@@ -160,3 +160,8 @@ MIT License - See [LICENSE](LICENSE) for details.
 ---
 
 *Part of the Clawffice Collective* 🦞🤖
+
+## Attribution
+
+- Godot Engine logo used under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/)
+- [Godot Engine](https://godotengine.org) - Game engine
