@@ -1,0 +1,11 @@
+[configuration]
+entry_symbol = "gdext_rust_init"
+compatibility_minimum = 4.1
+
+[libraries]
+linux.debug.x86_64 = "res://addons/godotty-node/bin/linux/libgodotty_node.so"
+linux.release.x86_64 = "res://addons/godotty-node/bin/linux/libgodotty_node.so"
+macos.debug = "res://addons/godotty-node/bin/macos/libgodotty_node.dylib"
+macos.release = "res://addons/godotty-node/bin/macos/libgodotty_node.dylib"
+windows.debug.x86_64 = "res://addons/godotty-node/bin/windows/godotty_node.dll"
+windows.release.x86_64 = "res://addons/godotty-node/bin/windows/godotty_node.dll"

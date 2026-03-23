@@ -39,3 +39,7 @@ theme/custom="res://resources/themes/terminal_theme.tres"
 
 renderer/rendering_method="gl_compatibility"
 textures/canvas_textures/default_texture_filter=0
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/godotty-node/plugin.cfg")

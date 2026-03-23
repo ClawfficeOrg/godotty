@@ -227,57 +227,87 @@ func _mock_clear() -> void:
 	_mock_output_buffer.clear()
 
 
-# === Real Terminal Implementation (stubbed) ===
+# === Real Terminal Implementation ===
 
 func _real_spawn_shell() -> bool:
 	if not is_addon_available:
-		push_error("Cannot spawn real shell: addon not available")
+		push_error("TerminalManager: cannot spawn real shell — addon not available")
 		return false
-	
-	# Will be implemented when godotty-node is ready
-	# if _real_terminal:
-	#     return _real_terminal.spawn_shell()
-	
-	push_warning("Real terminal not yet implemented - falling back to mock")
-	is_mock_mode = true
-	return _mock_spawn_shell()
+
+	# Instantiate TerminalNode2D from GDExtension and add as child
+	var TermClass = ClassDB.instantiate("TerminalNode2D")
+	if TermClass == null:
+		push_error("TerminalManager: ClassDB.instantiate('TerminalNode2D') returned null")
+		is_mock_mode = true
+		return _mock_spawn_shell()
+
+	_real_terminal = TermClass
+	add_child(_real_terminal)
+
+	# Connect signals
+	if _real_terminal.has_signal("output_received"):
+		_real_terminal.output_received.connect(_on_real_output_received)
+	if _real_terminal.has_signal("shell_exited"):
+		_real_terminal.shell_exited.connect(_on_real_shell_exited)
+
+	_real_terminal.spawn_shell()
+	shell_started.emit()
+	SignalBus.shell_status_changed.emit(true)
+	return true
 
 
 func _real_write_input(text: String) -> void:
-	if not is_addon_available:
-		return
-	
-	# Will be implemented when godotty-node is ready
-	# if _real_terminal:
-	#     _real_terminal.write_input(text)
+	if _real_terminal:
+		_real_terminal.write_input(text)
 
 
 func _real_has_output() -> bool:
-	if not is_addon_available:
-		return false
-	
-	# Will be implemented when godotty-node is ready
-	# if _real_terminal:
-	#     return _real_terminal.has_output()
-	
+	if _real_terminal:
+		return _real_terminal.has_output()
 	return false
 
 
 func _real_read_output() -> String:
-	if not is_addon_available:
-		return ""
-	
-	# Will be implemented when godotty-node is ready
-	# if _real_terminal:
-	#     return _real_terminal.read_output()
-	
+	if _real_terminal:
+		return _real_terminal.read_output()
 	return ""
 
 
 func _real_clear() -> void:
-	if not is_addon_available:
-		return
-	
-	# Will be implemented when godotty-node is ready
-	# if _real_terminal:
-	#     _real_terminal.clear()
+	# PTY-backed terminals can't truly "clear" from the host side;
+	# send the standard clear escape sequence instead.
+	if _real_terminal:
+		_real_terminal.write_input("clear\n")
+
+
+func _on_real_output_received(text: String) -> void:
+	output_received.emit(text)
+	SignalBus.output_ready.emit(text)
+
+
+func _on_real_shell_exited(code: int) -> void:
+	print("TerminalManager: shell exited with code ", code)
+	_real_terminal = null
+	shell_stopped.emit()
+	SignalBus.shell_status_changed.emit(false)
+
+
+## Get a cell from the real terminal grid (used by grid-based renderers).
+## Returns a Dictionary with keys: char, fg, bg, bold, italic.
+func get_cell(row: int, col: int) -> Dictionary:
+	if _real_terminal and not is_mock_mode:
+		return _real_terminal.get_cell(row, col)
+	return {"char": " ", "fg": Color.WHITE, "bg": Color.BLACK, "bold": false, "italic": false}
+
+
+## Get terminal grid dimensions. Returns [cols, rows].
+func get_dimensions() -> Array[int]:
+	if _real_terminal and not is_mock_mode:
+		return [_real_terminal.cols, _real_terminal.rows]
+	return [80, 24]
+
+
+## Resize the real terminal.
+func resize(cols: int, rows: int) -> void:
+	if _real_terminal and not is_mock_mode:
+		_real_terminal.resize(cols, rows)
