@@ -1,0 +1,30 @@
+# Godot
+*.import
+.godot/
+
+# Build artifacts
+*.o
+*.obj
+*.os
+*.so
+*.dll
+*.dylib
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# GDExtension builds (install from source)
+addons/godotty-node/*.so
+addons/godotty-node/*.dll
+addons/godotty-node/*.dylib
+
+# But keep the gdextension file
+!addons/godotty-node/*.gdextension

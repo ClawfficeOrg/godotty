@@ -1,0 +1,66 @@
+[gd_scene load_steps=4 format=3 uid="uid://main_scene_001"]
+
+[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="PackedScene" uid="uid://terminal_scene_001" path="res://scenes/terminal.tscn" id="2_terminal"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_status"]
+bg_color = Color(0.03, 0.03, 0.05, 1)
+border_width_top = 1
+border_color = Color(0.2, 0.8, 0.4, 0.5)
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_main")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 4
+
+[node name="StatusBar" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_status")
+
+[node name="ModeLabel" type="Label" parent="VBoxContainer/StatusBar"]
+layout_mode = 2
+text = "MODE: ---"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="VBoxContainer/StatusBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TitleLabel" type="Label" parent="VBoxContainer/StatusBar"]
+layout_mode = 2
+text = "═══ GODOTTY ═══"
+horizontal_alignment = 1
+
+[node name="Spacer2" type="Control" parent="VBoxContainer/StatusBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="AddonLabel" type="Label" parent="VBoxContainer/StatusBar"]
+layout_mode = 2
+text = "ADDON: ---"
+horizontal_alignment = 2
+
+[node name="TerminalContainer" type="Control" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Terminal" parent="VBoxContainer/TerminalContainer" instance=ExtResource("2_terminal")]
+layout_mode = 1

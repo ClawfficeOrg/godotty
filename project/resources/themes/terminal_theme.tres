@@ -1,0 +1,59 @@
+[gd_resource type="Theme" load_steps=3 format=3 uid="uid://c8m1h7x5p3q2k"]
+
+[ext_resource type="FontFile" id="1_monospace"]
+fallbacks = []
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_terminal"]
+bg_color = Color(0.05, 0.05, 0.1, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2, 0.8, 0.4, 1)
+corner_radius_top_left = 0
+corner_radius_top_right = 0
+corner_radius_bottom_right = 0
+corner_radius_bottom_left = 0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_input"]
+bg_color = Color(0.08, 0.08, 0.12, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.9, 0.5, 0.5)
+
+[resource]
+default_base_scale = 1.0
+default_font = ExtResource("1_monospace")
+default_font_size = 16
+
+LineEdit/colors/clear_button_color = Color(0.7, 0.7, 0.7, 1)
+LineEdit/colors/cursor_color = Color(0.3, 0.9, 0.5, 1)
+LineEdit/colors/font_color = Color(0.9, 0.9, 0.9, 1)
+LineEdit/colors/font_placeholder_color = Color(0.5, 0.5, 0.5, 1)
+LineEdit/colors/font_selected_color = Color(0.05, 0.05, 0.1, 1)
+LineEdit/colors/font_uneditable_color = Color(0.6, 0.6, 0.6, 1)
+LineEdit/colors/selection_color = Color(0.3, 0.9, 0.5, 0.3)
+LineEdit/constants/caret_width = 2
+LineEdit/constants/minimum_character_width = 4
+LineEdit/styles/normal = SubResource("StyleBoxFlat_input")
+LineEdit/styles/read_only = SubResource("StyleBoxFlat_input")
+
+RichTextLabel/colors/default_color = Color(0.9, 0.9, 0.9, 1)
+RichTextLabel/colors/font_selected_color = Color(0.05, 0.05, 0.1, 1)
+RichTextLabel/colors/font_shadow_color = Color(0, 0, 0, 0)
+RichTextLabel/colors/selection_color = Color(0.3, 0.9, 0.5, 0.3)
+RichTextLabel/constants/line_separation = 2
+RichTextLabel/constants/shadow_offset_x = 0
+RichTextLabel/constants/shadow_offset_y = 0
+RichTextLabel/styles/normal = SubResource("StyleBoxFlat_terminal")
+
+Button/colors/font_color = Color(0.9, 0.9, 0.9, 1)
+Button/colors/font_hover_color = Color(0.3, 0.9, 0.5, 1)
+Button/colors/font_pressed_color = Color(0.2, 0.6, 0.3, 1)
+Button/styles/normal = SubResource("StyleBoxFlat_input")
+
+Label/colors/font_color = Color(0.9, 0.9, 0.9, 1)
+Label/colors/font_outline_color = Color(0, 0, 0, 1)
+Label/colors/font_shadow_color = Color(0, 0, 0, 0)
