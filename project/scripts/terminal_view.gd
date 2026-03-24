@@ -84,29 +84,30 @@ func _process_ansi_text(text: String) -> String:
 	# Convert to BBCode for RichTextLabel
 	
 	var result: String = text
+	var esc: String = char(27)  # ANSI escape character
 	
 	# Reset
-	result = result.replace("\x1b[0m", "[/color]")
+	result = result.replace(esc + "[0m", "[/color]")
 	
 	# Standard colors
-	result = result.replace("\x1b[30m", "[color=black]")
-	result = result.replace("\x1b[31m", "[color=red]")
-	result = result.replace("\x1b[32m", "[color=green]")
-	result = result.replace("\x1b[33m", "[color=yellow]")
-	result = result.replace("\x1b[34m", "[color=blue]")
-	result = result.replace("\x1b[35m", "[color=magenta]")
-	result = result.replace("\x1b[36m", "[color=cyan]")
-	result = result.replace("\x1b[37m", "[color=white]")
+	result = result.replace(esc + "[30m", "[color=black]")
+	result = result.replace(esc + "[31m", "[color=red]")
+	result = result.replace(esc + "[32m", "[color=green]")
+	result = result.replace(esc + "[33m", "[color=yellow]")
+	result = result.replace(esc + "[34m", "[color=blue]")
+	result = result.replace(esc + "[35m", "[color=magenta]")
+	result = result.replace(esc + "[36m", "[color=cyan]")
+	result = result.replace(esc + "[37m", "[color=white]")
 	
 	# Bright colors
-	result = result.replace("\x1b[90m", "[color=gray]")
-	result = result.replace("\x1b[91m", "[color=#ff6666]")
-	result = result.replace("\x1b[92m", "[color=#66ff66]")
-	result = result.replace("\x1b[93m", "[color=#ffff66]")
-	result = result.replace("\x1b[94m", "[color=#6666ff]")
-	result = result.replace("\x1b[95m", "[color=#ff66ff]")
-	result = result.replace("\x1b[96m", "[color=#66ffff]")
-	result = result.replace("\x1b[97m", "[color=white]")
+	result = result.replace(esc + "[90m", "[color=gray]")
+	result = result.replace(esc + "[91m", "[color=#ff6666]")
+	result = result.replace(esc + "[92m", "[color=#66ff66]")
+	result = result.replace(esc + "[93m", "[color=#ffff66]")
+	result = result.replace(esc + "[94m", "[color=#6666ff]")
+	result = result.replace(esc + "[95m", "[color=#ff66ff]")
+	result = result.replace(esc + "[96m", "[color=#66ffff]")
+	result = result.replace(esc + "[97m", "[color=white]")
 	
 	return result
 

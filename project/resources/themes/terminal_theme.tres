@@ -1,7 +1,4 @@
-[gd_resource type="Theme" load_steps=3 format=3 uid="uid://c8m1h7x5p3q2k"]
-
-[ext_resource type="FontFile" id="1_monospace"]
-fallbacks = []
+[gd_resource type="Theme" format=3 uid="uid://c8m1h7x5p3q2k"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_terminal"]
 bg_color = Color(0.05, 0.05, 0.1, 1)
@@ -25,7 +22,6 @@ border_color = Color(0.3, 0.9, 0.5, 0.5)
 
 [resource]
 default_base_scale = 1.0
-default_font = ExtResource("1_monospace")
 default_font_size = 16
 
 LineEdit/colors/clear_button_color = Color(0.7, 0.7, 0.7, 1)

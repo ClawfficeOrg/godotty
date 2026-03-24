@@ -90,8 +90,9 @@ func clear() -> void:
 
 func _mock_spawn_shell() -> bool:
 	_mock_output_buffer.clear()
-	_mock_output_buffer.append("\x1b[32mGodotty Mock Terminal v1.0\x1b[0m")
-	_mock_output_buffer.append("\x1b[90mType 'help' for available commands\x1b[0m")
+	var esc: String = char(27)  # ANSI escape character
+	_mock_output_buffer.append(esc + "[32mGodotty Mock Terminal v1.0" + esc + "[0m")
+	_mock_output_buffer.append(esc + "[90mType 'help' for available commands" + esc + "[0m")
 	_mock_output_buffer.append("")
 	shell_started.emit()
 	SignalBus.shell_status_changed.emit(true)
@@ -106,7 +107,8 @@ func _mock_write_input(text: String) -> void:
 	_mock_history.append(text)
 	
 	# Echo the command
-	_mock_output_buffer.append("\x1b[36m%s\x1b[0m" % text)
+	var esc: String = char(27)
+	_mock_output_buffer.append(esc + "[36m%s" + esc + "[0m" % text)
 	
 	# Process command
 	var parts: PackedStringArray = text.strip_edges().split(" ", false, 1)
@@ -167,29 +169,31 @@ func _mock_process_command(cmd: String, args: String) -> String:
 			return ""
 		
 		"ls":
+			var esc: String = char(27)
 			if _mock_current_dir == "/home/user":
-				return """\x1b[34mdocuments\x1b[0m
-\x1b[34mdownloads\x1b[0m
-\x1b[34mprojects\x1b[0m
-\x1b[32mconfig.txt\x1b[0m
-\x1b[32mreadme.md\x1b[0m"""
+				return """{esc}[34mdocuments{esc}[0m
+{esc}[34mdownloads{esc}[0m
+{esc}[34mprojects{esc}[0m
+{esc}[32mconfig.txt{esc}[0m
+{esc}[32mreadme.md{esc}[0m""".format({"esc": esc})
 			elif _mock_current_dir == "/":
-				return """\x1b[34mhome\x1b[0m
-\x1b[34metc\x1b[0m
-\x1b[34musr\x1b[0m
-\x1b[34mvar\x1b[0m"""
+				return """{esc}[34mhome{esc}[0m
+{esc}[34metc{esc}[0m
+{esc}[34musr{esc}[0m
+{esc}[34mvar{esc}[0m""".format({"esc": esc})
 			else:
 				return "(empty directory)"
 		
 		"cat":
+			var esc: String = char(27)
 			if args == "readme.md" and _mock_current_dir == "/home/user":
 				return """# Godotty Reference App
 
 This is a demonstration terminal for the godotty-node GDExtension.
 
-Currently running in \x1b[33mMOCK MODE\x1b[0m.
+Currently running in {esc}[33mMOCK MODE{esc}[0m.
 
-Build the godotty-node extension for real terminal emulation!"""
+Build the godotty-node extension for real terminal emulation!""".format({"esc": esc})
 			elif args == "config.txt" and _mock_current_dir == "/home/user":
 				return """theme=retro
 font=monospace
@@ -204,13 +208,15 @@ size=16"""
 			return "user"
 		
 		"exit":
-			_mock_output_buffer.append("\x1b[33mGoodbye!\x1b[0m")
+			var esc: String = char(27)
+			_mock_output_buffer.append(esc + "[33mGoodbye!" + esc + "[0m")
 			shell_stopped.emit()
 			SignalBus.shell_status_changed.emit(false)
 			return ""
 		
 		_:
-			return "\x1b[31mCommand not found: %s\x1b[0m" % cmd
+			var esc: String = char(27)
+			return esc + "[31mCommand not found: %s" + esc + "[0m" % cmd
 
 
 func _mock_has_output() -> bool:
