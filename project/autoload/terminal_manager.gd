@@ -117,7 +117,7 @@ func _mock_write_input(text: String) -> void:
 	
 	# Echo the command
 	var esc: String = char(27)
-	_mock_output_buffer.append(esc + "[36m%s" + esc + "[0m" % text)
+	_mock_output_buffer.append(esc + "[36m%s%s[0m" % [text, esc])
 	
 	# Process command
 	var parts: PackedStringArray = text.strip_edges().split(" ", false, 1)
@@ -225,7 +225,7 @@ size=16"""
 		
 		_:
 			var esc: String = char(27)
-			return esc + "[31mCommand not found: %s" + esc + "[0m" % cmd
+			return "%s[31mCommand not found: %s%s[0m" % [esc, cmd, esc]
 
 
 func _mock_has_output() -> bool:
