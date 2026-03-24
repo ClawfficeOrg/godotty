@@ -189,6 +189,9 @@ func _on_text_submitted(text: String) -> void:
 ## Handle output from TerminalManager
 func _on_output_ready(text: String) -> void:
 	_append_output(text)
+	# Re-grab focus after output (RichTextLabel might steal it)
+	if input_field:
+		input_field.call_deferred("grab_focus")
 
 
 ## Handle terminal clear
