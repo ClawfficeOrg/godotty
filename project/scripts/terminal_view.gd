@@ -8,7 +8,7 @@ extends Control
 const MAX_LINES: int = 500
 
 ## Reference to the output display
-@onready var output_display: RichTextLabel = $VBoxContainer/OutputDisplay
+@onready var output_display: RichTextLabel = $VBoxContainer/ScrollContainer/OutputDisplay
 
 ## Reference to the input field
 @onready var input_field: LineEdit = $VBoxContainer/HBoxContainer/InputField
