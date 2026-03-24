@@ -177,13 +177,15 @@ func _on_text_submitted(text: String) -> void:
 		_command_history.append(trimmed)
 		_history_index = -1
 	
-	# Clear input field and re-grab focus
+	# Clear input field
 	input_field.clear()
-	input_field.grab_focus()
 	
 	# Send command
 	SignalBus.command_submitted.emit(trimmed)
 	TerminalManager.write_input(trimmed)
+	
+	# Re-grab focus after everything processes (deferred to avoid focus steal)
+	input_field.call_deferred("grab_focus")
 
 
 ## Handle output from TerminalManager
