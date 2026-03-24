@@ -177,8 +177,9 @@ func _on_text_submitted(text: String) -> void:
 		_command_history.append(trimmed)
 		_history_index = -1
 	
-	# Clear input field
+	# Clear input field and re-grab focus
 	input_field.clear()
+	input_field.grab_focus()
 	
 	# Send command
 	SignalBus.command_submitted.emit(trimmed)
