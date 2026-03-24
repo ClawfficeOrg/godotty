@@ -1,6 +1,6 @@
 ## TerminalManager - Manages terminal backend (real or mock)
 ## Detects godotty-node availability and provides fallback
-class_name TerminalManager
+## Note: No class_name to avoid conflict with autoload singleton name
 extends Node
 
 ## Whether godotty-node GDExtension is available
