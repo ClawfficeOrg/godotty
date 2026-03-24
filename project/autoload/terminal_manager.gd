@@ -29,6 +29,15 @@ func _ready() -> void:
 
 ## Check if godotty-node GDExtension is available
 func _check_addon_availability() -> void:
+	# Force mock mode on Windows - portable_pty has DLL initialization issues (0xc0000142)
+	# TODO: Re-enable real terminal on Windows once PTY issue is resolved
+	if OS.has_feature("windows"):
+		is_addon_available = false
+		is_mock_mode = true
+		print("Windows detected - using mock terminal (PTY issues)")
+		SignalBus.addon_status_changed.emit(is_addon_available)
+		return
+	
 	# Try to load the GDExtension class
 	var terminal_class = ClassDB.class_get_method_list("TerminalNode2D")
 	
