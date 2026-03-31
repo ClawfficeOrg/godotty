@@ -43,6 +43,7 @@ theme_override_constants/separation = 4
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_terminal_bg")
+focus_mode = 0
 
 [node name="OutputDisplay" type="RichTextLabel" parent="VBoxContainer/ScrollContainer"]
 layout_mode = 2
@@ -52,6 +53,7 @@ bbcode_enabled = true
 text = ""
 scroll_active = false
 scroll_following = true
+focus_mode = 0
 
 [node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
 layout_mode = 2
