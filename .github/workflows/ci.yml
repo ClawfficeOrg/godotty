@@ -35,7 +35,7 @@ jobs:
         run: scripts/lint.sh
 
   test-linux:
-    name: Test (Linux, Godot ${{ env.GODOT_VERSION }})
+    name: Test (Linux, Godot 4.6-stable)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -45,7 +45,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/godot
-          key: godot-${{ env.GODOT_VERSION }}-linux
+          key: godot-4.6-stable-linux
 
       - name: Install Godot
         if: steps.cache-godot.outputs.cache-hit != 'true'
