@@ -4,19 +4,22 @@
 
 ![Terminal Demo](screenshots/terminal-demo.png)
 
+## Status
+
+Current release: **v0.1.0** — see [CHANGELOG.md](CHANGELOG.md).
+
 ## Features
 
-- 🖥️ **Terminal Emulation** - Full terminal UI with ANSI color support
-- 📦 **Mock Mode** - Works without the GDExtension for development
-- 🎨 **Pixel Art Style** - Retro terminal aesthetic
-- ⌨️ **Command History** - Navigate with arrow keys
-- 🔌 **Hot-Swap Backend** - Seamlessly switch between mock and real terminal
+- 🖥️ **Terminal Emulation** — full ANSI color (256-color, truecolor, OSC sequences)
+- 📦 **Mock Mode** — works without the GDExtension for development
+- 🎨 **Solarized Dark** palette
+- ⌨️ **Command History** — navigate with arrow keys
+- 🧠 **Robust ANSI Parser** — handles partial-escape sequences across PTY chunks
+- 🔌 **Hot-Swap Backend** — seamlessly switch between mock and real terminal
 
 ## Quick Start
 
-### Running in Mock Mode
-
-The app works out of the box in mock mode without any additional setup:
+### Mock Mode (no GDExtension required)
 
 ```bash
 cd project
@@ -25,74 +28,42 @@ godot4 .
 
 Or open `project/project.godot` in the Godot Editor.
 
-### Building with godotty-node
+### Real Terminal (with godotty-node)
 
-To use the real terminal emulation:
-
-1. **Build the GDExtension**:
-   ```bash
-   git clone https://github.com/ClawfficeOrg/godotty-node.git
-   cd godotty-node
-   cargo build --release
-   ```
-
-2. **Install the extension**:
-   ```bash
-   mkdir -p ../godotty/project/addons/godotty-node
-   cp target/release/libgodotty_node.so ../godotty/project/addons/godotty-node/
-   cp godotty_node.gdextension ../godotty/project/addons/godotty-node/
-   ```
-
-3. **Run the project**:
-   ```bash
-   cd ../godotty/project
-   godot4 .
-   ```
-
-## Project Structure
-
-```
-project/
-├── project.godot          # Project configuration
-├── autoload/              # Global singletons
-│   ├── signal_bus.gd      # Event bus for decoupled communication
-│   └── terminal_manager.gd # Terminal backend (real/mock)
-├── scenes/
-│   ├── main.tscn          # Main application scene
-│   └── terminal.tscn      # Terminal UI component
-├── scripts/
-│   ├── main.gd            # Main scene controller
-│   └── terminal_view.gd   # Terminal display logic
-├── resources/
-│   └── themes/
-│       └── terminal_theme.tres # UI theming
-└── addons/                # GDExtensions (gitignored)
-    └── godotty-node/      # Real terminal extension
+```bash
+git clone https://github.com/ClawfficeOrg/godotty-node.git
+cd godotty
+./build_extension.sh    # builds godotty-node and installs it into project/addons/
+cd project
+godot4 .
 ```
 
 ## Architecture
 
-### Signal-Based Design
-
-Godotty uses a signal-based architecture for loose coupling:
+Signal-based, with a hard boundary between view and backend.
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   TerminalView  │────▶│   SignalBus     │────▶│ TerminalManager │
-│   (UI Layer)    │     │   (Event Bus)   │     │   (Backend)     │
+│   TerminalView  │◀──▶│    SignalBus     │◀──▶│ TerminalManager │
+│   (UI Layer)    │     │   (Event Bus)    │     │ (mock or real)  │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
 ```
 
-**Key Signals:**
-- `command_submitted(command: String)` - User entered a command
-- `output_ready(text: String)` - Terminal output ready to display
-- `terminal_cleared()` - Terminal was cleared
-- `addon_status_changed(available: bool)` - GDExtension status changed
-- `shell_status_changed(running: bool)` - Shell started/stopped
+**Signals (`SignalBus`):**
 
-### Mock Terminal
+| Signal | Purpose |
+|---|---|
+| `command_submitted(command: String)` | User entered a command. |
+| `output_ready(text: String)` | Output ready to display. |
+| `terminal_cleared()` | Terminal cleared. |
+| `addon_status_changed(available: bool)` | godotty-node detection result. |
+| `shell_status_changed(running: bool)` | Shell started/stopped. |
 
-When godotty-node is not available, the app runs in mock mode with a simulated terminal supporting:
+`TerminalView` and `TerminalManager` only talk via `SignalBus`. Direct
+calls across that boundary are forbidden — see
+[`AGENTS.md`](AGENTS.md) §2.5.
+
+## Mock command set
 
 | Command | Description |
 |---------|-------------|
@@ -107,61 +78,106 @@ When godotty-node is not available, the app runs in mock mode with a simulated t
 | `whoami` | Show current user |
 | `exit` | Exit the shell |
 
-### Real Terminal (godotty-node)
+Full mock spec: [`project/docs/mock-terminal-commands.md`](project/docs/mock-terminal-commands.md).
 
-When the GDExtension is available, commands are executed in a real PTY shell. The `TerminalManager` automatically detects availability and switches backends.
-
-## Keyboard Shortcuts
+## Keyboard shortcuts
 
 | Key | Action |
 |-----|--------|
 | `Enter` | Submit command |
 | `↑` / `↓` | Navigate command history |
-| `Ctrl+C` | Interrupt current input |
-| `Tab` | (TODO) Auto-complete |
+| `Ctrl+C` | Send SIGINT (real PTY) / clear input (mock) |
+| `Ctrl+L` | Clear terminal |
+| `Ctrl+D` | Send EOF |
+
+## Project layout
+
+```
+.github/        — workflows, skills, agents, issue templates
+.ralph/         — Ralph Loop state (specs, progress, learnings)
+project/        — the Godot project
+  autoload/     — SignalBus, TerminalManager
+  scenes/       — main.tscn, terminal.tscn
+  scripts/      — terminal_view.gd
+  resources/    — themes
+  docs/         — in-project docs
+tests/          — GdUnit4 test suites (unit + integration)
+docs/           — top-level docs (ADRs)
+scripts/        — ralph_loop, run_tests, lint, release, install_gdunit4
+```
 
 ## Development
+
+This repo is developed in the open by an autonomous agent loop —
+**Ralph Loop** + **Superpowers** — supervised by a human maintainer.
+See:
+
+- [`AGENTS.md`](AGENTS.md) — the agent constitution.
+- [`.ralph/README.md`](.ralph/README.md) — the loop's operational manual.
+- [`.github/skills/INDEX.md`](.github/skills/INDEX.md) — on-demand skill packs.
+- [`docs/adr/`](docs/adr/) — architectural decision records.
 
 ### Requirements
 
 - Godot 4.6+
-- Rust 1.70+ (for godotty-node)
+- Rust 1.70+ (only for building godotty-node)
+- For tests: `python3`, `gdtoolkit` (`pip install gdtoolkit`), GdUnit4
+  (installed via `scripts/install_gdunit4.sh`).
 
-### Running Tests
+### Running tests
 
 ```bash
-# TODO: Add GdUnit4 tests
+scripts/run_tests.sh                    # all tests, headless
+scripts/run_tests.sh tests/unit         # subset
 ```
 
-### Adding Commands (Mock Mode)
+### Linting
 
-Edit `autoload/terminal_manager.gd` and add to `_mock_process_command()`:
-
-```gdscript
-"mycommand":
-    return "My command output"
+```bash
+scripts/lint.sh         # gdformat --check, gdlint, shellcheck
 ```
 
-## Screenshots
+### Cutting a release
 
-| Mock Mode | Real Terminal |
-|-----------|---------------|
-| ![Mock Mode](screenshots/mock-mode.png) | ![Real Terminal](screenshots/real-terminal.png) |
+Maintainer-only (Hard Stop in `AGENTS.md` §9):
 
-## Related Projects
+```bash
+scripts/release.sh v0.2.0
+```
 
-- [godotty-node](https://github.com/ClawfficeOrg/godotty-node) - The GDExtension this app demonstrates
-- [Clawffice-Space](https://github.com/ClawfficeOrg/Clawffice-Space) - The main Clawffice project
+### Running the autonomous loop
+
+```bash
+RALPH_AGENT_CMD=claude scripts/ralph_loop.sh --max-iter 10
+touch .ralph/state/STOP        # graceful halt
+```
+
+See [`.github/skills/ralph/ralph-loop-iteration/SKILL.md`](.github/skills/ralph/ralph-loop-iteration/SKILL.md)
+for what the agent does each iteration.
+
+## Code review
+
+Every PR receives:
+
+1. **Claude review** — process compliance + concrete behavior
+   ([skill](.github/skills/review/dual-review/SKILL.md)).
+2. **GPT-5 review** — architectural drift, idiom, edge cases.
+3. **Human sign-off** for anything touching autoloads, the GDExtension
+   boundary, CI/release infra, or `TerminalManager`'s public API.
+
+The dual-review workflow runs on every PR (`.github/workflows/dual-review.yml`).
+If `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` is unset, that reviewer is
+skipped with a warning.
+
+## Related
+
+- [godotty-node](https://github.com/ClawfficeOrg/godotty-node) — the GDExtension this app demos.
+- [Clawffice-Space](https://github.com/ClawfficeOrg/Clawffice-Space) — the main Clawffice project.
 
 ## License
 
-MIT License - See [LICENSE](LICENSE) for details.
+MIT — see [LICENSE](LICENSE).
 
 ---
 
 *Part of the Clawffice Collective* 🦞🤖
-
-## Attribution
-
-- Godot Engine logo used under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/)
-- [Godot Engine](https://godotengine.org) - Game engine

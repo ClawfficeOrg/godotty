@@ -1,0 +1,60 @@
+name: Bug report
+description: Report a bug in godotty (the demo) — NOT godotty-node.
+title: "bug: <one-line summary>"
+labels: ["bug", "needs-triage"]
+body:
+  - type: input
+    id: godot-version
+    attributes:
+      label: Godot version
+      placeholder: "4.6.stable"
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Mode
+      options:
+        - Mock (no GDExtension)
+        - Real (godotty-node installed)
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Other (note in description)
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open project in Godot 4.6
+        2. Run main scene
+        3. Type `xxx`
+        4. Observe `yyy`
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / stack traces
+      render: shell
