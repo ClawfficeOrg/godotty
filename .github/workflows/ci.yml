@@ -65,6 +65,15 @@ jobs:
       - name: Verify Godot
         run: godot4 --version || true
 
+      - name: Remove godotty-node GDExtension (mock-mode tests only)
+        run: |
+          # The godotty-node dylib is not built in CI (real-mode tests are
+          # tracked under spec 0003). On macOS, Godot crashes hard with an
+          # NSException when the .gdextension points at a missing dylib; on
+          # Linux it's a soft warning. Remove the addon so both platforms
+          # behave the same.
+          rm -rf project/addons/godotty-node
+
       - name: Install GdUnit4
         run: scripts/install_gdunit4.sh
 
@@ -112,6 +121,9 @@ jobs:
 
       - name: Verify Godot
         run: godot4 --version || true
+
+      - name: Remove godotty-node GDExtension (mock-mode tests only)
+        run: rm -rf project/addons/godotty-node
 
       - name: Install GdUnit4
         run: scripts/install_gdunit4.sh
