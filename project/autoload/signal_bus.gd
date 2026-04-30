@@ -1,6 +1,6 @@
 ## SignalBus - Global event bus for godotty
 ## Provides decoupled communication between components
-class_name SignalBus
+## Note: No class_name to avoid conflict with autoload singleton name
 extends Node
 
 ## Emitted when a command is submitted

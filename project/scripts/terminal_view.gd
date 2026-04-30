@@ -8,7 +8,7 @@ extends Control
 const MAX_LINES: int = 500
 
 ## Reference to the output display
-@onready var output_display: RichTextLabel = $VBoxContainer/OutputDisplay
+@onready var output_display: RichTextLabel = $VBoxContainer/ScrollContainer/OutputDisplay
 
 ## Reference to the input field
 @onready var input_field: LineEdit = $VBoxContainer/HBoxContainer/InputField
@@ -84,29 +84,30 @@ func _process_ansi_text(text: String) -> String:
 	# Convert to BBCode for RichTextLabel
 	
 	var result: String = text
+	var esc: String = char(27)  # ANSI escape character
 	
 	# Reset
-	result = result.replace("\x1b[0m", "[/color]")
+	result = result.replace(esc + "[0m", "[/color]")
 	
 	# Standard colors
-	result = result.replace("\x1b[30m", "[color=black]")
-	result = result.replace("\x1b[31m", "[color=red]")
-	result = result.replace("\x1b[32m", "[color=green]")
-	result = result.replace("\x1b[33m", "[color=yellow]")
-	result = result.replace("\x1b[34m", "[color=blue]")
-	result = result.replace("\x1b[35m", "[color=magenta]")
-	result = result.replace("\x1b[36m", "[color=cyan]")
-	result = result.replace("\x1b[37m", "[color=white]")
+	result = result.replace(esc + "[30m", "[color=black]")
+	result = result.replace(esc + "[31m", "[color=red]")
+	result = result.replace(esc + "[32m", "[color=green]")
+	result = result.replace(esc + "[33m", "[color=yellow]")
+	result = result.replace(esc + "[34m", "[color=blue]")
+	result = result.replace(esc + "[35m", "[color=magenta]")
+	result = result.replace(esc + "[36m", "[color=cyan]")
+	result = result.replace(esc + "[37m", "[color=white]")
 	
 	# Bright colors
-	result = result.replace("\x1b[90m", "[color=gray]")
-	result = result.replace("\x1b[91m", "[color=#ff6666]")
-	result = result.replace("\x1b[92m", "[color=#66ff66]")
-	result = result.replace("\x1b[93m", "[color=#ffff66]")
-	result = result.replace("\x1b[94m", "[color=#6666ff]")
-	result = result.replace("\x1b[95m", "[color=#ff66ff]")
-	result = result.replace("\x1b[96m", "[color=#66ffff]")
-	result = result.replace("\x1b[97m", "[color=white]")
+	result = result.replace(esc + "[90m", "[color=gray]")
+	result = result.replace(esc + "[91m", "[color=#ff6666]")
+	result = result.replace(esc + "[92m", "[color=#66ff66]")
+	result = result.replace(esc + "[93m", "[color=#ffff66]")
+	result = result.replace(esc + "[94m", "[color=#6666ff]")
+	result = result.replace(esc + "[95m", "[color=#ff66ff]")
+	result = result.replace(esc + "[96m", "[color=#66ffff]")
+	result = result.replace(esc + "[97m", "[color=white]")
 	
 	return result
 
@@ -176,8 +177,9 @@ func _on_text_submitted(text: String) -> void:
 		_command_history.append(trimmed)
 		_history_index = -1
 	
-	# Clear input field
+	# Clear input field and grab focus back
 	input_field.clear()
+	input_field.call_deferred("grab_focus")
 	
 	# Send command
 	SignalBus.command_submitted.emit(trimmed)
@@ -187,6 +189,9 @@ func _on_text_submitted(text: String) -> void:
 ## Handle output from TerminalManager
 func _on_output_ready(text: String) -> void:
 	_append_output(text)
+	# Re-grab focus after output (RichTextLabel might steal it)
+	if input_field:
+		input_field.call_deferred("grab_focus")
 
 
 ## Handle terminal clear
