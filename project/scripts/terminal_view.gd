@@ -8,13 +8,13 @@ extends Control
 const MAX_LINES: int = 1000
 
 ## Reference to the output display
-@onready var output_display: RichTextLabel = $VBoxContainer/OutputDisplay
+@onready var output_display: RichTextLabel = $VBoxContainer/ScrollContainer/OutputDisplay
 
 ## Reference to the input field
-@onready var input_field: LineEdit = $VBoxContainer/HBoxContainer/InputField
+@onready var input_field: LineEdit = $VBoxContainer/InputBar/HBoxContainer/InputField
 
 ## Reference to the prompt label
-@onready var prompt_label: Label = $VBoxContainer/HBoxContainer/PromptLabel
+@onready var prompt_label: Label = $VBoxContainer/InputBar/HBoxContainer/PromptLabel
 
 ## Reference to the scroll container
 @onready var scroll_container: ScrollContainer = $VBoxContainer/ScrollContainer
@@ -31,8 +31,7 @@ var _is_ready: bool = false
 ## Line count for scrollback enforcement
 var _line_count: int = 0
 
-## ANSI state machine state
-var _ansi_color_stack: Array[String] = []
+## ANSI parser state
 var _current_fg: String = ""
 var _current_bg: String = ""
 var _current_bold: bool = false
@@ -142,13 +141,10 @@ func _ansi_to_bbcode(text: String) -> String:
 							_current_bold = false
 							call_deferred("_clear_output")
 					"H", "f":
-						# Cursor position — mostly ignore in text mode, add newline context
 						pass
 					"K":
-						# Erase line — skip
 						pass
 					_:
-						# Unknown CSI — skip
 						pass
 
 				i += end_pos + 1
@@ -169,12 +165,10 @@ func _ansi_to_bbcode(text: String) -> String:
 
 			else:
 				# Unknown escape type — skip one char
-				output += ""
 				i += 2
 				continue
 
 		elif ch == "\r":
-			# Carriage return — skip (paired with \n usually)
 			i += 1
 			continue
 		elif ch == "\n":
@@ -203,7 +197,6 @@ func _handle_sgr(params_str: String) -> String:
 	var result := ""
 
 	if params_str == "" or params_str == "0":
-		# Reset all — close open tags
 		result += _close_all_tags()
 		_current_fg = ""
 		_current_bg = ""
@@ -226,7 +219,7 @@ func _handle_sgr(params_str: String) -> String:
 					_current_bold = true
 					result += "[b]"
 			2:
-				pass  # dim — ignore
+				pass
 			3:
 				result += "[i]"
 			4:
@@ -251,7 +244,6 @@ func _handle_sgr(params_str: String) -> String:
 				_current_fg = _indexed_color(code - 90 + 8, false)
 				result += "[color=%s]" % _current_fg
 			38:
-				# Extended fg color
 				if idx + 2 < codes.size() and int(codes[idx + 1]) == 5:
 					result += _close_fg()
 					var color_idx := int(codes[idx + 2])
@@ -267,7 +259,6 @@ func _handle_sgr(params_str: String) -> String:
 					result += "[color=%s]" % _current_fg
 					idx += 4
 			48:
-				# Extended bg — RichTextLabel bg not easily supported, skip
 				if idx + 2 < codes.size() and int(codes[idx + 1]) == 5:
 					idx += 2
 				elif idx + 4 < codes.size() and int(codes[idx + 1]) == 2:
@@ -304,14 +295,14 @@ func _indexed_color(idx: int, _bright: bool) -> String:
 		"#d33682",  # 5  magenta
 		"#2aa198",  # 6  cyan
 		"#eee8d5",  # 7  white
-		"#002b36",  # 8  bright black (base03)
+		"#002b36",  # 8  bright black
 		"#cb4b16",  # 9  bright red (orange)
-		"#586e75",  # 10 bright green (base01)
-		"#657b83",  # 11 bright yellow (base00)
-		"#839496",  # 12 bright blue (base0)
+		"#586e75",  # 10 bright green
+		"#657b83",  # 11 bright yellow
+		"#839496",  # 12 bright blue
 		"#6c71c4",  # 13 bright magenta (violet)
-		"#93a1a1",  # 14 bright cyan (base1)
-		"#fdf6e3",  # 15 bright white (base3)
+		"#93a1a1",  # 14 bright cyan
+		"#fdf6e3",  # 15 bright white
 	]
 	if idx >= 0 and idx < PALETTE.size():
 		return PALETTE[idx]
@@ -338,25 +329,17 @@ func _append_output(text: String) -> void:
 	if not output_display:
 		return
 
-	# Process ANSI codes
 	var processed := _ansi_to_bbcode(text)
 	if processed.is_empty():
 		return
 
-	# Count newlines added
 	var new_lines := processed.count("\n")
 	_line_count += new_lines
 
 	output_display.append_text(processed)
 
-	# Enforce scrollback limit
 	if _line_count > MAX_LINES:
-		var excess := _line_count - MAX_LINES
 		_line_count = MAX_LINES
-		# RichTextLabel doesn't have direct line removal; clear and note truncation
-		# For now just let it grow (RichTextLabel handles this gracefully)
-		# A proper implementation would use a circular buffer
-		pass
 
 	_scroll_to_bottom()
 
@@ -414,7 +397,9 @@ func _on_text_submitted(text: String) -> void:
 		_command_history.append(trimmed)
 		_history_index = -1
 
+	# Clear input field and grab focus back
 	input_field.clear()
+	input_field.call_deferred("grab_focus")
 
 	# FIX: append \n so the command actually executes in the PTY
 	TerminalManager.write_input(trimmed + "\n")
@@ -424,6 +409,9 @@ func _on_text_submitted(text: String) -> void:
 ## Handle output from TerminalManager
 func _on_output_ready(text: String) -> void:
 	_append_output(text)
+	# Re-grab focus after output (RichTextLabel might steal it)
+	if input_field:
+		input_field.call_deferred("grab_focus")
 
 
 ## Handle terminal clear
