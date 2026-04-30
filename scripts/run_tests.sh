@@ -37,21 +37,12 @@ fi
 
 if [[ -z "$GODOT" ]] || ! command -v "$GODOT" >/dev/null 2>&1; then
 	echo "run_tests: cannot find Godot 4 binary. Set \$GODOT or install godot4." >&2
-	# Soft-success in CI when Godot isn't installed yet (spec 0001 tolerates this).
-	if [[ "${CI:-}" == "true" ]]; then
-		echo "run_tests: CI=true and no godot — emitting NO-OP success."
-		exit 0
-	fi
 	exit 2
 fi
 
 if [[ ! -d "$GDUNIT4_PATH" ]]; then
-	echo "run_tests: GdUnit4 not installed at $GDUNIT4_PATH"
-	echo "           run scripts/install_gdunit4.sh (spec 0002), or set GDUNIT4_PATH"
-	if [[ ! -d "tests" ]] || [[ -z "$(find tests -name '*_test.gd' -type f 2>/dev/null)" ]]; then
-		echo "run_tests: no tests configured yet — emitting NO-OP success (spec 0001)."
-		exit 0
-	fi
+	echo "run_tests: GdUnit4 not installed at $GDUNIT4_PATH" >&2
+	echo "           run scripts/install_gdunit4.sh" >&2
 	exit 2
 fi
 
@@ -78,6 +69,7 @@ fi
 set +e
 "$GODOT" --headless --path "$PROJECT_DIR" \
 	-s "addons/gdUnit4/bin/GdUnitCmdTool.gd" \
+	--ignoreHeadlessMode \
 	-a "${TARGETS[@]}" \
 	-rd "../$RESULTS_DIR"
 rc=$?
