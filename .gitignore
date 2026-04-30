@@ -19,3 +19,17 @@
 # OS
 .DS_Store
 Thumbs.db
+
+# Ralph Loop volatile state (specs, progress, learnings ARE tracked)
+.ralph/state/STOP
+.ralph/state/ITERATIONS
+.ralph/state/loop.log
+
+# Test artifacts
+build/
+project/tests        # symlink created by scripts/run_tests.sh
+
+# Python
+__pycache__/
+*.pyc
+.venv/
