@@ -81,7 +81,7 @@ jobs:
           if-no-files-found: ignore
 
   test-macos:
-    name: Test (macOS, Godot ${{ env.GODOT_VERSION }})
+    name: Test (macOS, Godot 4.6-stable)
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -91,7 +91,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/godot
-          key: godot-${{ env.GODOT_VERSION }}-macos-universal
+          key: godot-4.6-stable-macos-universal
 
       - name: Install Godot
         if: steps.cache-godot.outputs.cache-hit != 'true'
