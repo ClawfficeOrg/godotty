@@ -1,16 +1,25 @@
 # gdlint configuration for godotty
 # See: https://github.com/Scony/godot-gdscript-toolkit/wiki/3.-Linter
+#
+# This is intentionally lenient: the existing demo code predates lint
+# enforcement. Style cleanup is tracked as a follow-up spec; for now the
+# linter pins the *contract-level* rules (no-bare-except, mixed-tabs-and-spaces,
+# duplicated-load, etc.) and leaves cosmetic/style rules for a future pass.
 
-# Disable a few rules that are noisy for this codebase. Re-enable on a
-# per-file basis with inline comments if needed.
 disable:
   - max-public-methods           # autoloads naturally have many
-  - class-definitions-order      # we follow our own order in gdscript-style skill
+  - class-definitions-order      # follows our own order from gdscript-style skill
   - max-line-length              # gdformat handles wrapping
   - private-method-call          # we routinely test private mock helpers
+  - max-returns                  # mock _process_command is a big match block
+  - unused-argument              # signal handlers often ignore payload
+  - no-else-return               # legitimate readability choice in places
+  - no-elif-return               # ditto
+  - trailing-whitespace          # follow-up spec will run gdformat once
+  - function-variable-name       # allow CamelCase locals for class-objects
 
-# Naming
-function-name: '(_on_)?[a-z][a-z0-9]*(_[a-z0-9]+)*'
+# Naming — allow leading underscore for lifecycle / private (_ready, _on_xxx, ...).
+function-name: '(_on_)?_?[a-z][a-z0-9]*(_[a-z0-9]+)*'
 class-variable-name: '[a-z_][a-z0-9_]*'
 constant-name: '[A-Z][A-Z0-9_]*'
 

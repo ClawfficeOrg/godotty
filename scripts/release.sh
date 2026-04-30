@@ -44,7 +44,7 @@ run() {
 	if [[ "$DRY_RUN" == 1 ]]; then
 		echo "[dry-run] $*"
 	else
-		eval "$@"
+		"$@"
 	fi
 }
 
@@ -79,6 +79,7 @@ if ! grep -q '^## \[Unreleased\]' CHANGELOG.md; then
 	exit 1
 fi
 
+# shellcheck disable=SC2034  # consumed by the python heredoc below
 new_unreleased="## [Unreleased]\n\n### Added\n\n### Changed\n\n### Fixed\n\n### Removed\n\n## [${VERSION#v}] — ${TODAY}"
 
 if [[ "$DRY_RUN" == 1 ]]; then
