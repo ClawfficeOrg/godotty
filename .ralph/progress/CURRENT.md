@@ -444,6 +444,12 @@ Task `1.0.2` — DONE. Alternate screen buffer enter/exit implemented in `Termin
 
 ## Done this session (2026-05-27 - BBCode hotfix)
 
+- **Fixed `_current_bold` flag not being reset** (commit 34f850d, 2fda396):
+  - `_close_all_tags()` was generating `[/b]` closing tags but not resetting `_current_bold` to false.
+  - This caused duplicate `[/b]` tags on subsequent resets, appearing as literal text.
+  - Fix: Set `_current_bold = false` after appending `[/b]`.
+  - Updated CHANGELOG.md.
+
 - **Fixed BBCode rendering issue** (commit 376b4f8):
   - Root cause: `]` characters from shell output (Starship prompts, etc.) were not escaped,
     creating malformed BBCode like `[/bgcolor]]` that broke the RichTextLabel BBCode parser.
