@@ -7,8 +7,18 @@
 
 ## Now doing
 
-Task `0.3.1` — nightly workflow + install script. Implementation complete,
-pending commit and PR.
+Task `0.3.2` — real-mode integration test suite skeleton. Implementation
+complete; lint clean, unit tests GREEN. Pending commit.
+
+## Done this session (continued)
+
+- `tests/integration/real/__init__.gd` (`RealIntegrationBase`) — async base
+  class with `run_and_await()`, `_require_real_mode()`, lifecycle hooks.
+- `tests/integration/real/pwd_test.gd` — pwd returns absolute path.
+- `tests/integration/real/echo_test.gd` — echo hello contains "hello".
+- `tests/integration/real/exit_code_test.gd` — exit code 42 propagates via $?.
+- `bash scripts/lint.sh` → clean.
+- `bash scripts/run_tests.sh tests/unit` → 11/11 GREEN.
 
 ## Done this session (2026-05-27)
 

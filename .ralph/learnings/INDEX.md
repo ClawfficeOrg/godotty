@@ -13,7 +13,41 @@ Format:
 
 ---
 
-## 2026-03-23 — GdUnit4 repo moved orgs; v5.x is Godot 4.3/4.4 only
+## 2026-05-27 — TerminalManager does not expose shell exit code publicly
+
+**Context:** Writing `exit_code_test.gd` — need to assert exit code propagation.
+**Learning:** `TerminalManager._on_real_shell_exited(code)` receives the PTY
+exit code but only prints it; it does not re-emit on a public signal or store it
+as a property. To test exit code propagation via the current API, use
+`echo $?` in the running shell session and assert the value appears in
+`output_received`. Adding a `shell_exited(code)` signal to TerminalManager
+would require touching the autoload (Hard Stop) — defer to a follow-up spec.
+**Evidence:** `project/autoload/terminal_manager.gd:_on_real_shell_exited`,
+`tests/integration/real/exit_code_test.gd`.
+**Tag:** godot · pty · terminal
+
+## 2026-05-27 — `spawn_shell()` emits `shell_started` synchronously; `await` misses it
+
+**Context:** Writing `before_test()` for real-mode integration base class.
+**Learning:** `_real_spawn_shell()` calls `shell_started.emit()` synchronously
+before returning. `await TerminalManager.shell_started` placed *after*
+`spawn_shell()` will never receive the signal. Use a fixed settle delay
+(`create_timer(0.3).timeout`) instead of awaiting the signal.
+**Evidence:** `project/autoload/terminal_manager.gd:_real_spawn_shell`,
+`tests/integration/real/__init__.gd:before_test`.
+**Tag:** godot · gdscript · pty
+
+## 2026-05-27 — GdUnit4 runs base classes with no tests as empty suites (0 tests, 0 failures)
+
+**Context:** `tests/integration/real/__init__.gd` extends `GdUnitTestSuite` but
+has no `test_*` methods. GdUnit4 discovers it when scanning the directory.
+**Learning:** GdUnit4 instantiates the class, finds no test methods, reports
+"0 tests, 0 failures" — not an error. Safe to use as an inheritance base inside
+the scanned directory.
+**Evidence:** `tests/integration/real/__init__.gd`.
+**Tag:** godot · gdunit
+
+
 
 **Context:** First Ralph iteration, installing GdUnit4 from the URL in
 `scripts/install_gdunit4.sh` (pinned to `MikeSchulze/gdUnit4 v5.0.5`).

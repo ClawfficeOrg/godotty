@@ -10,6 +10,18 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Real-mode integration test suite skeleton (spec 0003, task 0.3.2).**
+  - `tests/integration/real/__init__.gd` (`RealIntegrationBase`) — shared base
+    class providing `run_and_await()`, `_require_real_mode()`, and async
+    `before_test()`/`after_test()` lifecycle hooks. Skips the whole suite
+    gracefully (`pending()`) when the GDExtension is absent.
+  - `tests/integration/real/pwd_test.gd` — asserts `pwd` output is a non-empty
+    absolute path (starts with `/`).
+  - `tests/integration/real/echo_test.gd` — asserts `echo hello` output
+    contains `hello`.
+  - `tests/integration/real/exit_code_test.gd` — asserts that `$?` captures
+    the exit code of a sub-process (`sh -c 'exit 42'` → `42`), proving exit
+    code propagation through the output stream.
 - **Nightly real-mode CI workflow (spec 0003, task 0.3.1).**
   - `.github/workflows/nightly-real.yml` — scheduled (02:17 UTC nightly) +
     `workflow_dispatch` trigger. Runs on `ubuntu-latest` and `macos-latest`
