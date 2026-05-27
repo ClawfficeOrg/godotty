@@ -230,39 +230,53 @@ func _input(event: InputEvent) -> void:
 	if not _is_ready:
 		return
 
-	if event is InputEventKey and event.pressed:
+	if event is InputEventKey and event.pressed and not event.echo:
+		# History navigation and legacy clipboard shortcuts are not in the rebindable keymap.
 		match event.keycode:
 			KEY_UP:
 				_navigate_history(-1)
 				get_viewport().set_input_as_handled()
+				return
 			KEY_DOWN:
 				_navigate_history(1)
 				get_viewport().set_input_as_handled()
-			KEY_C when event.ctrl_pressed and event.shift_pressed:
-				copy_selected_to_clipboard()
-				get_viewport().set_input_as_handled()
-			KEY_C when event.ctrl_pressed:
-				_handle_interrupt()
-				get_viewport().set_input_as_handled()
+				return
 			KEY_INSERT when event.ctrl_pressed:
 				copy_selected_to_clipboard()
 				get_viewport().set_input_as_handled()
+				return
 			KEY_INSERT when event.shift_pressed:
 				paste_text(_get_clipboard_text())
 				get_viewport().set_input_as_handled()
-			KEY_L when event.ctrl_pressed:
-				TerminalManager.clear()
-				get_viewport().set_input_as_handled()
-			KEY_D when event.ctrl_pressed:
-				# Send EOF
-				TerminalManager.write_input("\u0004")
-				get_viewport().set_input_as_handled()
-			KEY_V when event.ctrl_pressed and event.shift_pressed:
-				paste_text(_get_clipboard_text())
-				get_viewport().set_input_as_handled()
-			KEY_F when event.ctrl_pressed and event.shift_pressed:
-				show_search_bar()
-				get_viewport().set_input_as_handled()
+				return
+
+		var action: String = TerminalManager.keymap.find_action(event)
+		if action != "":
+			_execute_action(action)
+			get_viewport().set_input_as_handled()
+
+
+## Dispatch a keymap action by name.
+func _execute_action(action: String) -> void:
+	match action:
+		TerminalKeymap.ACTION_COPY:
+			copy_selected_to_clipboard()
+		TerminalKeymap.ACTION_PASTE:
+			paste_text(_get_clipboard_text())
+		TerminalKeymap.ACTION_CLEAR:
+			TerminalManager.clear()
+		TerminalKeymap.ACTION_SEARCH:
+			show_search_bar()
+		TerminalKeymap.ACTION_INTERRUPT:
+			_handle_interrupt()
+		TerminalKeymap.ACTION_EOF:
+			TerminalManager.write_input("\u0004")
+		TerminalKeymap.ACTION_SCROLL_PAGE_UP:
+			if scroll_container:
+				scroll_container.scroll_vertical -= int(scroll_container.size.y)
+		TerminalKeymap.ACTION_SCROLL_PAGE_DOWN:
+			if scroll_container:
+				scroll_container.scroll_vertical += int(scroll_container.size.y)
 
 
 ## Handle GUI mouse events for click-drag text selection and right-click context menu.

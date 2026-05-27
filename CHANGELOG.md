@@ -10,6 +10,15 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **TerminalView consumes TerminalKeymap for input dispatch (task 2.3.2).**
+  - `project/autoload/terminal_manager.gd` — new `keymap: TerminalKeymap` property
+    (defaults to `TerminalKeymap.default()`); assign to rebind at runtime.
+  - `project/scripts/terminal_view.gd` — `_input` now loops over
+    `TerminalManager.keymap.bindings` via `find_action()`; each match calls
+    `_execute_action(action_name)`. Echo events are filtered. Legacy
+    Ctrl+Insert / Shift+Insert shortcuts kept as hardcoded pre-checks.
+  - `tests/unit/terminal_view_keymap_test.gd` — 4 tests covering default
+    Ctrl+L clear, rebind clear to Ctrl+K, old binding invalidation, echo guard.
 - **TerminalKeymap resource (task 2.3.1).**
   - `project/resources/terminal_keymap.gd` — `Resource` with `bindings: Dictionary`
     mapping action name → `InputEventKey`. Twelve built-in actions: `copy`,

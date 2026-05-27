@@ -7,6 +7,16 @@
 
 ## Now doing
 
+Task `2.3.2` — DONE. Consume TerminalKeymap in TerminalView._input.
+- `project/autoload/terminal_manager.gd` — added `var keymap: TerminalKeymap = TerminalKeymap.default()` public property.
+- `project/scripts/terminal_view.gd` — replaced hard-coded `match event.keycode` block
+  with keymap-driven loop: `TerminalManager.keymap.find_action(event)` → `_execute_action(action)`.
+  Legacy Ctrl+Insert (copy) and Shift+Insert (paste) kept as hardcoded pre-checks.
+  Echo events now explicitly filtered out.
+- `tests/unit/terminal_view_keymap_test.gd` — 4 tests: default Ctrl+L clears,
+  rebind clear to Ctrl+K, old Ctrl+L no longer clears after rebind, echo ignored.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → 375 tests, ALL GREEN.
+
 Task `2.3.1` — DONE. TerminalKeymap resource.
 - `project/resources/terminal_keymap.gd` — Resource with `bindings: Dictionary`;
   12 built-in action constants + `BUILTIN_ACTIONS`; static `default()` factory;

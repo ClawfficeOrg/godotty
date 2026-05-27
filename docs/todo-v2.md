@@ -177,7 +177,7 @@ rebind via a `TerminalKeymap` Resource, persisted to `user://`.
     `eof` (Ctrl+D). Provide factory method `TerminalKeymap.default()`.
   - Tests: default bindings present; rebind copy action; fires on new key.
 
-- [ ] `2.3.2` Consume `TerminalKeymap` in `TerminalView._input`.
+- [x] `2.3.2` Consume `TerminalKeymap` in `TerminalView._input`.
   - Complexity: Low. Suggested model: standard coding model.
   - Owned paths: `project/scripts/terminal_view.gd`.
   - Work: replace the hard-coded `match event.keycode` block in `_input`
