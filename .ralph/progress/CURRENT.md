@@ -7,8 +7,8 @@
 
 ## Now doing
 
-Task `0.3.2` — real-mode integration test suite skeleton. Implementation
-complete; lint clean, unit tests GREEN. Pending commit.
+Task `0.3.3` complete — `GODOTTY_NODE_REF` workflow env var pinning, bump
+script, static CI tests, and docs.
 
 ## Done this session (continued)
 
@@ -17,6 +17,11 @@ complete; lint clean, unit tests GREEN. Pending commit.
 - `tests/integration/real/pwd_test.gd` — pwd returns absolute path.
 - `tests/integration/real/echo_test.gd` — echo hello contains "hello".
 - `tests/integration/real/exit_code_test.gd` — exit code 42 propagates via $?.
+- Task `0.3.3` — `GODOTTY_NODE_REF` workflow env pinning:
+  - `scripts/bump_godotty_node_ref.sh` — one-line bump helper.
+  - `tests/ci/workflow_contains_ref_test.sh` — 10 static assertions.
+  - `tests/ci/workflow-syntax-test.sh` — YAML parse check.
+  - `scripts/README.md` — scripts table + bump procedure docs.
 - `bash scripts/lint.sh` → clean.
 - `bash scripts/run_tests.sh tests/unit` → 11/11 GREEN.
 
