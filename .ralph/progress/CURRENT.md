@@ -7,6 +7,19 @@
 
 ## Now doing
 
+Task `1.1.3` — DONE. Cursor blink implemented.
+- `project/scripts/terminal_settings.gd` — new `TerminalSettings` class (plain
+  class_name, not autoload) with `static var cursor_blink_rate: float = 0.5`.
+- `project/scripts/terminal_view.gd` — added `_blink_timer` (child Timer) and
+  `_cursor_blink_visible` bool; `_setup_cursor_blink()` in `_ready()` creates timer
+  with `TerminalSettings.cursor_blink_rate`; `_on_blink_timeout()` toggles visibility
+  (steady styles exempt); blinking pauses on focus loss, resumes on focus gained;
+  `_exit_tree()` disconnects blink signals. `.gdlintrc` `max-file-lines` → 850.
+- `tests/unit/terminal_view_cursor_blink_test.gd` — 14 deterministic mock-mode tests,
+  ALL GREEN.
+- `CHANGELOG.md` and `docs/todo-v1.md` — updated.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
 Task `1.1.2` — DONE. Cursor style via DECSCUSR (CSI Ps SP q) implemented.
 - `project/scripts/terminal_view.gd` — added `CursorStyle` enum; `cursor_style`
   public property; `_handle_decscusr(params_str)` parser for Ps 0–6;

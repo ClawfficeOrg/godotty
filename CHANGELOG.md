@@ -10,6 +10,19 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Cursor blink (task 1.1.3).**
+  - `project/scripts/terminal_settings.gd` — new `TerminalSettings` class
+    (plain class, not autoload) with `static var cursor_blink_rate: float = 0.5`.
+  - `project/scripts/terminal_view.gd` — added `_blink_timer` (child Timer),
+    `_cursor_blink_visible` state; `_setup_cursor_blink()` wires the timer at
+    `_ready()` time using `TerminalSettings.cursor_blink_rate`; `_on_blink_timeout()`
+    toggles cursor visibility each tick (steady styles are exempt); blinking pauses
+    on `input_field.focus_exited` and resumes on `focus_entered`; signals cleaned
+    up in `_exit_tree()`. `.gdlintrc` `max-file-lines` bumped to 850.
+  - `tests/unit/terminal_view_cursor_blink_test.gd` — 14 deterministic mock-mode
+    unit tests covering: startup visibility, timer running, wait_time, blink toggle,
+    two-tick restore, focus loss stops timer, focus regain restarts timer, steady
+    cursor styles not toggled. All GREEN.
 - **Cursor style via DECSCUSR (task 1.1.2).**
   - `project/scripts/terminal_view.gd` — added `CursorStyle` enum (BLINKING_BLOCK,
     STEADY_BLOCK, BLINKING_UNDERLINE, STEADY_UNDERLINE, BLINKING_BAR, STEADY_BAR)

@@ -67,6 +67,12 @@ var _alt_grid: TerminalGrid = null
 var _terminal_cols: int = 80
 var _terminal_rows: int = 24
 
+## Whether the cursor is currently visible in the blink cycle.
+var _cursor_blink_visible: bool = true
+
+## Timer that drives cursor blinking (created in _setup_cursor_blink).
+var _blink_timer: Timer = null
+
 ## Reference to the output display
 @onready var output_display: RichTextLabel = $VBoxContainer/ScrollContainer/OutputDisplay
 
@@ -106,6 +112,9 @@ func _ready() -> void:
 
 	# Position cursor overlay at startup
 	_update_cursor_overlay()
+
+	# Set up cursor blinking timer
+	_setup_cursor_blink()
 
 
 func _input(event: InputEvent) -> void:
@@ -708,8 +717,67 @@ func _update_cursor_overlay() -> void:
 			cursor_overlay.position = base_pos
 
 
+## Create a child Timer and start cursor blinking.
+## Rate comes from TerminalSettings.cursor_blink_rate.
+func _setup_cursor_blink() -> void:
+	_blink_timer = Timer.new()
+	_blink_timer.wait_time = TerminalSettings.cursor_blink_rate
+	_blink_timer.one_shot = false
+	add_child(_blink_timer)
+	_blink_timer.timeout.connect(_on_blink_timeout)
+	if input_field:
+		input_field.focus_entered.connect(_on_input_focus_entered)
+		input_field.focus_exited.connect(_on_input_focus_exited)
+	_start_blinking()
+
+
+## Toggle cursor visibility on each timer tick.
+## Steady cursor styles are unaffected — they remain always visible.
+func _on_blink_timeout() -> void:
+	match cursor_style:
+		CursorStyle.STEADY_BLOCK, CursorStyle.STEADY_UNDERLINE, CursorStyle.STEADY_BAR:
+			_cursor_blink_visible = true
+		_:
+			_cursor_blink_visible = not _cursor_blink_visible
+	if cursor_overlay:
+		cursor_overlay.visible = _cursor_blink_visible
+
+
+func _on_input_focus_entered() -> void:
+	_start_blinking()
+
+
+func _on_input_focus_exited() -> void:
+	_stop_blinking()
+
+
+## Start the blink timer; cursor is set to visible immediately.
+func _start_blinking() -> void:
+	_cursor_blink_visible = true
+	if cursor_overlay:
+		cursor_overlay.visible = true
+	if _blink_timer:
+		_blink_timer.start()
+
+
+## Stop the blink timer; cursor is held visible (steady while unfocused).
+func _stop_blinking() -> void:
+	if _blink_timer:
+		_blink_timer.stop()
+	_cursor_blink_visible = true
+	if cursor_overlay:
+		cursor_overlay.visible = true
+
+
 func _exit_tree() -> void:
 	# Disconnect signals to avoid leaking callbacks if this node is freed
+	if _blink_timer and _blink_timer.timeout.is_connected(_on_blink_timeout):
+		_blink_timer.timeout.disconnect(_on_blink_timeout)
+	if input_field:
+		if input_field.focus_entered.is_connected(_on_input_focus_entered):
+			input_field.focus_entered.disconnect(_on_input_focus_entered)
+		if input_field.focus_exited.is_connected(_on_input_focus_exited):
+			input_field.focus_exited.disconnect(_on_input_focus_exited)
 	if SignalBus.output_ready.is_connected(_on_output_ready):
 		SignalBus.output_ready.disconnect(_on_output_ready)
 	if SignalBus.terminal_cleared.is_connected(_on_terminal_cleared):

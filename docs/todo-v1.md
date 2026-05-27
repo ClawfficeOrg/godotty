@@ -98,7 +98,7 @@ theme.
     Update the cursor overlay shape accordingly.
   - Tests: style sequence changes cursor overlay type.
 
-- [ ] `1.1.3` Cursor blink.
+- [x] `1.1.3` Cursor blink.
   - Complexity: Low. Suggested model: standard coding model.
   - Owned paths: `project/scripts/terminal_view.gd`.
   - Work: `TerminalSettings.cursor_blink_rate` (seconds, default 0.5).
