@@ -1298,6 +1298,8 @@ func _on_theme_menu_index_pressed(index: int) -> void:
 
 
 func _load_and_apply_theme(tname: String) -> void:
+	if tname.is_empty():
+		tname = TerminalSettings.BUNDLED_THEME_NAMES[0]
 	var slug: String = tname.to_lower().replace(" ", "_")
 	if tname == TerminalSettings.BUNDLED_THEME_NAMES[0]:
 		slug = "default_theme"
