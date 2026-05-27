@@ -228,7 +228,7 @@ the terminal feel polished.
     `MarginContainer` wrapping the output display.
   - Tests: padding (10, 10) adds 10 px inset on each side.
 
-- [ ] `2.4.3` Visual bell.
+- [x] `2.4.3` Visual bell.
   - Complexity: Low. Suggested model: standard coding model.
   - Owned paths: `project/scripts/terminal_view.gd`.
   - Work: on `\x07` (BEL), briefly flash the terminal background by
