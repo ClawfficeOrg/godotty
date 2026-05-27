@@ -10,6 +10,19 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Keybinding editor panel (task 2.3.3).**
+  - `project/scenes/settings_dialog.tscn` — scrollable keybinding list with
+    (action name, current chord, [Edit] button) rows; Save and Reset to Defaults
+    buttons at the bottom.
+  - `project/scripts/settings_dialog.gd` — `SettingsDialog` class (extends Control):
+    populates rows from `TerminalKeymap.BUILTIN_ACTIONS`, captures the next key press
+    when Edit is clicked and updates `TerminalManager.keymap.bindings`, saves to
+    `user://keymap.tres` via `save_keymap()`, restores from file or defaults via
+    `load_keymap()`.
+  - `tests/unit/settings_keybinding_test.gd` — 6 tests: action rows populated,
+    F5 capture binds action, capture resets after one key, modifier-only key ignored,
+    save/load persistence, missing-file fallback to defaults, rebind "copy" survives
+    simulated restart (release-gate test for 2.3.0).
 - **TerminalView consumes TerminalKeymap for input dispatch (task 2.3.2).**
   - `project/autoload/terminal_manager.gd` — new `keymap: TerminalKeymap` property
     (defaults to `TerminalKeymap.default()`); assign to rebind at runtime.
