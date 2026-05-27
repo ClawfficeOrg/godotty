@@ -38,7 +38,7 @@ Planned scope:
     that can be instanced per-tab. Autoload becomes a "default" instance
     registry. **Hard-stop: requires human sign-off** (public API change).
 
-- [ ] `3.0.2` `TabBar` node with add / close buttons.
+- [x] `3.0.2` `TabBar` node with add / close buttons.
   - A `HBoxContainer`-based tab bar. Each tab shows shell name (from OSC 0/2
     or process argv), a close button, and an indicator dot when output
     has arrived since last focus.

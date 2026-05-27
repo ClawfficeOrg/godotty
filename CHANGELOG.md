@@ -9,6 +9,18 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 
 ## [Unreleased]
 
+- **TabBar with add/close buttons and output indicators (task 3.0.2).**
+  - Added `TerminalTabButton` (`project/scripts/tab_button.gd`) — reusable per-tab Control
+    with title label, output-indicator dot, and close button; created programmatically.
+  - Added `TerminalTabBar` (`project/scripts/tab_bar.gd`) — `HBoxContainer`-based tab bar
+    exposing `add_tab`, `remove_tab`, `set_tab_title`, `notify_output`, `focus_tab` and
+    signals `new_tab_requested`, `tab_close_requested`, `tab_focused`.
+  - Added `project/scenes/tab_bar.tscn` — minimal scene for editor/test instantiation.
+  - Added `tests/unit/tab_bar_test.gd` — 11 GdUnit4 tests covering title display, add/close
+    signals, indicator toggle, focus clearing, tab removal, and Callable disconnect safety.
+  - Note: class names use `TerminalTabBar` / `TerminalTabButton` to avoid shadowing
+    Godot 4's built-in `TabBar` / `TabButton` native classes.
+
 - **Multi-instance `TerminalManager` (task 3.0.1) — BREAKING CHANGE (public API; requires human sign-off).**
   - Added `TerminalManagerNode` (`project/scripts/terminal_manager_node.gd`) — a new `Node`-derived
     class with full terminal logic (mock + real backend) that can be instantiated per-tab independently.
