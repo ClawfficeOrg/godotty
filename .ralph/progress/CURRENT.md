@@ -7,10 +7,17 @@
 
 ## Now doing
 
-Task `0.3.3` complete — `GODOTTY_NODE_REF` workflow env var pinning, bump
-script, static CI tests, and docs.
+Task `0.4.1` — DONE. gdformat reformat complete; `gdformat --check` re-enabled in lint.
 
 ## Done this session (continued)
+
+- Task `0.4.1` — one-shot gdformat reformat:
+  - `project/autoload/signal_bus.gd`, `terminal_manager.gd` — reformatted.
+  - `project/scripts/main.gd`, `terminal_view.gd` — reformatted.
+  - `tests/integration/real/__init__.gd`, `echo_test.gd`, `exit_code_test.gd`, `pwd_test.gd` — reformatted.
+  - `scripts/lint.sh` — re-enabled `gdformat --check`.
+  - `bash scripts/lint.sh` → clean (exit 0).
+  - `bash scripts/run_tests.sh tests/unit` → 11/11 GREEN.
 
 - `tests/integration/real/__init__.gd` (`RealIntegrationBase`) — async base
   class with `run_and_await()`, `_require_real_mode()`, lifecycle hooks.

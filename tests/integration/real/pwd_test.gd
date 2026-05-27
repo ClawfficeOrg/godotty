@@ -13,9 +13,7 @@ func test_pwd_returns_valid_path() -> void:
 		return
 
 	var output := await run_and_await(
-		"pwd",
-		func(line: String) -> bool:
-			return line.strip_edges().begins_with("/")
+		"pwd", func(line: String) -> bool: return line.strip_edges().begins_with("/")
 	)
 
 	assert_str(output.strip_edges()).is_not_empty()

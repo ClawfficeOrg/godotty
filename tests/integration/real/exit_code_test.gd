@@ -20,9 +20,7 @@ func test_exit_code_propagates() -> void:
 	await get_tree().create_timer(0.15).timeout
 
 	var output := await run_and_await(
-		"echo $?",
-		func(line: String) -> bool:
-			return line.strip_edges() == "42"
+		"echo $?", func(line: String) -> bool: return line.strip_edges() == "42"
 	)
 
 	assert_str(output.strip_edges()).is_equal("42")

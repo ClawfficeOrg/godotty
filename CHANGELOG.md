@@ -9,6 +9,13 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 
 ## [Unreleased]
 
+### Changed
+- **One-shot gdformat reformat of all project GDScript files (spec 0004, task 0.4.1).**
+  - All `.gd` files under `project/` and `tests/` (excluding `addons/`) reformatted
+    to canonical `gdformat` style.
+  - `scripts/lint.sh` re-enabled `gdformat --check` so formatting is enforced on
+    every future lint run.
+
 ### Added
 - **Pinned godotty-node ref as one-line-bump workflow env var (spec 0003, task 0.3.3).**
   - `GODOTTY_NODE_REF` is now a workflow-level env var in
