@@ -960,6 +960,7 @@ func _close_all_tags() -> String:
 		_current_underline = false
 	if _current_bold:
 		r += "[/b]"
+		_current_bold = false
 	if not _current_bg.is_empty():
 		r += "[/bgcolor]"
 	if not _current_fg.is_empty():
