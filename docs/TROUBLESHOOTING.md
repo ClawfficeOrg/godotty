@@ -21,26 +21,35 @@ The `class_name` declarations (TerminalTheme, TerminalKeymap, etc.) haven't been
 
 ### Solution
 
-**Option 1: Clean Restart (Recommended)**
+**The Real Fix: Open in Editor First**
+
+Godot needs to scan and register `class_name` declarations before the project can run. This happens when you open the project in the **Godot Editor** (not when running directly).
+
+**Steps:**
+1. Kill any running Godot instances
+2. Delete `project/.godot` directory
+3. Open the project in the **editor**: `godot --editor project/project.godot`
+4. Wait for the editor to fully load and scan scripts (bottom-right shows "ScanSources")
+5. Once scanning is complete, you can run the project
+
+**Quick Command:**
 ```bash
-# From the godotty directory:
-./scripts/clean_restart.sh
+cd godotty
+./scripts/clean_cache.sh
+cd project
+godot --editor project.godot
+# Wait for editor to load, then press F5 to run
 ```
 
-This script:
-- Kills any running Godot instances
-- Clears the `.godot` cache directory
-- Opens the project fresh
+**Why This Happens:**
+Godot 4.6 requires the editor to scan and cache `class_name` declarations in `.godot/global_script_class_cache.cfg`. When you run the project directly (`godot .`) without opening the editor first, this cache doesn't exist, causing autoloads to fail parsing.
 
-**Option 2: Manual Steps**
-1. Close all Godot instances completely (don't just close the window)
-2. Delete `project/.godot` directory
-3. Open the project: `cd project && godot .`
-
-**Option 3: Editor Restart**
-If you're in the Godot editor:
-1. Project → Reload Current Project
-2. If that doesn't work: close Godot, delete `.godot`, reopen
+**Option 2: Run After Editor Scan**
+Once the editor has scanned the project (step 3-4 above), you can close it and run from command line:
+```bash
+cd project
+godot .  # Now works because .godot cache exists
+```
 
 ### Prevention
 - Don't run `godot .` while the project is already open

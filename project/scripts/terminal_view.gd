@@ -4,13 +4,6 @@
 class_name TerminalView
 extends Control
 
-# Preload dependencies
-const TerminalSettings = preload("res://scripts/terminal_settings.gd")
-const TerminalKeymap = preload("res://resources/terminal_keymap.gd")
-const TerminalTheme = preload("res://resources/terminal_theme.gd")
-const TerminalGrid = preload("res://scripts/terminal_grid.gd")
-const SearchBar = preload("res://scenes/search_bar.tscn")
-
 ## Emitted when the user triggers the new_tab keymap action.
 signal tab_new_requested
 
