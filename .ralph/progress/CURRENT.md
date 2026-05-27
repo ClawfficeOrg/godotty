@@ -7,6 +7,19 @@
 
 ## Now doing
 
+Task `3.0.1` — DONE. Multi-instance `TerminalManager`.
+- Created `project/scripts/terminal_manager_node.gd` (`class_name TerminalManagerNode`) — full
+  terminal logic (mock + real) as an instanceable Node; no SignalBus.terminal_resized in _ready().
+- `project/autoload/terminal_manager.gd` — added `_registered_default`, `get_default()`,
+  `set_default()` registry methods; `get_default()` falls back to `self` for compat.
+- `project/scripts/terminal_view.gd` — added `@export var manager: Node = null` and
+  `_get_manager()` helper; all 13 `TerminalManager.xxx` calls replaced with `_get_manager().xxx`.
+- `project/scenes/terminal_manager.tscn` — minimal scene for TerminalManagerNode.
+- `.gdlintrc` — raised `max-file-lines` from 1500 to 1600 (terminal_view.gd grew to ~1502 lines).
+- `tests/unit/terminal_manager_multi_instance_test.gd` — 11 GdUnit4 tests.
+- `tests/unit/terminal_view_injection_test.gd` — 9 GdUnit4 tests.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
 Task `2.4.4` — DONE. Scrollback buffer size setting.
 - `project/scripts/terminal_settings.gd` — added `static var scrollback_lines: int = 1000`.
 - `project/scripts/terminal_view.gd` — removed `MAX_LINES` const; replaced hard-coded limit with

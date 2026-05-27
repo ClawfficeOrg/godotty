@@ -1,6 +1,8 @@
-## TerminalManager - Manages terminal backend (real or mock)
-## Detects godotty-node availability and provides fallback
-## Note: No class_name to avoid conflict with autoload singleton name
+## TerminalManagerNode — instanceable per-tab terminal manager.
+## Contains real and mock terminal logic. Can be instantiated per-tab for
+## multi-terminal layouts. Does not auto-subscribe to SignalBus.terminal_resized.
+## The application-wide default is the TerminalManager autoload.
+class_name TerminalManagerNode
 extends Node
 
 ## Emitted when terminal produces output.
@@ -45,25 +47,16 @@ var _mock_rows: int = 24
 # Reference to real terminal (if available)
 var _real_terminal: Node = null
 
-## Registered alternative default node (nil = use self).
-var _registered_default: Node = null
-
 
 func _ready() -> void:
 	if _current_theme == null:
 		_current_theme = TerminalTheme.new()
 	_check_addon_availability()
-	SignalBus.terminal_resized.connect(_on_terminal_resized)
-
-
-func _exit_tree() -> void:
-	SignalBus.terminal_resized.disconnect(_on_terminal_resized)
 
 
 ## Check if godotty-node GDExtension is available
 func _check_addon_availability() -> void:
 	# Force mock mode on Windows - portable_pty has DLL initialization issues (0xc0000142)
-	# TODO: Re-enable real terminal on Windows once PTY issue is resolved
 	if OS.has_feature("windows"):
 		is_addon_available = false
 		is_mock_mode = true
@@ -71,7 +64,6 @@ func _check_addon_availability() -> void:
 		SignalBus.addon_status_changed.emit(is_addon_available)
 		return
 
-	# Try to load the GDExtension class
 	var terminal_class = ClassDB.class_get_method_list("TerminalNode2D")
 
 	if terminal_class != null and terminal_class.size() > 0:
@@ -123,6 +115,36 @@ func clear() -> void:
 		_real_clear()
 
 	SignalBus.terminal_cleared.emit()
+
+
+## Get a cell from the real terminal grid (used by grid-based renderers).
+## Returns a Dictionary with keys: char, fg, bg, bold, italic.
+func get_cell(row: int, col: int) -> Dictionary:
+	if _real_terminal and not is_mock_mode:
+		return _real_terminal.get_cell(row, col)
+	return {"char": " ", "fg": Color.WHITE, "bg": Color.BLACK, "bold": false, "italic": false}
+
+
+## Get terminal grid dimensions. Returns [cols, rows].
+func get_dimensions() -> Array[int]:
+	if _real_terminal and not is_mock_mode:
+		return [_real_terminal.cols, _real_terminal.rows]
+	return [_mock_cols, _mock_rows]
+
+
+## Resize the real terminal.
+func resize(cols: int, rows: int) -> void:
+	if _real_terminal and not is_mock_mode:
+		_real_terminal.resize(cols, rows)
+
+
+## Handle terminal_resized signal: update mock state or forward to real terminal.
+func _on_terminal_resized(cols: int, rows: int) -> void:
+	if is_mock_mode:
+		_mock_cols = cols
+		_mock_rows = rows
+	elif _real_terminal:
+		_real_terminal.resize(cols, rows)
 
 
 # === Mock Terminal Implementation ===
@@ -305,20 +327,18 @@ func _mock_clear() -> void:
 
 func _real_spawn_shell() -> bool:
 	if not is_addon_available:
-		push_error("TerminalManager: cannot spawn real shell — addon not available")
+		push_error("TerminalManagerNode: cannot spawn real shell — addon not available")
 		return false
 
-	# Instantiate TerminalNode2D from GDExtension and add as child
 	var term_class = ClassDB.instantiate("TerminalNode2D")
 	if term_class == null:
-		push_error("TerminalManager: ClassDB.instantiate('TerminalNode2D') returned null")
+		push_error("TerminalManagerNode: ClassDB.instantiate('TerminalNode2D') returned null")
 		is_mock_mode = true
 		return _mock_spawn_shell()
 
 	_real_terminal = term_class
 	add_child(_real_terminal)
 
-	# Connect signals
 	if _real_terminal.has_signal("output_received"):
 		_real_terminal.output_received.connect(_on_real_output_received)
 	if _real_terminal.has_signal("shell_exited"):
@@ -360,48 +380,7 @@ func _on_real_output_received(text: String) -> void:
 
 
 func _on_real_shell_exited(code: int) -> void:
-	print("TerminalManager: shell exited with code ", code)
+	print("TerminalManagerNode: shell exited with code ", code)
 	_real_terminal = null
 	shell_stopped.emit()
 	SignalBus.shell_status_changed.emit(false)
-
-
-## Get a cell from the real terminal grid (used by grid-based renderers).
-## Returns a Dictionary with keys: char, fg, bg, bold, italic.
-func get_cell(row: int, col: int) -> Dictionary:
-	if _real_terminal and not is_mock_mode:
-		return _real_terminal.get_cell(row, col)
-	return {"char": " ", "fg": Color.WHITE, "bg": Color.BLACK, "bold": false, "italic": false}
-
-
-## Get terminal grid dimensions. Returns [cols, rows].
-func get_dimensions() -> Array[int]:
-	if _real_terminal and not is_mock_mode:
-		return [_real_terminal.cols, _real_terminal.rows]
-	return [_mock_cols, _mock_rows]
-
-
-## Resize the real terminal.
-func resize(cols: int, rows: int) -> void:
-	if _real_terminal and not is_mock_mode:
-		_real_terminal.resize(cols, rows)
-
-
-## Handle terminal_resized signal: update mock state or forward to real terminal.
-func _on_terminal_resized(cols: int, rows: int) -> void:
-	if is_mock_mode:
-		_mock_cols = cols
-		_mock_rows = rows
-	elif _real_terminal:
-		_real_terminal.resize(cols, rows)
-
-
-## Returns the registered default terminal manager node.
-## Returns this autoload itself when no explicit default has been registered.
-func get_default() -> Node:
-	return _registered_default if _registered_default != null else self
-
-
-## Register an alternative node as the application-wide default terminal manager.
-func set_default(node: Node) -> void:
-	_registered_default = node
