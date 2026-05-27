@@ -3,6 +3,10 @@
 ## Note: No class_name to avoid conflict with autoload singleton name
 extends Node
 
+# Preload dependencies to ensure they're registered before this autoload initializes
+const TerminalTheme = preload("res://resources/terminal_theme.gd")
+const TerminalKeymap = preload("res://resources/terminal_keymap.gd")
+
 ## Emitted when terminal produces output.
 signal output_received(text: String)
 
