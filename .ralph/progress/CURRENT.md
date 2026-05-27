@@ -1,11 +1,18 @@
 # Current Working Memory
 
 **STATUS:** in-progress
-**SPEC:** `.ralph/specs/0003-real-terminal-ci.md`
-**BRANCH:** `feature/0003-real-terminal-ci` (target)
+**SPEC:** BBCode rendering hotfix
+**BRANCH:** `hotfix/bbcode-bracket-escaping`
 **STARTED:** 2026-05-27
 
 ## Now doing
+
+BBCode rendering issue - visible tags in output (2026-05-27):
+- User reported BBCode tags like `[/bgcolor]` and `[/color]` are being displayed as literal text.
+- Root cause: `]` characters from shell output (e.g., Starship prompt segments) are not escaped,
+  causing malformed BBCode like `[/bgcolor]]` which breaks the BBCode parser.
+- Fix: escape both `[` to `[lb]` AND `]` to `[rb]` in user text.
+- Also check font size default (user wants 20px).
 
 Runtime crash triage (2026-05-27 session):
 - Fixed `_load_and_apply_theme("")` -> `res://resources/themes/.tres` (empty slug path).

@@ -233,7 +233,9 @@ func _ready() -> void:
 	# godot-rust 'safeguards balanced' fires SIGTRAP on the cross-thread
 	# output_received emit.
 	if TerminalSettings.font == null and TerminalSettings.selected_font_name != "Default":
-		var _fpath: String = TerminalSettings.BUNDLED_FONT_PATHS.get(TerminalSettings.selected_font_name, "")
+		var _fpath: String = TerminalSettings.BUNDLED_FONT_PATHS.get(
+			TerminalSettings.selected_font_name, ""
+		)
 		if _fpath != "":
 			TerminalSettings.font = load(_fpath)
 
@@ -355,56 +357,103 @@ func _key_to_pty_seq(ev: InputEventKey) -> String:
 	# Ctrl+letter -> control character (e.g. Ctrl+C = \x03)
 	if ev.ctrl_pressed and not ev.alt_pressed and not ev.meta_pressed:
 		match ev.keycode:
-			KEY_A: return "\u0001"
-			KEY_B: return "\u0002"
-			KEY_C: return "\u0003"
-			KEY_D: return "\u0004"
-			KEY_E: return "\u0005"
-			KEY_F: return "\u0006"
-			KEY_G: return "\u0007"
-			KEY_H: return "\u0008"
-			KEY_K: return "\u000b"
-			KEY_L: return "\u000c"
-			KEY_N: return "\u000e"
-			KEY_P: return "\u0010"
-			KEY_R: return "\u0012"
-			KEY_T: return "\u0014"
-			KEY_U: return "\u0015"
-			KEY_W: return "\u0017"
-			KEY_Y: return "\u0019"
-			KEY_Z: return "\u001a"
-			KEY_BRACKETLEFT:  return "\u001b"  # Ctrl+[ = ESC
-			KEY_BACKSLASH:    return "\u001c"
-			KEY_BRACKETRIGHT: return "\u001d"
+			KEY_A:
+				return "\u0001"
+			KEY_B:
+				return "\u0002"
+			KEY_C:
+				return "\u0003"
+			KEY_D:
+				return "\u0004"
+			KEY_E:
+				return "\u0005"
+			KEY_F:
+				return "\u0006"
+			KEY_G:
+				return "\u0007"
+			KEY_H:
+				return "\u0008"
+			KEY_K:
+				return "\u000b"
+			KEY_L:
+				return "\u000c"
+			KEY_N:
+				return "\u000e"
+			KEY_P:
+				return "\u0010"
+			KEY_R:
+				return "\u0012"
+			KEY_T:
+				return "\u0014"
+			KEY_U:
+				return "\u0015"
+			KEY_W:
+				return "\u0017"
+			KEY_Y:
+				return "\u0019"
+			KEY_Z:
+				return "\u001a"
+			KEY_BRACKETLEFT:
+				return "\u001b"  # Ctrl+[ = ESC
+			KEY_BACKSLASH:
+				return "\u001c"
+			KEY_BRACKETRIGHT:
+				return "\u001d"
 
 	# Special / navigation keys
 	match ev.keycode:
-		KEY_ENTER, KEY_KP_ENTER: return "\r"
-		KEY_BACKSPACE:           return "\u007f"
-		KEY_TAB:                 return "\t"
-		KEY_ESCAPE:              return ESC
-		KEY_DELETE:              return ESC + "[3~"
-		KEY_HOME:                return ESC + "[H"
-		KEY_END:                 return ESC + "[F"
-		KEY_INSERT:              return ESC + "[2~"
-		KEY_UP:                  return ESC + "[A"
-		KEY_DOWN:                return ESC + "[B"
-		KEY_RIGHT:               return ESC + "[C"
-		KEY_LEFT:                return ESC + "[D"
-		KEY_PAGEUP:              return ESC + "[5~"
-		KEY_PAGEDOWN:            return ESC + "[6~"
-		KEY_F1:  return ESC + "OP"
-		KEY_F2:  return ESC + "OQ"
-		KEY_F3:  return ESC + "OR"
-		KEY_F4:  return ESC + "OS"
-		KEY_F5:  return ESC + "[15~"
-		KEY_F6:  return ESC + "[17~"
-		KEY_F7:  return ESC + "[18~"
-		KEY_F8:  return ESC + "[19~"
-		KEY_F9:  return ESC + "[20~"
-		KEY_F10: return ESC + "[21~"
-		KEY_F11: return ESC + "[23~"
-		KEY_F12: return ESC + "[24~"
+		KEY_ENTER, KEY_KP_ENTER:
+			return "\r"
+		KEY_BACKSPACE:
+			return "\u007f"
+		KEY_TAB:
+			return "\t"
+		KEY_ESCAPE:
+			return ESC
+		KEY_DELETE:
+			return ESC + "[3~"
+		KEY_HOME:
+			return ESC + "[H"
+		KEY_END:
+			return ESC + "[F"
+		KEY_INSERT:
+			return ESC + "[2~"
+		KEY_UP:
+			return ESC + "[A"
+		KEY_DOWN:
+			return ESC + "[B"
+		KEY_RIGHT:
+			return ESC + "[C"
+		KEY_LEFT:
+			return ESC + "[D"
+		KEY_PAGEUP:
+			return ESC + "[5~"
+		KEY_PAGEDOWN:
+			return ESC + "[6~"
+		KEY_F1:
+			return ESC + "OP"
+		KEY_F2:
+			return ESC + "OQ"
+		KEY_F3:
+			return ESC + "OR"
+		KEY_F4:
+			return ESC + "OS"
+		KEY_F5:
+			return ESC + "[15~"
+		KEY_F6:
+			return ESC + "[17~"
+		KEY_F7:
+			return ESC + "[18~"
+		KEY_F8:
+			return ESC + "[19~"
+		KEY_F9:
+			return ESC + "[20~"
+		KEY_F10:
+			return ESC + "[21~"
+		KEY_F11:
+			return ESC + "[23~"
+		KEY_F12:
+			return ESC + "[24~"
 
 	# Printable unicode character
 	if ev.unicode > 0 and not ev.ctrl_pressed and not ev.meta_pressed:
@@ -783,11 +832,15 @@ func _ansi_to_bbcode(text: String) -> String:
 			i += 1
 			continue
 		else:
-			# xml_escape handles &<>" but not [ which Godot treats as a BBCode
-			# tag opener. Escape [ -> [lb] so literal brackets in terminal output
-			# (e.g. Starship prompt segments like [%]) never leak as BBCode tags.
+			# xml_escape handles &<>" but not [ or ] which Godot treats as BBCode
+			# tag delimiters. Escape [ -> [lb] and ] -> [rb] so literal brackets
+			# in terminal output (e.g., Starship prompt segments like [segment] or
+			# closing brackets after color codes) never leak as BBCode tags or create
+			# malformed BBCode like `[/color]]` that breaks the RichTextLabel parser.
 			if ch == "[":
 				output += "[lb]"
+			elif ch == "]":
+				output += "[rb]"
 			else:
 				output += ch.xml_escape()
 			if _in_alternate_screen and _alt_grid != null:
@@ -1233,12 +1286,18 @@ func apply_font_settings() -> void:
 		# unstyled text picks up the override; bold segments fall back to the
 		# system bold font and display in the wrong typeface.
 		const FONT_SLOTS: Array[StringName] = [
-			&"normal_font", &"bold_font", &"italics_font",
-			&"bold_italics_font", &"mono_font",
+			&"normal_font",
+			&"bold_font",
+			&"italics_font",
+			&"bold_italics_font",
+			&"mono_font",
 		]
 		const SIZE_SLOTS: Array[StringName] = [
-			&"normal_font_size", &"bold_font_size", &"italics_font_size",
-			&"bold_italics_font_size", &"mono_font_size",
+			&"normal_font_size",
+			&"bold_font_size",
+			&"italics_font_size",
+			&"bold_italics_font_size",
+			&"mono_font_size",
 		]
 		for slot: StringName in FONT_SLOTS:
 			if TerminalSettings.font != null:

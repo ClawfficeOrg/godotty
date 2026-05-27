@@ -35,10 +35,7 @@ func before_test() -> void:
 
 ## Send "exit" and pause briefly to let the shell process close (no-op in mock mode).
 func after_test() -> void:
-	if (
-		_output_cb.is_valid()
-		and TerminalManager.output_received.is_connected(_output_cb)
-	):
+	if _output_cb.is_valid() and TerminalManager.output_received.is_connected(_output_cb):
 		TerminalManager.output_received.disconnect(_output_cb)
 	if not TerminalManager.is_mock_mode:
 		TerminalManager.write_input("exit\n")
