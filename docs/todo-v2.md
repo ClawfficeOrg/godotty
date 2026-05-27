@@ -185,7 +185,7 @@ rebind via a `TerminalKeymap` Resource, persisted to `user://`.
     binding calls a private `_execute_action(action_name)` method.
   - Tests: rebind `clear` from Ctrl+L to Ctrl+K; Ctrl+K clears.
 
-- [ ] `2.3.3` Keybinding editor panel.
+- [x] `2.3.3` Keybinding editor panel.
   - Complexity: Medium. Suggested model: standard coding model.
   - Owned paths: `project/scenes/settings_dialog.tscn`,
     `project/scripts/settings_dialog.gd`.

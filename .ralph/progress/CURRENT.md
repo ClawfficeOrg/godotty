@@ -7,6 +7,17 @@
 
 ## Now doing
 
+Task `2.3.3` — DONE. Keybinding editor panel.
+- `project/scenes/settings_dialog.tscn` — Control-based dialog with ScrollContainer
+  listing keybinding rows and Save/Reset buttons.
+- `project/scripts/settings_dialog.gd` — SettingsDialog class: populates rows from
+  TerminalKeymap.BUILTIN_ACTIONS, captures the next key press when Edit clicked,
+  saves/loads user://keymap.tres, falls back to TerminalKeymap.default() when absent.
+- `tests/unit/settings_keybinding_test.gd` — 6 tests covering row population,
+  F5 capture, single-capture reset, modifier-only ignore, persistence, missing-file
+  fallback, and the release-gate rebind-copy-survives-restart test.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
 Task `2.3.2` — DONE. Consume TerminalKeymap in TerminalView._input.
 - `project/autoload/terminal_manager.gd` — added `var keymap: TerminalKeymap = TerminalKeymap.default()` public property.
 - `project/scripts/terminal_view.gd` — replaced hard-coded `match event.keycode` block
