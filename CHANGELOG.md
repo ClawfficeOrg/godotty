@@ -9,6 +9,14 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 
 ## [Unreleased]
 
+- **Fix: Escape `]` to `[rb]` in user text to prevent malformed BBCode.**
+  - ANSI parser now escapes both `[` (to `[lb]`) and `]` (to `[rb]`) in shell output.
+  - Previously only `[` was escaped, allowing `]` from prompts (e.g., Starship segments) to
+    create malformed BBCode like `[/color]]` that breaks RichTextLabel's BBCode parser.
+  - This caused BBCode tags to be displayed as literal text in the terminal.
+  - Fix adds `elif ch == "]":` branch to escape `]` to `[rb]` in `_ansi_to_bbcode()`.
+  - Added 11 unit tests in `tests/unit/terminal_view_bracket_escaping_test.gd`.
+
 - **Fix: `\x1b[J]` (ED mode 0) in primary mode no longer wipes output one frame after render.**
   - ZLE (zsh) and readline (bash) emit `CSI J` with no params after every command to clear below
     the prompt. In Godotty's streaming model there is no fixed viewport, so this should be a no-op.

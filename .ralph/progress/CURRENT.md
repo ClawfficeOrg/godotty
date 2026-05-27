@@ -7,12 +7,7 @@
 
 ## Now doing
 
-BBCode rendering issue - visible tags in output (2026-05-27):
-- User reported BBCode tags like `[/bgcolor]` and `[/color]` are being displayed as literal text.
-- Root cause: `]` characters from shell output (e.g., Starship prompt segments) are not escaped,
-  causing malformed BBCode like `[/bgcolor]]` which breaks the BBCode parser.
-- Fix: escape both `[` to `[lb]` AND `]` to `[rb]` in user text.
-- Also check font size default (user wants 20px).
+- Second issue: font size default (user wants 20px). Need to verify scene file font_size setting.
 
 Runtime crash triage (2026-05-27 session):
 - Fixed `_load_and_apply_theme("")` -> `res://resources/themes/.tres` (empty slug path).
@@ -442,6 +437,16 @@ Task `1.0.2` — DONE. Alternate screen buffer enter/exit implemented in `Termin
   - `scripts/README.md` — scripts table + bump procedure docs.
 - `bash scripts/lint.sh` → clean.
 - `bash scripts/run_tests.sh tests/unit` → 11/11 GREEN.
+
+## Done this session (2026-05-27 - BBCode hotfix)
+
+- **Fixed BBCode rendering issue** (commit 376b4f8):
+  - Root cause: `]` characters from shell output (Starship prompts, etc.) were not escaped,
+    creating malformed BBCode like `[/bgcolor]]` that broke the RichTextLabel BBCode parser.
+  - Fix: escape both `[` to `[lb]` AND `]` to `[rb]` in `_ansi_to_bbcode()`.
+  - Added 11 unit tests in `tests/unit/terminal_view_bracket_escaping_test.gd` (all pass).
+  - Updated CHANGELOG.md.
+  - Verified existing bgcolor and BBCode tests still pass.
 
 ## Done this session (2026-05-27)
 
