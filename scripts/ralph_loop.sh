@@ -31,7 +31,6 @@ CODE_MODEL="claude-sonnet-4.6"
 STOP_FILE="$REPO_ROOT/.ralph/state/STOP"
 
 # ── colours ─────────────────────────────────────────────────────────────────
-BOLD=$(tput bold 2>/dev/null || true)
 CYAN=$(tput setaf 6 2>/dev/null || true)
 GREEN=$(tput setaf 2 2>/dev/null || true)
 YELLOW=$(tput setaf 3 2>/dev/null || true)
