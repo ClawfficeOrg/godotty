@@ -694,10 +694,7 @@ func _ansi_to_bbcode(text: String) -> String:
 						if _in_alternate_screen and _alt_grid != null:
 							_alt_grid.erase_display(mode_j)
 						elif mode_j == 2:
-							output += "[/color]"  # close any open tags
-							_current_fg = ""
-							_current_bg = ""
-							_current_bold = false
+							output += _close_all_tags()  # close any open tags before clearing
 							call_deferred("_clear_output")
 						# mode 0 (erase to end) and mode 1 (erase to start) are no-ops in primary mode.
 					"H", "f":
@@ -806,7 +803,7 @@ func _ansi_to_bbcode(text: String) -> String:
 					# \r\n sequence - just skip the \r, emit \n next iteration
 					i += 1
 					continue
-			elif next_ch != "\u001b":  # Not an escape sequence
+				elif next_ch != "\u001b":  # Not an escape sequence
 					# Shell is rewriting the current line. Remove everything after
 					# the last newline from output (so the rewrite replaces it).
 					var last_newline := output.rfind("\n")
@@ -850,167 +847,122 @@ func _ansi_to_bbcode(text: String) -> String:
 	return output
 
 
-## Handle SGR (Select Graphic Rendition) codes
+## Handle SGR (Select Graphic Rendition) codes.
+## Two-pass: first compute the fully-desired new state from all codes in the sequence,
+## then emit a single close-all / reopen diff. This prevents orphaned tags from
+## compound sequences like ESC[48;2;R;G;B;38;2;R;G;Bm that set bgcolor then
+## immediately change fgcolor in the same escape.
 func _handle_sgr(params_str: String) -> String:
-	var result := ""
+	# --- Pass 1: compute desired new state ---
+	var new_fg := _current_fg
+	var new_bg := _current_bg
+	var new_bold := _current_bold
+	var new_underline := _current_underline
 
 	if params_str == "" or params_str == "0":
-		result += _close_all_tags()
-		_current_fg = ""
-		_current_bg = ""
-		_current_bold = false
-		_current_underline = false
-		return result
+		new_fg = ""
+		new_bg = ""
+		new_bold = false
+		new_underline = false
+	else:
+		var codes := params_str.split(";")
+		var idx := 0
+		while idx < codes.size():
+			var code := int(codes[idx])
+			match code:
+				0:
+					new_fg = ""
+					new_bg = ""
+					new_bold = false
+					new_underline = false
+				1:
+					new_bold = true
+				4:
+					new_underline = true
+				22:
+					new_bold = false
+				24:
+					new_underline = false
+				30, 31, 32, 33, 34, 35, 36, 37:
+					new_fg = _indexed_color(code - 30, false)
+				39:
+					new_fg = ""
+				40, 41, 42, 43, 44, 45, 46, 47:
+					new_bg = _indexed_color(code - 40, false)
+				49:
+					new_bg = ""
+				90, 91, 92, 93, 94, 95, 96, 97:
+					new_fg = _indexed_color(code - 90 + 8, false)
+				38:
+					if idx + 2 < codes.size() and int(codes[idx + 1]) == 5:
+						new_fg = _xterm256_hex(int(codes[idx + 2]))
+						idx += 2
+					elif idx + 4 < codes.size() and int(codes[idx + 1]) == 2:
+						new_fg = "#%02x%02x%02x" % [int(codes[idx + 2]), int(codes[idx + 3]), int(codes[idx + 4])]
+						idx += 4
+				48:
+					if idx + 2 < codes.size() and int(codes[idx + 1]) == 5:
+						new_bg = _xterm256_hex(int(codes[idx + 2]))
+						idx += 2
+					elif idx + 4 < codes.size() and int(codes[idx + 1]) == 2:
+						new_bg = "#%02x%02x%02x" % [int(codes[idx + 2]), int(codes[idx + 3]), int(codes[idx + 4])]
+						idx += 4
+				100, 101, 102, 103, 104, 105, 106, 107:
+					new_bg = _indexed_color(code - 100 + 8, false)
+			idx += 1
 
-	var codes := params_str.split(";")
-	var idx := 0
-	while idx < codes.size():
-		var code := int(codes[idx])
+	# --- Pass 2: emit BBCode diff ---
+	# If nothing changed, emit nothing.
+	var changed: bool = (
+		new_fg != _current_fg
+		or new_bg != _current_bg
+		or new_bold != _current_bold
+		or new_underline != _current_underline
+	)
+	if not changed:
+		return ""
 
-		match code:
-			0:
-				result += _close_all_tags()
-				_current_fg = ""
-				_current_bg = ""
-				_current_bold = false
-				_current_underline = false
-			1:
-				if not _current_bold:
-					_current_bold = true
-					result += "[b]"
-			2:
-				pass
-			3:
-				result += "[i]"
-			4:
-				if not _current_underline:
-					_current_underline = true
-					result += "[u]"
-			22:
-				if _current_bold:
-					_current_bold = false
-					result += "[/b]"
-			23:
-				result += "[/i]"
-			24:
-				if _current_underline:
-					_current_underline = false
-					result += "[/u]"
-			30, 31, 32, 33, 34, 35, 36, 37:
-				var new_color := _indexed_color(code - 30, false)
-				if _current_fg != new_color:
-					result += _close_fg()
-					_current_fg = new_color
-					result += "[color=%s]" % _current_fg
-			39:
-				result += _close_fg()
-				_current_fg = ""
-			40, 41, 42, 43, 44, 45, 46, 47:
-				var new_color := _indexed_color(code - 40, false)
-				if _current_bg != new_color:
-					result += _close_bg()
-					_current_bg = new_color
-					result += "[bgcolor=%s]" % _current_bg
-			49:
-				result += _close_bg()
-				_current_bg = ""
-			90, 91, 92, 93, 94, 95, 96, 97:
-				var new_color := _indexed_color(code - 90 + 8, false)
-				if _current_fg != new_color:
-					result += _close_fg()
-					_current_fg = new_color
-					result += "[color=%s]" % _current_fg
-			38:
-				if idx + 2 < codes.size() and int(codes[idx + 1]) == 5:
-					var color_idx := int(codes[idx + 2])
-					var new_color := _xterm256_hex(color_idx)
-					if _current_fg != new_color:
-						result += _close_fg()
-						_current_fg = new_color
-						result += "[color=%s]" % _current_fg
-					idx += 2
-				elif idx + 4 < codes.size() and int(codes[idx + 1]) == 2:
-					var r := int(codes[idx + 2])
-					var g := int(codes[idx + 3])
-					var b := int(codes[idx + 4])
-					var new_color := "#%02x%02x%02x" % [r, g, b]
-					if _current_fg != new_color:
-						result += _close_fg()
-						_current_fg = new_color
-						result += "[color=%s]" % _current_fg
-					idx += 4
-			48:
-				if idx + 2 < codes.size() and int(codes[idx + 1]) == 5:
-					var color_idx := int(codes[idx + 2])
-					var new_color := _xterm256_hex(color_idx)
-					if _current_bg != new_color:
-						result += _close_bg()
-						_current_bg = new_color
-						result += "[bgcolor=%s]" % _current_bg
-					idx += 2
-				elif idx + 4 < codes.size() and int(codes[idx + 1]) == 2:
-					var r := int(codes[idx + 2])
-					var g := int(codes[idx + 3])
-					var b := int(codes[idx + 4])
-					var new_color := "#%02x%02x%02x" % [r, g, b]
-					if _current_bg != new_color:
-						result += _close_bg()
-						_current_bg = new_color
-						result += "[bgcolor=%s]" % _current_bg
-					idx += 4
-			100, 101, 102, 103, 104, 105, 106, 107:
-				var new_color := _indexed_color(code - 100 + 8, false)
-				if _current_bg != new_color:
-					result += _close_bg()
-					_current_bg = new_color
-					result += "[bgcolor=%s]" % _current_bg
-		idx += 1
-
+	# Close all open tags in LIFO order, apply new state, reopen in FIFO order.
+	var result := _close_all_tags()
+	_current_fg = new_fg
+	_current_bg = new_bg
+	_current_bold = new_bold
+	_current_underline = new_underline
+	result += _open_active_tags()
 	return result
 
 
+## Close all open BBCode tags in LIFO order: bgcolor → color → underline → bold.
+## Clears all state variables as a side effect.
 func _close_all_tags() -> String:
 	var r := ""
-	if _current_underline:
-		r += "[/u]"
-		_current_underline = false
-	if _current_bold:
-		r += "[/b]"
-		_current_bold = false
 	if not _current_bg.is_empty():
 		r += "[/bgcolor]"
 		_current_bg = ""
 	if not _current_fg.is_empty():
 		r += "[/color]"
 		_current_fg = ""
+	if _current_underline:
+		r += "[/u]"
+		_current_underline = false
+	if _current_bold:
+		r += "[/b]"
+		_current_bold = false
 	return r
 
 
-func _close_fg() -> String:
+## Open the currently-active BBCode tags in FIFO order: bold → underline → color → bgcolor.
+func _open_active_tags() -> String:
+	var r := ""
+	if _current_bold:
+		r += "[b]"
+	if _current_underline:
+		r += "[u]"
 	if not _current_fg.is_empty():
-		# Maintain proper LIFO BBCode nesting: close BG first if open,
-		# then close FG, then reopen BG.
-		var r := ""
-		var had_bg := not _current_bg.is_empty()
-		var bg_value := _current_bg
-
-		if had_bg:
-			r += "[/bgcolor]"
-		r += "[/color]"
-		_current_fg = ""
-
-		if had_bg:
-			r += "[bgcolor=%s]" % bg_value
-			# Note: _current_bg is still set, we didn't clear it
-		return r
-	return ""
-
-
-func _close_bg() -> String:
+		r += "[color=%s]" % _current_fg
 	if not _current_bg.is_empty():
-		_current_bg = ""
-		return "[/bgcolor]"
-	return ""
+		r += "[bgcolor=%s]" % _current_bg
+	return r
 
 
 ## Build a TerminalGrid cell dictionary from the current SGR rendering state.

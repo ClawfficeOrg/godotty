@@ -164,3 +164,42 @@ func test_escaped_brackets_do_not_break_bbcode_parsing() -> void:
 	# A quick heuristic: bbcode should not contain "t]" (text followed by unescaped ]).
 	assert_bool(bbcode.contains("t]")).is_false()  # 'test]' pattern
 	assert_bool(bbcode.contains("d]")).is_false()  # 'end]' pattern
+
+
+# ---------------------------------------------------------------------------
+# Compound SGR sequences (bgcolor + fgcolor in one escape)
+# ---------------------------------------------------------------------------
+
+
+func test_compound_sgr_bgcolor_then_fgcolor_produces_balanced_tags() -> void:
+	var esc := char(27)
+	# Starship sends compound sequences: set bgcolor AND fgcolor in a single escape.
+	# e.g. ESC[48;2;214;93;14;38;2;251;241;199m (set bg orange, fg cream in one seq).
+	# Old one-pass code generated: [color=orange][bgcolor=orange][/color][color=cream]
+	# which has an orphaned [/color] (no matching open between [bgcolor] and it).
+	SignalBus.output_ready.emit(esc + "[38;2;214;93;14m" + esc + "[48;2;214;93;14;38;2;251;241;199mhello" + esc + "[0m")
+	await get_tree().process_frame
+	var bbcode := _view._output_accumulator
+	# Tags must balance.
+	var open_color2 := bbcode.count("[color=")
+	var close_color2 := bbcode.count("[/color]")
+	assert_int(open_color2).is_equal(close_color2)
+	var open_bg := bbcode.count("[bgcolor=")
+	var close_bg := bbcode.count("[/bgcolor]")
+	assert_int(open_bg).is_equal(close_bg)
+
+
+func test_compound_sgr_no_orphaned_closing_tags() -> void:
+	var esc := char(27)
+	# After a compound sequence that changes both bg and fg, a plain reset (ESC[0m)
+	# should close everything cleanly with no leftover closing tags.
+	SignalBus.output_ready.emit(esc + "[48;2;100;100;100;38;2;200;200;200mtext" + esc + "[0m")
+	await get_tree().process_frame
+	var bbcode := _view._output_accumulator
+	# Should end cleanly -- no closing tags emitted when nothing is open.
+	var open_color3 := bbcode.count("[color=")
+	var close_color3 := bbcode.count("[/color]")
+	assert_int(open_color3).is_equal(close_color3)
+	var open_bg2 := bbcode.count("[bgcolor=")
+	var close_bg2 := bbcode.count("[/bgcolor]")
+	assert_int(open_bg2).is_equal(close_bg2)
