@@ -7,7 +7,11 @@
 
 ## Now doing
 
-- Second issue: font size default (user wants 20px). Need to verify scene file font_size setting.
+**BBCode bracket escaping fix - COMPLETE** ✅
+
+Waiting for user feedback on remaining issues:
+1. Font size - scene file already set to 20px, but user may be seeing different rendering
+2. Double start character - need more info to diagnose
 
 Runtime crash triage (2026-05-27 session):
 - Fixed `_load_and_apply_theme("")` -> `res://resources/themes/.tres` (empty slug path).
