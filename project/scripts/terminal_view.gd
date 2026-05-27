@@ -10,6 +10,10 @@ const PROMPT_SYMBOL: String = "❯"
 const CHAR_W: float = 8.0
 const CHAR_H: float = 16.0
 
+## Primary-screen cursor position (0-based). Updated on CSI H/f in primary mode.
+var cursor_row: int = 0
+var cursor_col: int = 0
+
 ## Command history for up/down navigation
 var _command_history: Array[String] = []
 
@@ -59,6 +63,9 @@ var _terminal_rows: int = 24
 ## Reference to the scroll container
 @onready var scroll_container: ScrollContainer = $VBoxContainer/ScrollContainer
 
+## Block cursor overlay — floats above the text layer.
+@onready var cursor_overlay: ColorRect = $VBoxContainer/ScrollContainer/CursorOverlay
+
 
 func _ready() -> void:
 	# Connect signals
@@ -80,6 +87,9 @@ func _ready() -> void:
 
 	# Handle resize
 	get_tree().get_root().size_changed.connect(_on_viewport_resize)
+
+	# Position cursor overlay at startup
+	_update_cursor_overlay()
 
 
 func _input(event: InputEvent) -> void:
@@ -113,6 +123,8 @@ func _initialize_terminal() -> void:
 	_primary_bbcode = ""
 	_output_accumulator = ""
 	_primary_line_count_saved = 0
+	cursor_row = 0
+	cursor_col = 0
 	_clear_output()
 	TerminalManager.spawn_shell()
 
@@ -183,6 +195,19 @@ func _ansi_to_bbcode(text: String) -> String:
 								if parts.size() >= 2 and parts[1] != "":
 									c = max(1, int(parts[1]))
 							_alt_grid.set_cursor(r - 1, c - 1)
+						else:
+							# Primary screen — track cursor_row/cursor_col.
+							var r := 1
+							var c := 1
+							if params_str != "":
+								var parts := params_str.split(";")
+								if parts.size() >= 1 and parts[0] != "":
+									r = max(1, int(parts[0]))
+								if parts.size() >= 2 and parts[1] != "":
+									c = max(1, int(parts[1]))
+							cursor_row = r - 1
+							cursor_col = c - 1
+						_update_cursor_overlay()
 					"A":
 						# Cursor up.
 						if _in_alternate_screen and _alt_grid != null:
@@ -612,6 +637,19 @@ func _on_viewport_resize() -> void:
 		if _alt_grid != null:
 			_alt_grid.resize(cols, rows)
 		TerminalManager.resize(cols, rows)
+
+
+## Update the cursor overlay position to match the tracked cursor.
+## In alternate screen, syncs from _alt_grid; otherwise uses cursor_row/cursor_col.
+func _update_cursor_overlay() -> void:
+	if not cursor_overlay:
+		return
+	var row := cursor_row
+	var col := cursor_col
+	if _in_alternate_screen and _alt_grid != null:
+		row = _alt_grid.cursor_row
+		col = _alt_grid.cursor_col
+	cursor_overlay.position = Vector2(col * CHAR_W, row * CHAR_H)
 
 
 func _exit_tree() -> void:
