@@ -1093,11 +1093,25 @@ func apply_font_settings() -> void:
 	char_width = float(TerminalSettings.font_size) * 0.5
 	line_height = float(TerminalSettings.font_size)
 	if output_display:
-		if TerminalSettings.font != null:
-			output_display.add_theme_font_override("normal_font", TerminalSettings.font)
-		else:
-			output_display.remove_theme_font_override("normal_font")
-		output_display.add_theme_font_size_override("normal_font_size", TerminalSettings.font_size)
+		# Override every RichTextLabel font slot so that bold ([b]), italic ([i]),
+		# and mono text all use the same Nerd Font family. Without this, only
+		# unstyled text picks up the override; bold segments fall back to the
+		# system bold font and display in the wrong typeface.
+		const FONT_SLOTS: Array[StringName] = [
+			&"normal_font", &"bold_font", &"italics_font",
+			&"bold_italics_font", &"mono_font",
+		]
+		const SIZE_SLOTS: Array[StringName] = [
+			&"normal_font_size", &"bold_font_size", &"italics_font_size",
+			&"bold_italics_font_size", &"mono_font_size",
+		]
+		for slot: StringName in FONT_SLOTS:
+			if TerminalSettings.font != null:
+				output_display.add_theme_font_override(slot, TerminalSettings.font)
+			else:
+				output_display.remove_theme_font_override(slot)
+		for slot: StringName in SIZE_SLOTS:
+			output_display.add_theme_font_size_override(slot, TerminalSettings.font_size)
 	_update_cursor_overlay()
 
 
