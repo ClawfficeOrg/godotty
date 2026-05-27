@@ -22,6 +22,8 @@ var is_mock_mode: bool = false
 var _mock_output_buffer: Array[String] = []
 var _mock_history: Array[String] = []
 var _mock_current_dir: String = "/home/user"
+var _mock_cols: int = 80
+var _mock_rows: int = 24
 
 # Reference to real terminal (if available)
 var _real_terminal: Node = null
@@ -29,6 +31,11 @@ var _real_terminal: Node = null
 
 func _ready() -> void:
 	_check_addon_availability()
+	SignalBus.terminal_resized.connect(_on_terminal_resized)
+
+
+func _exit_tree() -> void:
+	SignalBus.terminal_resized.disconnect(_on_terminal_resized)
 
 
 ## Check if godotty-node GDExtension is available
@@ -349,10 +356,19 @@ func get_cell(row: int, col: int) -> Dictionary:
 func get_dimensions() -> Array[int]:
 	if _real_terminal and not is_mock_mode:
 		return [_real_terminal.cols, _real_terminal.rows]
-	return [80, 24]
+	return [_mock_cols, _mock_rows]
 
 
 ## Resize the real terminal.
 func resize(cols: int, rows: int) -> void:
 	if _real_terminal and not is_mock_mode:
+		_real_terminal.resize(cols, rows)
+
+
+## Handle terminal_resized signal: update mock state or forward to real terminal.
+func _on_terminal_resized(cols: int, rows: int) -> void:
+	if is_mock_mode:
+		_mock_cols = cols
+		_mock_rows = rows
+	elif _real_terminal:
 		_real_terminal.resize(cols, rows)

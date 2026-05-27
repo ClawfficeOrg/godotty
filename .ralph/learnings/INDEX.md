@@ -3,6 +3,13 @@
 Append-only log of non-obvious things the agent has learned.
 **Newest at top.** Each entry: date, one-line summary, evidence/links.
 
+## 2026-05-27 — Godot 4 signal Callable disconnect requires the exact same Callable reference
+
+**Context:** Connecting `SignalBus.terminal_resized` to `_on_terminal_resized` in TerminalManager's `_ready()`, then disconnecting in `_exit_tree()`.
+**Learning:** In Godot 4, `signal.connect(callable)` and `signal.disconnect(callable)` must receive the *same* Callable object (i.e., the result of `func_ref` / method Callable). Passing a newly constructed `Callable(self, "_on_terminal_resized")` in `_exit_tree` when you used `self._on_terminal_resized` in `_ready` will fail if they don't compare equal. The safe pattern: use the method reference form (`self._on_terminal_resized`) in both calls so Godot can compare them by object+method identity.
+**Evidence:** `project/autoload/terminal_manager.gd` — task 1.2.2.
+**Tag:** godot · gdscript · signals
+
 Format:
 
     ## YYYY-MM-DD — short title
