@@ -7,6 +7,39 @@
 
 ## Now doing
 
+**BBCode visible tags + doubled first character — DEBUG LOGGING ADDED** 🔍
+
+2026-05-27 — User reports both issues persist after the `_close_all_tags()` fix:
+1. BBCode tags still visible as plaintext in prompt
+2. First character still doubled
+
+Added comprehensive debug logging to trace the issue:
+
+**Debug commits:**
+- `71986b4` — Added debug logging to `_on_output_ready`, `_append_output`, and CR handler
+- `88882b6` — Added `DEBUG_INSTRUCTIONS.md` with capture guide
+
+**Debug output shows:**
+- Raw shell/PTY input (escaped for readability)
+- Generated BBCode after ANSI processing
+- Carriage return behavior and line clearing
+
+**Next steps:**
+1. User runs `godot --path project 2>&1 | tee debug_output.log`
+2. User captures first ~100 lines of debug output after prompt appears
+3. User shares the output so I can see:
+   - Exact ANSI sequences from Starship
+   - Generated BBCode (to see why tags are visible)
+   - CR handling (to see if character doubling happens there)
+
+Once I see the actual sequences, I can pinpoint whether:
+- The fix for `_close_all_tags()` isn't being called in the right places
+- There's a different issue with how BBCode is being escaped
+- The CR handling is causing the character duplication
+- Starship is sending sequences we don't handle correctly
+
+---
+
 **BBCode visible-tag bug — FIXED** ✅
 
 2026-05-27 — New screenshot from user shows `[/bgcolor]`, `[/color]`, `[/b]` tags still visible
