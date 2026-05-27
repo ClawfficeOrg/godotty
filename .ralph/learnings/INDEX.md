@@ -3,7 +3,18 @@
 Append-only log of non-obvious things the agent has learned.
 **Newest at top.** Each entry: date, one-line summary, evidence/links.
 
-## 2026-05-27 — Godot 4 has native `TabBar` and `TabButton` classes — never use those as `class_name`
+## 2026-05-27 — OSC sequences (ESC]) are silently dropped by the `bracket_pos == -1` guard in `_ansi_to_bbcode`
+
+**Context:** Implementing task 3.0.4 — OSC 0/2 tab-title sequences.
+**Learning:** The early-exit guard `var bracket_pos := rest.find("["); if bracket_pos == -1: ...`
+was intended to buffer incomplete CSI sequences (ESC[), but also caught ANY escape sequence
+that doesn't contain `[`, including fully-complete OSC sequences (ESC]). This silently discarded
+all OSC sequences. Fix: change guard to `if rest.length() == 1 or (rest[1] == "[" and rest.length() == 2):`
+so only a bare ESC or an ESC[ with no further content is buffered.
+**Evidence:** `project/scripts/terminal_view.gd:_ansi_to_bbcode` — task 3.0.4.
+**Tag:** godot · gdscript · ansi · osc
+
+
 
 **Context:** Implementing task 3.0.2 — a custom tab bar widget with `class_name TabBar`.
 **Learning:** Godot 4 exposes `TabBar` and `TabButton` as native (C++) classes. A GDScript file with

@@ -13,6 +13,9 @@ signal tab_close_requested
 ## Emitted when the user triggers the next_tab keymap action.
 signal tab_next_requested
 
+## Emitted when an OSC 0 or OSC 2 sequence sets the window/tab title.
+signal tab_title_changed(title: String)
+
 ## DECSCUSR cursor style values (CSI Ps SP q).
 ## Ps=0/1 → blinking block (default), Ps=2 → steady block,
 ## Ps=3 → blinking underline, Ps=4 → steady underline,
@@ -498,9 +501,10 @@ func _ansi_to_bbcode(text: String) -> String:
 		if ch == "\u001b":
 			# Check if we have a complete sequence
 			var rest := input.substr(i)
-			# If we see an escape at the end of buffer without closing 'm', save for next chunk
-			var bracket_pos := rest.find("[")
-			if bracket_pos == -1 or (bracket_pos == 1 and rest.length() == 2):
+			# Buffer bare ESC or ESC[ with nothing following (incomplete CSI prefix).
+			# Do NOT buffer OSC (ESC]) or other 2+ char sequences here — let the
+			# specific elif branches handle them.
+			if rest.length() == 1 or (rest[1] == "[" and rest.length() == 2):
 				_partial_escape = rest
 				break
 
@@ -610,16 +614,20 @@ func _ansi_to_bbcode(text: String) -> String:
 				continue
 
 			elif rest.length() > 1 and rest[1] == "]":
-				# OSC sequence (title, hyperlink, etc.) — skip to ST (BEL or ESC\)
-				var osc_end := rest.find("\u0007")
-				if osc_end == -1:
-					osc_end = rest.find("\u001b\\")
-					if osc_end != -1:
-						osc_end += 2
-				if osc_end == -1:
+				# OSC sequence — find ST (BEL or ESC\) and extract content.
+				var osc_content_end := rest.find("\u0007")
+				var st_len := 1
+				if osc_content_end == -1:
+					var st_pos := rest.find("\u001b\\")
+					if st_pos != -1:
+						osc_content_end = st_pos
+						st_len = 2
+				if osc_content_end == -1:
 					_partial_escape = rest
 					break
-				i += osc_end + 1
+				var osc_body := rest.substr(2, osc_content_end - 2)
+				_handle_osc(osc_body)
+				i += osc_content_end + st_len
 				continue
 
 			else:
@@ -890,6 +898,18 @@ func _handle_private_mode_reset(params_str: String) -> void:
 			_exit_alternate_screen(true)
 		DEC_BRACKETED_PASTE:
 			_bracketed_paste_mode = false
+
+
+## Handle OSC (Operating System Command) sequences.
+## Emits tab_title_changed for OSC 0 and OSC 2 window-title sequences.
+func _handle_osc(body: String) -> void:
+	var sep := body.find(";")
+	if sep == -1:
+		return
+	var code_str := body.substr(0, sep)
+	var title := body.substr(sep + 1)
+	if code_str == "0" or code_str == "2":
+		tab_title_changed.emit(title)
 
 
 ## Enter alternate screen buffer.

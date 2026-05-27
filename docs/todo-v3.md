@@ -46,7 +46,7 @@ Planned scope:
 - [x] `3.0.3` Ctrl+T / Ctrl+W / Ctrl+Tab keybindings for tab management.
   - Integrated with `TerminalKeymap` (Phase 2.3.0).
 
-- [ ] `3.0.4` Tab title updates from OSC 0/2 (window title sequences).
+- [x] `3.0.4` Tab title updates from OSC 0/2 (window title sequences).
   - Shell sets tab title via `echo -e '\033]0;My Tab\007'`.
 
 - [ ] `3.0.5` RC cut and multi-model review.
