@@ -7,6 +7,14 @@
 
 ## Now doing
 
+Task `1.4.3` — DONE. Paste from clipboard.
+- `project/scripts/terminal_view.gd` — added `_clipboard_override` var and
+  `_get_clipboard_text()` helper (bypasses headless clipboard limits in tests);
+  Ctrl+Shift+V and Shift+Insert key bindings call `paste_text(_get_clipboard_text())`.
+- `tests/unit/terminal_view_paste_test.gd` — 8 mock-mode tests, ALL GREEN.
+- CHANGELOG.md updated under [Unreleased].
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
 Task `1.4.2` — DONE. Copy selection to clipboard.
 - `project/scripts/terminal_view.gd` — added `_last_copied_text` var; `get_selected_text()`
   reads from alt-grid cells or primary-screen RichTextLabel; `copy_selected_to_clipboard()`

@@ -214,7 +214,7 @@ terminal emulators.
     `DisplayServer.clipboard_set(text)`.
   - Tests: select "hello"; Ctrl+Shift+C; assert clipboard contains "hello".
 
-- [ ] `1.4.3` Paste from clipboard.
+- [x] `1.4.3` Paste from clipboard.
   - Complexity: Low. Suggested model: standard coding model.
   - Owned paths: `project/scripts/terminal_view.gd`.
   - Work: Ctrl+Shift+V (and Shift+Insert) reads `DisplayServer.clipboard_get()`
