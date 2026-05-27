@@ -7,6 +7,16 @@
 
 ## Now doing
 
+Task `2.1.1` — DONE. TerminalSettings Resource.
+- `project/resources/terminal_settings.gd` — `extends Resource` (no class_name to avoid
+  collision with existing `TerminalSettings` static class). Exports: `font: FontFile`,
+  `font_size: int` (default 14, clamped [8,72]), `line_height_scale: float` (default 1.2,
+  clamped [0.5,3.0]), `theme: TerminalTheme`, `cursor_blink_rate: float` (default 0.5,
+  clamped [0.0,5.0]). Clamping via property setters + backing vars; `_validate_property`
+  adds PROPERTY_HINT_RANGE for Inspector.
+- `tests/unit/terminal_settings_test.gd` — 17 tests: defaults, range clamping, .tres round-trip.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
 Task `2.0.4` — DONE. Theme picker UI.
 - `project/scenes/terminal.tscn` — added `TitleBar` HBoxContainer with `TitleLabel`
   and `ThemeMenu` MenuButton as first child of VBoxContainer.
