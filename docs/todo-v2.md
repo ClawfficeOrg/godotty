@@ -33,7 +33,7 @@ at runtime.
     Load/save via `ResourceSaver` / `ResourceLoader`.
   - Tests: default palette has 16 entries; resource round-trips to `.tres`.
 
-- [ ] `2.0.2` Wire `TerminalTheme` into `TerminalView` rendering.
+- [x] `2.0.2` Wire `TerminalTheme` into `TerminalView` rendering.
   - Complexity: Low-Medium. Suggested model: standard coding model.
   - Owned paths: `project/scripts/terminal_view.gd`.
   - Work: replace the hard-coded `PALETTE` constant in `terminal_view.gd`
