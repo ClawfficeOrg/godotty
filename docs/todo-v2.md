@@ -208,7 +208,7 @@ the terminal feel polished.
 
 **Prerequisite:** Phase 2.1.0 (`TerminalSettings`).
 
-- [ ] `2.4.1` Background transparency.
+- [x] `2.4.1` Background transparency.
   - Complexity: Low. Suggested model: standard coding model.
   - Owned paths: `project/scenes/terminal.tscn`,
     `project/scripts/terminal_view.gd`.
