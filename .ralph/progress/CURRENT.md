@@ -7,7 +7,21 @@
 
 ## Now doing
 
-Task `2.0.3` — DONE. Bundle built-in color themes.
+Task `2.0.4` — DONE. Theme picker UI.
+- `project/scenes/terminal.tscn` — added `TitleBar` HBoxContainer with `TitleLabel`
+  and `ThemeMenu` MenuButton as first child of VBoxContainer.
+- `project/scripts/terminal_settings.gd` — added `BUNDLED_THEME_NAMES` const (9 names)
+  and `selected_theme_name` static var for persistence.
+- `project/scripts/terminal_view.gd` — added `@onready _theme_menu`; `_setup_theme_picker()`
+  populates popup from `TerminalSettings.BUNDLED_THEME_NAMES` and connects `index_pressed`;
+  `_on_theme_menu_index_pressed()` saves name to `TerminalSettings.selected_theme_name` and
+  calls `_load_and_apply_theme()`; `_load_and_apply_theme()` loads .tres resource and sets
+  `TerminalManager.current_theme`; `_initialize_terminal()` restores persisted theme on startup.
+- `tests/unit/theme_picker_test.gd` — 5 tests: lists ≥8 items, Dracula present,
+  selecting Dracula applies dark bg, persists in TerminalSettings, new view restores persisted.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
+
 - Created 8 `.tres` files under `project/resources/themes/`:
   `solarized_dark`, `solarized_light`, `dracula`, `tokyo_night`,
   `gruvbox_dark`, `catppuccin_mocha`, `nord`, `one_dark`.

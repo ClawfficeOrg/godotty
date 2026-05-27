@@ -51,7 +51,7 @@ at runtime.
     Each `.tres` file is self-contained and human-readable.
   - Tests: each theme resource loads without errors; palette has 16 entries.
 
-- [ ] `2.0.4` Theme picker UI.
+- [x] `2.0.4` Theme picker UI.
   - Complexity: Low. Suggested model: standard coding model.
   - Owned paths: `project/scenes/terminal.tscn`,
     `project/scripts/terminal_view.gd`.
