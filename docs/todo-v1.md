@@ -164,7 +164,7 @@ being interpreted as command submission.
 
 **Prerequisite:** Phase 1.1.0.
 
-- [ ] `1.3.1` Track bracketed paste mode state.
+- [x] `1.3.1` Track bracketed paste mode state.
   - Complexity: Very Low. Suggested model: standard coding model.
   - Owned paths: `project/scripts/terminal_view.gd`.
   - Work: detect `CSI ?2004h` (enable) and `CSI ?2004l` (disable).

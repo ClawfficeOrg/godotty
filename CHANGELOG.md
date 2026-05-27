@@ -10,6 +10,13 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Bracketed paste mode state tracking (task 1.3.1).**
+  - `project/scripts/terminal_view.gd` — added `_bracketed_paste_mode: bool`
+    field; `_handle_private_mode_set("?2004")` sets it true on `CSI ?2004h`;
+    `_handle_private_mode_reset("?2004")` clears it on `CSI ?2004l`.
+  - `tests/unit/terminal_view_bracketed_paste_test.gd` — 4 mock-mode tests
+    covering default state, enable, disable, and enable→disable toggle.
+  - `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
 - **Grid reflow on resize (task 1.2.3).**
   - `project/scripts/terminal_grid.gd` — `resize(cols, rows)` now reflows
     existing logical lines: lines wider than `cols` wrap onto multiple physical

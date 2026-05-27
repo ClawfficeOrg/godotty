@@ -20,6 +20,7 @@ enum CursorStyle {
 ## Maximum lines to keep in scrollback buffer
 const MAX_LINES: int = 1000
 const PROMPT_SYMBOL: String = "❯"
+const DEC_BRACKETED_PASTE: String = "?2004"
 const CHAR_W: float = 8.0
 const CHAR_H: float = 16.0
 
@@ -73,6 +74,10 @@ var _cursor_blink_visible: bool = true
 ## DEC private mode 25: true = cursor visible (default), false = cursor hidden.
 ## Controlled by CSI ?25h (show) and CSI ?25l (hide).
 var _cursor_dec_visible: bool = true
+
+## DEC private mode 2004: bracketed paste mode.
+## Enabled by CSI ?2004h, disabled by CSI ?2004l.
+var _bracketed_paste_mode: bool = false
 
 ## Timer that drives cursor blinking (created in _setup_cursor_blink).
 var _blink_timer: Timer = null
@@ -533,6 +538,8 @@ func _handle_private_mode_set(params_str: String) -> void:
 			_enter_alternate_screen(false)
 		"?1049":
 			_enter_alternate_screen(true)
+		DEC_BRACKETED_PASTE:
+			_bracketed_paste_mode = true
 
 
 ## Dispatch CSI private mode reset (?-prefixed params with 'l' command).
@@ -546,6 +553,8 @@ func _handle_private_mode_reset(params_str: String) -> void:
 			_exit_alternate_screen(false)
 		"?1049":
 			_exit_alternate_screen(true)
+		DEC_BRACKETED_PASTE:
+			_bracketed_paste_mode = false
 
 
 ## Enter alternate screen buffer.

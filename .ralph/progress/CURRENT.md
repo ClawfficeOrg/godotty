@@ -7,6 +7,14 @@
 
 ## Now doing
 
+Task `1.3.1` — DONE. Track bracketed paste mode state.
+- `project/scripts/terminal_view.gd` — added `_bracketed_paste_mode: bool = false`;
+  `_handle_private_mode_set("?2004")` sets it true on `CSI ?2004h`;
+  `_handle_private_mode_reset("?2004")` clears it on `CSI ?2004l`.
+- `tests/unit/terminal_view_bracketed_paste_test.gd` — 4 mock-mode tests, ALL GREEN.
+- CHANGELOG.md and docs/todo-v1.md updated.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
 Task `1.2.3` — DONE. Grid reflow on resize.
 - `project/scripts/terminal_grid.gd` — added `scrollback_offset: int = 0` and
   `_wrapped: Array`; `resize()` rewrites reflow logic: extracts logical lines,
