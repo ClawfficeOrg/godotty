@@ -7,6 +7,16 @@
 
 ## Now doing
 
+Task `1.2.1` — DONE. Terminal resize cols/rows calculation from TerminalSettings.font_size.
+- `project/autoload/signal_bus.gd` — added `terminal_resized(cols: int, rows: int)` signal.
+- `project/scripts/terminal_settings.gd` — added `static var font_size: int = 16`.
+- `project/scripts/terminal_view.gd` — `_on_viewport_resize` derives char_w/line_h from
+  `TerminalSettings.font_size`, computes `cols=floor(w/cw)`, `rows=floor(h/lh)`,
+  emits `SignalBus.terminal_resized(cols, rows)`, then clamps for `TerminalManager.resize`.
+- `tests/unit/terminal_view_resize_test.gd` — 5 mock-mode tests, ALL GREEN.
+- CHANGELOG.md and docs/todo-v1.md updated.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
 Task `1.1.4` — DONE. Cursor hide/show via DEC private mode 25 implemented.
 - `project/scripts/terminal_view.gd` — added `_cursor_dec_visible: bool = true`;
   `_handle_private_mode_set("?25")` sets it true and restores overlay;
