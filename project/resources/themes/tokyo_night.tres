@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="TerminalTheme" format=3]
+
+[ext_resource type="Script" path="res://resources/terminal_theme.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+color_background = Color(0.102, 0.106, 0.149, 1)
+color_foreground = Color(0.753, 0.792, 0.961, 1)
+color_cursor = Color(0.753, 0.792, 0.961, 1)
+color_selection_bg = Color(0.157, 0.204, 0.341, 0.5)
+color_selection_fg = Color(0.753, 0.792, 0.961, 1)
+palette = Array[Color]([Color(0.082, 0.086, 0.118, 1), Color(0.969, 0.463, 0.557, 1), Color(0.62, 0.808, 0.416, 1), Color(0.878, 0.686, 0.408, 1), Color(0.478, 0.635, 0.969, 1), Color(0.733, 0.604, 0.969, 1), Color(0.49, 0.812, 1, 1), Color(0.663, 0.694, 0.839, 1), Color(0.255, 0.282, 0.408, 1), Color(0.969, 0.463, 0.557, 1), Color(0.62, 0.808, 0.416, 1), Color(0.878, 0.686, 0.408, 1), Color(0.478, 0.635, 0.969, 1), Color(0.733, 0.604, 0.969, 1), Color(0.49, 0.812, 1, 1), Color(0.753, 0.792, 0.961, 1)])
