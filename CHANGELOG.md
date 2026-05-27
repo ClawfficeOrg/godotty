@@ -10,6 +10,20 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Erase sequences in alternate screen (task 1.0.4).**
+  - `project/scripts/terminal_grid.gd` — added `erase_display(mode)` (CSI J,
+    modes 0/1/2: cursor-to-end, start-to-cursor, entire display) and
+    `erase_line(mode)` (CSI K, modes 0/1/2: cursor-to-end-of-line,
+    start-to-cursor, entire line). Both clear affected cells to the default
+    background without moving the cursor.
+  - `project/scripts/terminal_view.gd` — `CSI J` now routes to
+    `_alt_grid.erase_display(mode)` in alternate screen; primary screen
+    retains prior full-clear behaviour. `CSI K` (previously a no-op) now
+    routes to `_alt_grid.erase_line(mode)` in alternate screen.
+  - `tests/unit/terminal_grid_erase_test.gd` — 12 unit tests covering all
+    erase_display and erase_line modes. All GREEN.
+  - `tests/unit/terminal_view_erase_test.gd` — 9 mock-mode integration
+    tests sending full CSI sequences and asserting grid cell state. All GREEN.
 - **Cursor positioning in alternate screen (task 1.0.3).**
   - `project/scripts/terminal_grid.gd` — added cursor state (`cursor_row`,
     `cursor_col`) and three new methods: `set_cursor(row, col)` (absolute,

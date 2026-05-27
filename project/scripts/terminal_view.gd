@@ -159,8 +159,13 @@ func _ansi_to_bbcode(text: String) -> String:
 					"m":
 						output += _handle_sgr(params_str)
 					"J":
-						# Erase display — treat 2J as clear
-						if params_str == "2" or params_str == "":
+						# Erase display. Alt screen: route to grid. Primary: full clear only.
+						var mode_j := 0
+						if params_str != "":
+							mode_j = int(params_str)
+						if _in_alternate_screen and _alt_grid != null:
+							_alt_grid.erase_display(mode_j)
+						elif mode_j == 2 or params_str == "":
 							output += "[/color]"  # close any open tags
 							_current_fg = ""
 							_current_bg = ""
@@ -207,7 +212,12 @@ func _ansi_to_bbcode(text: String) -> String:
 								n = max(1, int(params_str))
 							_alt_grid.move_cursor(0, -n)
 					"K":
-						pass
+						# Erase line. Alt screen: route to grid.
+						if _in_alternate_screen and _alt_grid != null:
+							var mode_k := 0
+							if params_str != "":
+								mode_k = int(params_str)
+							_alt_grid.erase_line(mode_k)
 					"h":
 						_handle_private_mode_set(params_str)
 					"l":
