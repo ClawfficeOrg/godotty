@@ -234,3 +234,12 @@ See `docs/todo-v0.md` phase 0.3.0 for full task cards.
   before letting it loose.
 - Full roadmap is now at `docs/ROADMAP.md`. WezTerm inspiration map
   is in the roadmap master index.
+
+Task `1.4.1` — DONE. Click-drag text selection in TerminalView.
+- `project/scripts/terminal_view.gd` — selection_start/end state, _gui_input
+  mouse handling, _pixel_to_cell, _setup_selection_overlay, _update_selection_overlay,
+  selected_cell_count.
+- `project/scripts/terminal_grid.gd` — char_width/line_height vars, clamp_cell,
+  cell_from_pixel, get_cell_rect helpers.
+- `tests/unit/terminal_view_mouse_selection_test.gd` — 5 mock-mode tests, ALL GREEN.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.

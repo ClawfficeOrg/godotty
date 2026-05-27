@@ -10,7 +10,22 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
-- **Bracketed paste wrapping (task 1.3.2).**
+- **Click-drag text selection in TerminalView (task 1.4.1).**
+  - `project/scripts/terminal_view.gd` — added `selection_start`, `selection_end`
+    (`Vector2i`) public state; `_gui_input()` handles `InputEventMouseButton` (left
+    press sets start) and `InputEventMouseMotion` (drag updates end); `_pixel_to_cell()`
+    converts pixel positions using `CHAR_W`/`CHAR_H`; `_setup_selection_overlay()`
+    creates a semi-transparent `ColorRect` child; `_update_selection_overlay()` sizes
+    and positions the overlay over the selected rectangle; `selected_cell_count()`
+    returns the inclusive cell count.
+  - `project/scripts/terminal_grid.gd` — added `char_width`/`line_height` public
+    float vars; `clamp_cell()`, `cell_from_pixel()`, `get_cell_rect()` helper methods.
+  - `tests/unit/terminal_view_mouse_selection_test.gd` — 5 mock-mode tests covering
+    forward drag, reverse drag, pixel→cell metric mapping, overlay rect, and
+    out-of-bounds clamping.
+  - `.gdlintrc` — raised `max-file-lines` to 1000 (terminal_view.gd growth).
+  - `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
   - `project/scripts/terminal_view.gd` — added `paste_text(text)` public method;
     wraps payload with `ESC[200~`…`ESC[201~` when `_bracketed_paste_mode` is true,
     sends bare text otherwise; added `BRACKETED_PASTE_START`/`BRACKETED_PASTE_END`
