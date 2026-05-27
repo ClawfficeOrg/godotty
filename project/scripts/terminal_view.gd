@@ -263,6 +263,12 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		# History navigation and legacy clipboard shortcuts are not in the rebindable keymap.
 		match event.keycode:
+			KEY_TAB:
+				# Send tab to the PTY for shell completion; do NOT let Godot use it
+				# for UI focus traversal.
+				_get_manager().write_input("\t")
+				get_viewport().set_input_as_handled()
+				return
 			KEY_UP:
 				_navigate_history(-1)
 				get_viewport().set_input_as_handled()
@@ -1049,6 +1055,11 @@ func _on_shell_status_changed(running: bool) -> void:
 ## char_width / line_height for cursor and selection positioning.
 ## Call this whenever TerminalSettings.font_size or font changes.
 func apply_font_settings() -> void:
+	# Lazy-load the selected font the first time (font starts null even when a name is selected).
+	if TerminalSettings.font == null and TerminalSettings.selected_font_name != "Default":
+		var path: String = TerminalSettings.BUNDLED_FONT_PATHS.get(TerminalSettings.selected_font_name, "")
+		if path != "":
+			TerminalSettings.font = load(path)
 	char_width = float(TerminalSettings.font_size) * 0.5
 	line_height = float(TerminalSettings.font_size)
 	if output_display:

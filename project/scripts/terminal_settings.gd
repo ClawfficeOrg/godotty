@@ -51,7 +51,7 @@ static var selected_theme_name: String = ""
 
 ## Name of the last font the user picked. "Default" means no override.
 ## Persists across scene reloads because static vars survive within a process.
-static var selected_font_name: String = "Default"
+static var selected_font_name: String = "JetBrains Mono Nerd"
 
 ## Background transparency of the terminal panel (0.0 = fully transparent,
 ## 1.0 = fully opaque). Applied to TerminalView.self_modulate.a.
