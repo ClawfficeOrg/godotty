@@ -10,6 +10,16 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Configurable terminal padding (task 2.4.2).**
+  - `TerminalSettings.padding: Vector2i` (default `(4, 4)` px).
+  - `terminal.tscn` wraps `VBoxContainer` in a `MarginContainer` named
+    `PaddingContainer`; `TerminalView.padding_container` exposes it.
+  - `TerminalView.apply_padding()` — reads `TerminalSettings.padding` and
+    applies x to left/right margins and y to top/bottom margins. Called in `_ready()`.
+  - `.gdlintrc` — raised `max-line-length` to 120 to accommodate longer NodePath
+    @onready declarations introduced by the PaddingContainer wrapper.
+  - `tests/unit/terminal_view_padding_test.gd` — 5 tests: default (4,4), applied
+    at ready, (10,10) sets all sides to 10, (0,0) sets all to zero, asymmetric axes.
 - **Background transparency for terminal panel (task 2.4.1).**
   - `TerminalSettings.background_opacity: float` (0.0–1.0, default 1.0).
   - `TerminalView.apply_background_opacity()` — applies the setting to

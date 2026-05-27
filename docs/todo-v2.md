@@ -219,7 +219,7 @@ the terminal feel polished.
     alpha < 1.0.
   - Tests: opacity 0.5 sets panel alpha; opacity 1.0 fully opaque.
 
-- [ ] `2.4.2` Configurable padding.
+- [x] `2.4.2` Configurable padding.
   - Complexity: Very Low. Suggested model: standard coding model.
   - Owned paths: `project/scenes/terminal.tscn`,
     `project/scripts/terminal_view.gd`.

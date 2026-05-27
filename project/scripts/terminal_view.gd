@@ -159,25 +159,31 @@ var _last_search_query: String = ""
 var _last_search_use_regex: bool = false
 
 ## Reference to the output display
-@onready var output_display: RichTextLabel = $VBoxContainer/ScrollContainer/OutputDisplay
+@onready
+var output_display: RichTextLabel = $PaddingContainer/VBoxContainer/ScrollContainer/OutputDisplay
 
 ## Reference to the input field
-@onready var input_field: LineEdit = $VBoxContainer/InputBar/HBoxContainer/InputField
+@onready
+var input_field: LineEdit = $PaddingContainer/VBoxContainer/InputBar/HBoxContainer/InputField
 
 ## Reference to the prompt label
-@onready var prompt_label: Label = $VBoxContainer/InputBar/HBoxContainer/PromptLabel
+@onready var prompt_label: Label = $PaddingContainer/VBoxContainer/InputBar/HBoxContainer/PromptLabel
 
 ## Reference to the scroll container
-@onready var scroll_container: ScrollContainer = $VBoxContainer/ScrollContainer
+@onready var scroll_container: ScrollContainer = $PaddingContainer/VBoxContainer/ScrollContainer
 
 ## Block cursor overlay — floats above the text layer.
-@onready var cursor_overlay: ColorRect = $VBoxContainer/ScrollContainer/CursorOverlay
+@onready
+var cursor_overlay: ColorRect = $PaddingContainer/VBoxContainer/ScrollContainer/CursorOverlay
 
 ## Overlay search bar anchored to the top-right of this control.
 @onready var search_bar: SearchBar = $SearchBar
-@onready var _theme_menu: MenuButton = $VBoxContainer/TitleBar/ThemeMenu
-@onready var _font_option: OptionButton = $VBoxContainer/TitleBar/FontOptionButton
-@onready var _font_spinbox: SpinBox = $VBoxContainer/TitleBar/FontSizeSpinBox
+
+## MarginContainer that applies TerminalSettings.padding as insets.
+@onready var padding_container: MarginContainer = $PaddingContainer
+@onready var _theme_menu: MenuButton = $PaddingContainer/VBoxContainer/TitleBar/ThemeMenu
+@onready var _font_option: OptionButton = $PaddingContainer/VBoxContainer/TitleBar/FontOptionButton
+@onready var _font_spinbox: SpinBox = $PaddingContainer/VBoxContainer/TitleBar/FontSizeSpinBox
 
 
 func _ready() -> void:
@@ -203,6 +209,7 @@ func _ready() -> void:
 	apply_font_settings()
 	_setup_font_panel()
 	apply_background_opacity()
+	apply_padding()
 
 	# Handle resize
 	get_tree().get_root().size_changed.connect(_on_viewport_resize)
@@ -977,6 +984,17 @@ func apply_background_opacity() -> void:
 	var c := self_modulate
 	c.a = clampf(TerminalSettings.background_opacity, 0.0, 1.0)
 	self_modulate = c
+
+
+## Apply TerminalSettings.padding as margin insets on the PaddingContainer.
+## x maps to left and right; y maps to top and bottom.
+func apply_padding() -> void:
+	if not padding_container:
+		return
+	padding_container.add_theme_constant_override("margin_left", TerminalSettings.padding.x)
+	padding_container.add_theme_constant_override("margin_right", TerminalSettings.padding.x)
+	padding_container.add_theme_constant_override("margin_top", TerminalSettings.padding.y)
+	padding_container.add_theme_constant_override("margin_bottom", TerminalSettings.padding.y)
 
 
 ## Handle viewport resize — compute cols/rows from pixel size and font_size,

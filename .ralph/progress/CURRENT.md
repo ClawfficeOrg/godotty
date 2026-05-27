@@ -7,6 +7,16 @@
 
 ## Now doing
 
+Task `2.4.2` — DONE. Configurable padding.
+- `project/scripts/terminal_settings.gd` — added `static var padding: Vector2i = Vector2i(4, 4)`.
+- `project/scenes/terminal.tscn` — added `PaddingContainer` (MarginContainer) wrapping VBoxContainer.
+- `project/scripts/terminal_view.gd` — updated @onready paths, added `padding_container` public var,
+  added `apply_padding()` method; called in `_ready()` after `apply_background_opacity()`.
+- `.gdlintrc` — raised `max-line-length` to 120 for longer NodePath @onready declarations.
+- `tests/unit/terminal_view_padding_test.gd` — 5 tests: default (4,4) setting, default applied at ready,
+  (10,10) sets all sides to 10, (0,0) sets all to zero, asymmetric axes x=16/y=8.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
 Task `2.4.1` — DONE. Background transparency.
 - `project/scripts/terminal_settings.gd` — added `static var background_opacity: float = 1.0`.
 - `project/scripts/terminal_view.gd` — added `apply_background_opacity()` (clamps to [0,1],

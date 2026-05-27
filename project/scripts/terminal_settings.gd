@@ -58,3 +58,8 @@ static var selected_font_name: String = "Default"
 ## Requires display/window/transparent = true in Project Settings for the OS
 ## window to actually become transparent; the panel alpha is always applied.
 static var background_opacity: float = 1.0
+
+## Terminal content padding in pixels applied as a MarginContainer inset.
+## x = horizontal (left and right), y = vertical (top and bottom).
+## Default: (4, 4) px.
+static var padding: Vector2i = Vector2i(4, 4)
