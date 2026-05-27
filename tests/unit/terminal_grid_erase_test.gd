@@ -3,7 +3,7 @@
 # Spec: docs/todo-v1.md  (task 1.0.4)
 #
 # Covers: erase_display mode 0/1/2 and erase_line mode 0/1/2.
-# TerminalGrid is a RefCounted — no scene tree needed.
+# TerminalGrid is a RefCounted -- no scene tree needed.
 extends GdUnitTestSuite
 
 
@@ -39,7 +39,7 @@ func _is_blank(cell: Dictionary) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# erase_display mode 2 — entire display
+# erase_display mode 2 -- entire display
 # ---------------------------------------------------------------------------
 
 
@@ -61,7 +61,7 @@ func test_erase_display_mode2_does_not_move_cursor() -> void:
 
 
 # ---------------------------------------------------------------------------
-# erase_display mode 0 — cursor to end of display
+# erase_display mode 0 -- cursor to end of display
 # ---------------------------------------------------------------------------
 
 
@@ -93,7 +93,7 @@ func test_erase_display_mode0_at_origin_clears_all() -> void:
 
 
 # ---------------------------------------------------------------------------
-# erase_display mode 1 — beginning of display to cursor
+# erase_display mode 1 -- beginning of display to cursor
 # ---------------------------------------------------------------------------
 
 
@@ -115,7 +115,7 @@ func test_erase_display_mode1_clears_from_start_to_cursor() -> void:
 
 
 # ---------------------------------------------------------------------------
-# erase_line mode 2 — entire line
+# erase_line mode 2 -- entire line
 # ---------------------------------------------------------------------------
 
 
@@ -142,7 +142,7 @@ func test_erase_line_mode2_does_not_move_cursor() -> void:
 
 
 # ---------------------------------------------------------------------------
-# erase_line mode 0 — cursor to end of line
+# erase_line mode 0 -- cursor to end of line
 # ---------------------------------------------------------------------------
 
 
@@ -163,7 +163,7 @@ func test_erase_line_mode0_clears_cursor_to_end_of_line() -> void:
 
 
 # ---------------------------------------------------------------------------
-# erase_line mode 1 — beginning of line to cursor
+# erase_line mode 1 -- beginning of line to cursor
 # ---------------------------------------------------------------------------
 
 

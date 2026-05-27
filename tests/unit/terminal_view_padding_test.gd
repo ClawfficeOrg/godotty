@@ -5,11 +5,11 @@
 # Covers:
 #   - TerminalSettings.padding default is Vector2i(4, 4).
 #   - apply_padding() sets MarginContainer insets from TerminalSettings.padding.
-#   - padding (10, 10) → 10 px inset on each side.
-#   - padding (0, 0) → 0 px inset on each side.
+#   - padding (10, 10) -> 10 px inset on each side.
+#   - padding (0, 0) -> 0 px inset on each side.
 #   - x maps to left/right; y maps to top/bottom independently.
 #
-# All tests run in mock mode — no GDExtension required.
+# All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TERMINAL_SCENE := preload("res://scenes/terminal.tscn")

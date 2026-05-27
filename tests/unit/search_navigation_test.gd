@@ -10,7 +10,7 @@
 ##   - Escape (hide_search) resets _search_match_index to -1.
 ##   - get_highlighted_line with accent_col highlights that match in SEARCH_ACCENT_BG.
 ##
-## All tests run in mock mode — no GDExtension required.
+## All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TERMINAL_SCENE := preload("res://scenes/terminal.tscn")
@@ -57,7 +57,7 @@ func test_navigate_next_wraps_to_first_after_last() -> void:
 	_view.search_bar.navigate_next.emit()
 	assert_int(_view._search_match_index).is_equal(2)
 
-	# One more — wraps to 0.
+	# One more -- wraps to 0.
 	_view.search_bar.navigate_next.emit()
 	assert_int(_view._search_match_index).is_equal(0)
 
@@ -165,6 +165,6 @@ func test_new_search_resets_match_index() -> void:
 	_view.search_bar.navigate_next.emit()
 	assert_int(_view._search_match_index).is_equal(0)
 
-	# Run a fresh search — index must reset.
+	# Run a fresh search -- index must reset.
 	_view.search_scrollback("second")
 	assert_int(_view._search_match_index).is_equal(-1)

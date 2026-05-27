@@ -1,10 +1,10 @@
-## TerminalGrid — 2-D cell backing store for terminal emulation.
+## TerminalGrid -- 2-D cell backing store for terminal emulation.
 ##
 ## Stores a row-major array of cell dictionaries. Each cell:
 ##   { char: String, fg: Color, bg: Color, bold: bool, italic: bool,
 ##     underline: bool, url: String }
 ##
-## Not an autoload — instantiate directly:
+## Not an autoload -- instantiate directly:
 ##   var grid := TerminalGrid.new()
 ##   grid.resize(80, 24)
 ##
@@ -33,16 +33,16 @@ var cursor_col: int = 0
 ## Reset to 0 on every resize so the newest line remains visible.
 var scrollback_offset: int = 0
 
-## Pixel width of one character cell — used by cell_from_pixel / get_cell_rect.
+## Pixel width of one character cell -- used by cell_from_pixel / get_cell_rect.
 var char_width: float = 8.0
 
-## Pixel height of one character line — used by cell_from_pixel / get_cell_rect.
+## Pixel height of one character line -- used by cell_from_pixel / get_cell_rect.
 var line_height: float = 16.0
 
 var _cols: int = 0
 var _rows: int = 0
 
-## Row-major 2-D array: _cells[row][col] → Dictionary
+## Row-major 2-D array: _cells[row][col] -> Dictionary
 var _cells: Array = []
 
 ## Parallel bool array: _wrapped[r] is true when row r is a soft-wrapped
@@ -68,7 +68,7 @@ func _is_blank_cell(cell: Dictionary) -> bool:
 	)
 
 
-## Resize the grid to (cols × rows) with line reflow.
+## Resize the grid to (cols ? rows) with line reflow.
 ##
 ## Existing logical lines (sequences of consecutive rows where each
 ## continuation row has _wrapped=true) are re-wrapped at the new col width.

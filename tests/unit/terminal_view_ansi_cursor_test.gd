@@ -7,7 +7,7 @@
 #         cursor position in the alternate screen, out-of-bounds clamping,
 #         and partial-escape buffering for cursor sequences.
 #
-# All tests run in mock mode — no GDExtension required.
+# All tests run in mock mode -- no GDExtension required.
 # Characters are verified via _view._alt_grid (the backing TerminalGrid).
 extends GdUnitTestSuite
 
@@ -42,7 +42,7 @@ func _alt_grid() -> TerminalGrid:
 
 
 # ---------------------------------------------------------------------------
-# CSI H — cursor home / position
+# CSI H -- cursor home / position
 # ---------------------------------------------------------------------------
 
 
@@ -55,7 +55,7 @@ func test_csi_h_no_params_homes_cursor_to_origin() -> void:
 
 func test_csi_h_with_params_positions_cursor_row_col() -> void:
 	SignalBus.output_ready.emit("\u001b[3;5H")
-	# CSI params are 1-based; grid is 0-based → row=2, col=4
+	# CSI params are 1-based; grid is 0-based -> row=2, col=4
 	assert_int(_alt_grid().cursor_row).is_equal(2)
 	assert_int(_alt_grid().cursor_col).is_equal(4)
 
@@ -67,7 +67,7 @@ func test_csi_h_with_row_only_defaults_col_to_one() -> void:
 
 
 # ---------------------------------------------------------------------------
-# CSI f — cursor position (same as H)
+# CSI f -- cursor position (same as H)
 # ---------------------------------------------------------------------------
 
 
@@ -78,7 +78,7 @@ func test_csi_f_positions_cursor_row_col() -> void:
 
 
 # ---------------------------------------------------------------------------
-# CSI A — cursor up
+# CSI A -- cursor up
 # ---------------------------------------------------------------------------
 
 
@@ -101,7 +101,7 @@ func test_csi_a_clamps_at_top() -> void:
 
 
 # ---------------------------------------------------------------------------
-# CSI B — cursor down
+# CSI B -- cursor down
 # ---------------------------------------------------------------------------
 
 
@@ -118,7 +118,7 @@ func test_csi_b_no_param_moves_down_by_one() -> void:
 
 
 # ---------------------------------------------------------------------------
-# CSI C — cursor right
+# CSI C -- cursor right
 # ---------------------------------------------------------------------------
 
 
@@ -135,7 +135,7 @@ func test_csi_c_no_param_moves_right_by_one() -> void:
 
 
 # ---------------------------------------------------------------------------
-# CSI D — cursor left
+# CSI D -- cursor left
 # ---------------------------------------------------------------------------
 
 
@@ -165,7 +165,7 @@ func test_csi_d_clamps_at_left_edge() -> void:
 func test_char_lands_at_cursor_position_after_csi_h() -> void:
 	SignalBus.output_ready.emit("\u001b[3;5H")
 	SignalBus.output_ready.emit("X")
-	# CSI 3;5H → 0-based (2, 4)
+	# CSI 3;5H -> 0-based (2, 4)
 	assert_str(_alt_grid().get_cell(2, 4)["char"]).is_equal("X")
 
 
@@ -178,17 +178,17 @@ func test_char_advances_cursor_after_write() -> void:
 func test_sequential_chars_fill_consecutive_cells() -> void:
 	SignalBus.output_ready.emit("\u001b[2;3H")
 	SignalBus.output_ready.emit("Hi")
-	# CSI 2;3H → (1, 2); then 'H' at (1,2), 'i' at (1,3)
+	# CSI 2;3H -> (1, 2); then 'H' at (1,2), 'i' at (1,3)
 	assert_str(_alt_grid().get_cell(1, 2)["char"]).is_equal("H")
 	assert_str(_alt_grid().get_cell(1, 3)["char"]).is_equal("i")
 
 
 func test_move_cursor_then_write_lands_correctly() -> void:
-	# Position at (5;5) then move up 2 → (3;5), then write 'Q'
+	# Position at (5;5) then move up 2 -> (3;5), then write 'Q'
 	SignalBus.output_ready.emit("\u001b[5;5H")
 	SignalBus.output_ready.emit("\u001b[2A")
 	SignalBus.output_ready.emit("Q")
-	# (5;5H) → row=4,col=4; move up 2 → row=2,col=4
+	# (5;5H) -> row=4,col=4; move up 2 -> row=2,col=4
 	assert_str(_alt_grid().get_cell(2, 4)["char"]).is_equal("Q")
 
 

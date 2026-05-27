@@ -1,11 +1,11 @@
-## Global terminal settings — accessed as TerminalSettings.<property>.
+## Global terminal settings -- accessed as TerminalSettings.<property>.
 ## This is a plain class (not an autoload); class_name makes it available
 ## everywhere without adding a new singleton.
 class_name TerminalSettings
 
 ## All bundled theme display names. The theme picker populates its menu from
 ## this list. Each name maps to a .tres file under resources/themes/ via
-## name.to_lower().replace(" ", "_") — except "Default" → "default_theme".
+## name.to_lower().replace(" ", "_") -- except "Default" -> "default_theme".
 const BUNDLED_THEME_NAMES: Array[String] = [
 	"Default",
 	"Dracula",
@@ -26,7 +26,7 @@ const BUNDLED_FONT_NAMES: Array[String] = [
 ]
 
 ## Maps each bundled font display name to its resource path under
-## resources/fonts/. "Default" is intentionally absent — it means null.
+## resources/fonts/. "Default" is intentionally absent -- it means null.
 const BUNDLED_FONT_PATHS: Dictionary = {
 	"JetBrains Mono Nerd": "res://resources/fonts/JetBrainsMonoNerdFont-Regular.ttf",
 }
@@ -40,9 +40,9 @@ static var cursor_blink_rate: float = 0.5
 static var font: Font = null
 
 ## Point size of the terminal monospace font.
-## Drives char_width (= font_size × 0.5) and line_height (= font_size)
+## Drives char_width (= font_size ? 0.5) and line_height (= font_size)
 ## used to compute cols/rows from the viewport pixel dimensions.
-## Default: 16 pt → char_width = 8.0 px, line_height = 16.0 px.
+## Default: 16 pt -> char_width = 8.0 px, line_height = 16.0 px.
 static var font_size: int = 16
 
 ## Name of the last theme the user picked. Empty string means "use default".

@@ -10,7 +10,7 @@
 #   - Focus regain does not show a DEC-hidden cursor.
 #   - Focus regain after ?25h restores the cursor correctly.
 #
-# All tests run in mock mode — no GDExtension required.
+# All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TERMINAL_SCENE := preload("res://scenes/terminal.tscn")
@@ -46,7 +46,7 @@ func test_cursor_overlay_visible_at_startup() -> void:
 
 
 # ---------------------------------------------------------------------------
-# CSI ?25l — hide cursor
+# CSI ?25l -- hide cursor
 # ---------------------------------------------------------------------------
 
 
@@ -61,7 +61,7 @@ func test_csi_question25l_sets_dec_visible_false() -> void:
 
 
 # ---------------------------------------------------------------------------
-# CSI ?25h — show cursor
+# CSI ?25h -- show cursor
 # ---------------------------------------------------------------------------
 
 

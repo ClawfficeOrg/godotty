@@ -1,4 +1,4 @@
-## TerminalTabBar — HBoxContainer-based tab bar for multi-terminal layouts.
+## TerminalTabBar -- HBoxContainer-based tab bar for multi-terminal layouts.
 ##
 ## Manages a row of TerminalTerminalTabButton nodes, one per terminal session.
 ## Exposes signals for new-tab and close-tab so callers (e.g. the main

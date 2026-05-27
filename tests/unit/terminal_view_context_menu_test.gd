@@ -10,7 +10,7 @@
 ##   - Paste menu action fires paste_text().
 ##   - Clear menu action fires TerminalManager.clear().
 ##
-## All tests run in mock mode — no GDExtension required.
+## All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TERMINAL_SCENE := preload("res://scenes/terminal.tscn")
@@ -96,7 +96,7 @@ func test_right_click_popup_requested_stays_true_on_second_click() -> void:
 # ---------------------------------------------------------------------------
 
 
-## No selection → Copy item is disabled after right-click.
+## No selection -> Copy item is disabled after right-click.
 func test_copy_disabled_when_no_selection() -> void:
 	_view.selection_start = Vector2i(-1, -1)
 	_view.selection_end = Vector2i(-1, -1)
@@ -105,7 +105,7 @@ func test_copy_disabled_when_no_selection() -> void:
 	assert_bool(_view._context_menu.is_item_disabled(idx)).is_true()
 
 
-## Active selection → Copy item is enabled after right-click.
+## Active selection -> Copy item is enabled after right-click.
 func test_copy_enabled_when_text_selected() -> void:
 	_write_alt_grid("hello")
 	_view.selection_start = Vector2i(0, 0)

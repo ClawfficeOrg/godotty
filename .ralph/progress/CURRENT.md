@@ -7,6 +7,18 @@
 
 ## Now doing
 
+Task `3.0.5` — DONE. RC cut and multi-model review.
+- Created `tests/unit/rc_multi_tab_independence_test.gd` (6 tests).
+- Created `tests/unit/rc_close_middle_tab_test.gd` (7 tests).
+- Created `tests/unit/rc_ctrl_tab_cycle_test.gd` (6 tests).
+- Created `scripts/cut-rc.sh` — RC branch/tag helper with release gate checklist.
+- Created `.github/skills/review/multi-model-checklist/SKILL.md` — dual-model review workflow.
+- Updated `.github/skills/INDEX.md`, `CHANGELOG.md`, `docs/todo-v3.md`.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
+Phase 3.0.0 release gate tests are now in place. All Phase 3.0.x tasks complete.
+
+
 Task `3.0.4` — DONE. OSC 0/2 tab-title sequences.
 - `TerminalView`: added `signal tab_title_changed(title: String)`.
 - Fixed `_ansi_to_bbcode` early-exit: OSC sequences (`ESC]`) were incorrectly caught by the

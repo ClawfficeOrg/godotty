@@ -8,7 +8,7 @@
 ##   - Empty selection produces no copy (_last_copied_text unchanged).
 ##   - copy_selected_to_clipboard() is callable directly from tests.
 ##
-## All tests run in mock mode — no GDExtension required.
+## All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TERMINAL_SCENE := preload("res://scenes/terminal.tscn")
@@ -73,7 +73,7 @@ func _make_key_event(keycode: Key, ctrl: bool, shift: bool) -> InputEventKey:
 # ---------------------------------------------------------------------------
 
 
-## Select "hello" in alt screen, press Ctrl+Shift+C → _last_copied_text is "hello".
+## Select "hello" in alt screen, press Ctrl+Shift+C -> _last_copied_text is "hello".
 func test_copy_selected_word_with_ctrl_shift_c() -> void:
 	_write_alt_grid("hello")
 	_view.selection_start = Vector2i(0, 0)
@@ -84,7 +84,7 @@ func test_copy_selected_word_with_ctrl_shift_c() -> void:
 	assert_str(_view._last_copied_text).is_equal("hello")
 
 
-## Select partial text "hel" (cols 0-2), Ctrl+Shift+C → clipboard is "hel".
+## Select partial text "hel" (cols 0-2), Ctrl+Shift+C -> clipboard is "hel".
 func test_copy_partial_selection_ctrl_shift_c() -> void:
 	_write_alt_grid("hello")
 	_view.selection_start = Vector2i(0, 0)
@@ -100,7 +100,7 @@ func test_copy_partial_selection_ctrl_shift_c() -> void:
 # ---------------------------------------------------------------------------
 
 
-## Select "world" in alt screen, press Ctrl+Insert → _last_copied_text is "world".
+## Select "world" in alt screen, press Ctrl+Insert -> _last_copied_text is "world".
 func test_copy_selection_with_ctrl_insert() -> void:
 	_write_alt_grid("world")
 	_view.selection_start = Vector2i(0, 0)
@@ -116,7 +116,7 @@ func test_copy_selection_with_ctrl_insert() -> void:
 # ---------------------------------------------------------------------------
 
 
-## No selection → Ctrl+Shift+C does nothing (_last_copied_text stays empty).
+## No selection -> Ctrl+Shift+C does nothing (_last_copied_text stays empty).
 func test_no_selection_copy_does_nothing() -> void:
 	_view.selection_start = Vector2i(-1, -1)
 	_view.selection_end = Vector2i(-1, -1)
@@ -126,7 +126,7 @@ func test_no_selection_copy_does_nothing() -> void:
 	assert_str(_view._last_copied_text).is_equal("")
 
 
-## No selection → Ctrl+Insert does nothing.
+## No selection -> Ctrl+Insert does nothing.
 func test_no_selection_ctrl_insert_does_nothing() -> void:
 	_view.selection_start = Vector2i(-1, -1)
 	_view.selection_end = Vector2i(-1, -1)
@@ -175,7 +175,7 @@ func test_ctrl_c_without_shift_does_not_copy() -> void:
 	_view.selection_end = Vector2i(4, 0)
 	_view._last_copied_text = ""
 
-	# Ctrl+C without shift → _handle_interrupt(), not copy
+	# Ctrl+C without shift -> _handle_interrupt(), not copy
 	_view._input(_make_key_event(KEY_C, true, false))
 
 	assert_str(_view._last_copied_text).is_equal("")

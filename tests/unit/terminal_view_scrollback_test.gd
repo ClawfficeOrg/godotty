@@ -8,7 +8,7 @@
 #   - _line_count does not exceed scrollback_lines after trimming.
 #   - Content of retained lines equals the last N lines written.
 #
-# All tests run in mock mode — no GDExtension required.
+# All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TERMINAL_SCENE := preload("res://scenes/terminal.tscn")

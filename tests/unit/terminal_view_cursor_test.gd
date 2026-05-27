@@ -5,7 +5,7 @@
 # Covers: CursorOverlay ColorRect visible at startup at grid (0,0);
 #         position update after CSI cursor-position sequence (primary screen).
 #
-# All tests run in mock mode — no GDExtension required.
+# All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TERMINAL_SCENE := preload("res://scenes/terminal.tscn")
@@ -45,12 +45,12 @@ func test_cursor_at_origin_on_startup() -> void:
 
 
 # ---------------------------------------------------------------------------
-# CSI H — cursor position moves the overlay
+# CSI H -- cursor position moves the overlay
 # ---------------------------------------------------------------------------
 
 
 func test_csi_h_moves_cursor_to_row_col() -> void:
-	# CSI 3;5H → 1-based row=3, col=5 → 0-based row=2, col=4
+	# CSI 3;5H -> 1-based row=3, col=5 -> 0-based row=2, col=4
 	SignalBus.output_ready.emit("\u001b[3;5H")
 	assert_int(_view.cursor_row).is_equal(2)
 	assert_int(_view.cursor_col).is_equal(4)

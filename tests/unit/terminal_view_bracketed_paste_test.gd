@@ -5,7 +5,7 @@
 # Covers: CSI ?2004h (enable) and CSI ?2004l (disable) set/clear
 # _bracketed_paste_mode on TerminalView.
 #
-# All tests run in mock mode — no GDExtension required.
+# All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TERMINAL_SCENE := preload("res://scenes/terminal.tscn")
@@ -37,7 +37,7 @@ func test_bracketed_paste_mode_is_false_by_default() -> void:
 
 
 # ---------------------------------------------------------------------------
-# CSI ?2004h — enable bracketed paste
+# CSI ?2004h -- enable bracketed paste
 # ---------------------------------------------------------------------------
 
 
@@ -47,7 +47,7 @@ func test_csi_2004h_enables_bracketed_paste_mode() -> void:
 
 
 # ---------------------------------------------------------------------------
-# CSI ?2004l — disable bracketed paste
+# CSI ?2004l -- disable bracketed paste
 # ---------------------------------------------------------------------------
 
 

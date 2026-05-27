@@ -6,7 +6,7 @@
 # Covers: CSI 2J clears entire alt grid; CSI J (mode 0), CSI 1J (mode 1);
 #         CSI K / CSI 1K / CSI 2K erase partial or full lines.
 #
-# All tests run in mock mode — no GDExtension required.
+# All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TERMINAL_SCENE := preload("res://scenes/terminal.tscn")
@@ -66,7 +66,7 @@ func _is_blank(cell: Dictionary) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# CSI 2J — erase entire display
+# CSI 2J -- erase entire display
 # ---------------------------------------------------------------------------
 
 
@@ -94,7 +94,7 @@ func test_csi_2j_does_not_move_cursor() -> void:
 
 
 # ---------------------------------------------------------------------------
-# CSI J (no param / mode 0) — cursor to end of display
+# CSI J (no param / mode 0) -- cursor to end of display
 # ---------------------------------------------------------------------------
 
 
@@ -112,7 +112,7 @@ func test_csi_j_mode0_clears_from_cursor_to_end() -> void:
 
 
 # ---------------------------------------------------------------------------
-# CSI K (no param / mode 0) — cursor to end of line
+# CSI K (no param / mode 0) -- cursor to end of line
 # ---------------------------------------------------------------------------
 
 
@@ -132,7 +132,7 @@ func test_csi_k_default_clears_cursor_to_end_of_line() -> void:
 
 
 # ---------------------------------------------------------------------------
-# CSI 1K — beginning of line to cursor
+# CSI 1K -- beginning of line to cursor
 # ---------------------------------------------------------------------------
 
 
@@ -152,7 +152,7 @@ func test_csi_1k_clears_start_to_cursor() -> void:
 
 
 # ---------------------------------------------------------------------------
-# CSI 2K — entire line
+# CSI 2K -- entire line
 # ---------------------------------------------------------------------------
 
 

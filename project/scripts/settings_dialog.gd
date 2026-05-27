@@ -1,4 +1,4 @@
-## SettingsDialog — keybinding editor panel (task 2.3.3).
+## SettingsDialog -- keybinding editor panel (task 2.3.3).
 ##
 ## Presents a scrollable list of (action name, current chord, [Edit] button)
 ## rows. Clicking Edit captures the next key press and rebinds the action.
@@ -41,7 +41,7 @@ func _input(event: InputEvent) -> void:
 	var ev: InputEventKey = event as InputEventKey
 	if not ev.pressed or ev.echo:
 		return
-	# Ignore bare modifier keys — they can't form a useful binding on their own.
+	# Ignore bare modifier keys -- they can't form a useful binding on their own.
 	if ev.keycode in [KEY_CTRL, KEY_SHIFT, KEY_ALT, KEY_META]:
 		return
 	var new_key := InputEventKey.new()

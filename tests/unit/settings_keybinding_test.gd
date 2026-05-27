@@ -9,7 +9,7 @@
 ##   - When user://keymap.tres is absent, load_keymap() installs the defaults.
 ##   - Rebinding "copy" via the UI and saving survives a simulated restart.
 ##
-## All tests run in mock mode — no GDExtension required.
+## All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const SETTINGS_SCENE := preload("res://scenes/settings_dialog.tscn")
@@ -94,7 +94,7 @@ func test_capturing_resets_after_one_key() -> void:
 func test_modifier_only_keypress_is_ignored() -> void:
 	_dialog._on_edit_pressed(TerminalKeymap.ACTION_COPY)
 	_dialog._input(_make_key_event(KEY_CTRL, true))
-	# Still capturing — binding unchanged from default (Ctrl+Shift+C).
+	# Still capturing -- binding unchanged from default (Ctrl+Shift+C).
 	var bound: InputEventKey = TerminalManager.keymap.bindings[TerminalKeymap.ACTION_COPY]
 	assert_bool(bound.keycode == KEY_C).is_true()
 	assert_bool(bound.shift_pressed).is_true()
@@ -123,7 +123,7 @@ func test_missing_user_keymap_loads_default() -> void:
 	var custom_key := InputEventKey.new()
 	custom_key.keycode = KEY_Z
 	TerminalManager.keymap.bindings[TerminalKeymap.ACTION_COPY] = custom_key
-	# No file on disk — load_keymap() must reset to default.
+	# No file on disk -- load_keymap() must reset to default.
 	_dialog.load_keymap()
 	var bound: InputEventKey = TerminalManager.keymap.bindings[TerminalKeymap.ACTION_COPY]
 	assert_bool(bound.keycode == KEY_C).is_true()

@@ -1,4 +1,4 @@
-## TerminalManagerNode — instanceable per-tab terminal manager.
+## TerminalManagerNode -- instanceable per-tab terminal manager.
 ## Contains real and mock terminal logic. Can be instantiated per-tab for
 ## multi-terminal layouts. Does not auto-subscribe to SignalBus.terminal_resized.
 ## The application-wide default is the TerminalManager autoload.
@@ -327,7 +327,7 @@ func _mock_clear() -> void:
 
 func _real_spawn_shell() -> bool:
 	if not is_addon_available:
-		push_error("TerminalManagerNode: cannot spawn real shell — addon not available")
+		push_error("TerminalManagerNode: cannot spawn real shell -- addon not available")
 		return false
 
 	var term_class = ClassDB.instantiate("TerminalNode2D")

@@ -1,6 +1,6 @@
 # GdUnit4 test: TerminalView accepts an injected TerminalManagerNode instance.
 #
-# Spec: task 3.0.1 — multi-instance TerminalManager
+# Spec: task 3.0.1 -- multi-instance TerminalManager
 #
 # Covers:
 #   - TerminalView uses the injected manager for spawn_shell on ready.
@@ -8,7 +8,7 @@
 #   - The global TerminalManager autoload is NOT affected by the injected view.
 #   - get_effective_palette() reads from the injected manager's current_theme.
 #
-# All tests run in mock mode — no GDExtension required.
+# All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TERMINAL_SCENE := preload("res://scenes/terminal.tscn")

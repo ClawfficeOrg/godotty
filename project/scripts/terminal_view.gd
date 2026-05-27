@@ -17,9 +17,9 @@ signal tab_next_requested
 signal tab_title_changed(title: String)
 
 ## DECSCUSR cursor style values (CSI Ps SP q).
-## Ps=0/1 → blinking block (default), Ps=2 → steady block,
-## Ps=3 → blinking underline, Ps=4 → steady underline,
-## Ps=5 → blinking bar, Ps=6 → steady bar.
+## Ps=0/1 -> blinking block (default), Ps=2 -> steady block,
+## Ps=3 -> blinking underline, Ps=4 -> steady underline,
+## Ps=5 -> blinking bar, Ps=6 -> steady bar.
 enum CursorStyle {
 	BLINKING_BLOCK = 0,
 	STEADY_BLOCK = 2,
@@ -28,7 +28,7 @@ enum CursorStyle {
 	BLINKING_BAR = 5,
 	STEADY_BAR = 6,
 }
-const PROMPT_SYMBOL: String = "❯"
+const PROMPT_SYMBOL: String = "?"
 const DEC_BRACKETED_PASTE: String = "?2004"
 const CHAR_W: float = 8.0
 const CHAR_H: float = 16.0
@@ -62,11 +62,11 @@ const BELL_DURATION: float = 0.15
 ## Set before adding to the scene tree to use a per-tab manager instead of the global one.
 @export var manager: Node = null
 
-## Computed character cell width in pixels (TerminalSettings.font_size × 0.5).
+## Computed character cell width in pixels (TerminalSettings.font_size ? 0.5).
 ## Updated by apply_font_settings(). Used for cursor and selection positioning.
 var char_width: float = CHAR_W
 
-## Computed line height in pixels (TerminalSettings.font_size × 1.0).
+## Computed line height in pixels (TerminalSettings.font_size ? 1.0).
 ## Updated by apply_font_settings(). Used for cursor and selection positioning.
 var line_height: float = CHAR_H
 
@@ -194,7 +194,7 @@ var input_field: LineEdit = $PaddingContainer/VBoxContainer/InputBar/HBoxContain
 ## Reference to the scroll container
 @onready var scroll_container: ScrollContainer = $PaddingContainer/VBoxContainer/ScrollContainer
 
-## Block cursor overlay — floats above the text layer.
+## Block cursor overlay -- floats above the text layer.
 @onready
 var cursor_overlay: ColorRect = $PaddingContainer/VBoxContainer/ScrollContainer/CursorOverlay
 
@@ -336,7 +336,7 @@ func _gui_input(event: InputEvent) -> void:
 
 
 ## Convert a local pixel position to a grid cell coordinate (col, row).
-## Clamped to [0, _terminal_cols-1] × [0, _terminal_rows-1].
+## Clamped to [0, _terminal_cols-1] ? [0, _terminal_rows-1].
 func _pixel_to_cell(pos: Vector2) -> Vector2i:
 	var col := int(floor(pos.x / char_width))
 	var row := int(floor(pos.y / line_height))
@@ -502,7 +502,7 @@ func _ansi_to_bbcode(text: String) -> String:
 			# Check if we have a complete sequence
 			var rest := input.substr(i)
 			# Buffer bare ESC or ESC[ with nothing following (incomplete CSI prefix).
-			# Do NOT buffer OSC (ESC]) or other 2+ char sequences here — let the
+			# Do NOT buffer OSC (ESC]) or other 2+ char sequences here -- let the
 			# specific elif branches handle them.
 			if rest.length() == 1 or (rest[1] == "[" and rest.length() == 2):
 				_partial_escape = rest
@@ -518,7 +518,7 @@ func _ansi_to_bbcode(text: String) -> String:
 						break
 
 				if end_pos == -1:
-					# Incomplete sequence — buffer it
+					# Incomplete sequence -- buffer it
 					_partial_escape = rest
 					break
 
@@ -542,7 +542,7 @@ func _ansi_to_bbcode(text: String) -> String:
 							_current_bold = false
 							call_deferred("_clear_output")
 					"H", "f":
-						# Cursor home / position (1-based params → 0-based grid).
+						# Cursor home / position (1-based params -> 0-based grid).
 						if _in_alternate_screen and _alt_grid != null:
 							var r := 1
 							var c := 1
@@ -554,7 +554,7 @@ func _ansi_to_bbcode(text: String) -> String:
 									c = max(1, int(parts[1]))
 							_alt_grid.set_cursor(r - 1, c - 1)
 						else:
-							# Primary screen — track cursor_row/cursor_col.
+							# Primary screen -- track cursor_row/cursor_col.
 							var r := 1
 							var c := 1
 							if params_str != "":
@@ -614,7 +614,7 @@ func _ansi_to_bbcode(text: String) -> String:
 				continue
 
 			elif rest.length() > 1 and rest[1] == "]":
-				# OSC sequence — find ST (BEL or ESC\) and extract content.
+				# OSC sequence -- find ST (BEL or ESC\) and extract content.
 				var osc_content_end := rest.find("\u0007")
 				var st_len := 1
 				if osc_content_end == -1:
@@ -631,7 +631,7 @@ func _ansi_to_bbcode(text: String) -> String:
 				continue
 
 			else:
-				# Unknown escape type — skip one char
+				# Unknown escape type -- skip one char
 				i += 2
 				continue
 
@@ -1083,7 +1083,7 @@ func apply_padding() -> void:
 	padding_container.add_theme_constant_override("margin_bottom", TerminalSettings.padding.y)
 
 
-## Handle viewport resize — compute cols/rows from pixel size and font_size,
+## Handle viewport resize -- compute cols/rows from pixel size and font_size,
 ## emit SignalBus.terminal_resized, then update TerminalManager.
 func _on_viewport_resize() -> void:
 	if not _is_ready:
@@ -1104,7 +1104,7 @@ func _on_viewport_resize() -> void:
 		_get_manager().resize(cols, rows)
 
 
-## Handle DECSCUSR — set cursor style (CSI Ps SP q).
+## Handle DECSCUSR -- set cursor style (CSI Ps SP q).
 ## The intermediate byte (SP) is absorbed into params_str by the CSI scanner;
 ## strip it before parsing the numeric Ps value.
 func _handle_decscusr(params_str: String) -> void:
@@ -1126,7 +1126,7 @@ func _handle_decscusr(params_str: String) -> void:
 		6:
 			cursor_style = CursorStyle.STEADY_BAR
 		_:
-			# 0 and unknown → default blinking block
+			# 0 and unknown -> default blinking block
 			cursor_style = CursorStyle.BLINKING_BLOCK
 	_update_cursor_overlay()
 
@@ -1170,7 +1170,7 @@ func _setup_cursor_blink() -> void:
 
 
 ## Toggle cursor visibility on each timer tick.
-## Steady cursor styles are unaffected — they remain always visible.
+## Steady cursor styles are unaffected -- they remain always visible.
 ## DEC mode 25 (off) keeps cursor hidden regardless of blink state.
 func _on_blink_timeout() -> void:
 	if not _cursor_dec_visible:
@@ -1216,7 +1216,7 @@ func _stop_blinking() -> void:
 
 ## Returns the current clipboard text.
 ## When _clipboard_override is set (non-empty), returns that value instead of
-## the system clipboard — allows unit tests to bypass headless clipboard limits.
+## the system clipboard -- allows unit tests to bypass headless clipboard limits.
 func _get_clipboard_text() -> String:
 	if not _clipboard_override.is_empty():
 		return _clipboard_override
@@ -1225,7 +1225,7 @@ func _get_clipboard_text() -> String:
 
 ## Send text to the terminal as a paste operation.
 ## When bracketed paste mode is active, wraps text with the DEC markers
-## ESC[200~ … ESC[201~ so the receiving shell can distinguish a paste from
+## ESC[200~ ... ESC[201~ so the receiving shell can distinguish a paste from
 ## manually typed input and suppress premature execution of embedded newlines.
 ## The wrapped payload is sent as a single write_input call.
 func paste_text(text: String) -> void:

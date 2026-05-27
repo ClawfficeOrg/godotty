@@ -7,7 +7,7 @@
 # Ps=3 (blinking underline), Ps=4 (steady underline),
 # Ps=5 (blinking bar), Ps=6 (steady bar).
 #
-# All tests run in mock mode — no GDExtension required.
+# All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TERMINAL_SCENE := preload("res://scenes/terminal.tscn")
@@ -39,48 +39,48 @@ func test_cursor_style_is_blinking_block_by_default() -> void:
 
 
 # ---------------------------------------------------------------------------
-# DECSCUSR — CSI Ps SP q
+# DECSCUSR -- CSI Ps SP q
 # ---------------------------------------------------------------------------
 
 
 func test_csi_q_blinking_block() -> void:
-	# CSI 0 SP q  → default blinking block
+	# CSI 0 SP q  -> default blinking block
 	SignalBus.output_ready.emit("\u001b[0 q")
 	assert_int(_view.cursor_style).is_equal(TerminalView.CursorStyle.BLINKING_BLOCK)
 
 
 func test_csi_q_blinking_block_ps1() -> void:
-	# CSI 1 SP q  → blinking block (alias)
+	# CSI 1 SP q  -> blinking block (alias)
 	SignalBus.output_ready.emit("\u001b[1 q")
 	assert_int(_view.cursor_style).is_equal(TerminalView.CursorStyle.BLINKING_BLOCK)
 
 
 func test_csi_q_steady_block_ps2() -> void:
-	# CSI 2 SP q  → steady block
+	# CSI 2 SP q  -> steady block
 	SignalBus.output_ready.emit("\u001b[2 q")
 	assert_int(_view.cursor_style).is_equal(TerminalView.CursorStyle.STEADY_BLOCK)
 
 
 func test_csi_q_blinking_underline_ps3() -> void:
-	# CSI 3 SP q  → blinking underline
+	# CSI 3 SP q  -> blinking underline
 	SignalBus.output_ready.emit("\u001b[3 q")
 	assert_int(_view.cursor_style).is_equal(TerminalView.CursorStyle.BLINKING_UNDERLINE)
 
 
 func test_csi_q_steady_underline_ps4() -> void:
-	# CSI 4 SP q  → steady underline
+	# CSI 4 SP q  -> steady underline
 	SignalBus.output_ready.emit("\u001b[4 q")
 	assert_int(_view.cursor_style).is_equal(TerminalView.CursorStyle.STEADY_UNDERLINE)
 
 
 func test_csi_q_blinking_bar_ps5() -> void:
-	# CSI 5 SP q  → blinking bar
+	# CSI 5 SP q  -> blinking bar
 	SignalBus.output_ready.emit("\u001b[5 q")
 	assert_int(_view.cursor_style).is_equal(TerminalView.CursorStyle.BLINKING_BAR)
 
 
 func test_csi_q_steady_bar_ps6() -> void:
-	# CSI 6 SP q  → steady bar
+	# CSI 6 SP q  -> steady bar
 	SignalBus.output_ready.emit("\u001b[6 q")
 	assert_int(_view.cursor_style).is_equal(TerminalView.CursorStyle.STEADY_BAR)
 

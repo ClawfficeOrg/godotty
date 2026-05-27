@@ -9,7 +9,7 @@
 ##   - When bracketed mode is off, clipboard text is sent unwrapped.
 ##
 ## Uses _clipboard_override on TerminalView to bypass headless clipboard limits.
-## All tests run in mock mode — no GDExtension required.
+## All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TERMINAL_SCENE := preload("res://scenes/terminal.tscn")
@@ -100,7 +100,7 @@ func test_shift_insert_with_empty_clipboard_sends_nothing() -> void:
 
 
 # ---------------------------------------------------------------------------
-# Bracketed paste mode ON — key bindings wrap the clipboard text
+# Bracketed paste mode ON -- key bindings wrap the clipboard text
 # ---------------------------------------------------------------------------
 
 
@@ -129,7 +129,7 @@ func test_bracketed_paste_wraps_shift_insert_when_mode_on() -> void:
 
 
 # ---------------------------------------------------------------------------
-# Bracketed paste mode OFF — text sent unwrapped
+# Bracketed paste mode OFF -- text sent unwrapped
 # ---------------------------------------------------------------------------
 
 

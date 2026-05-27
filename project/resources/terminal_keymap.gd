@@ -1,4 +1,4 @@
-## TerminalKeymap — maps action names to InputEventKey bindings.
+## TerminalKeymap -- maps action names to InputEventKey bindings.
 ##
 ## A Resource that holds a `bindings` dictionary from action name (String)
 ## to InputEventKey. Call `TerminalKeymap.default()` to get a keymap
@@ -59,26 +59,26 @@ const BUILTIN_ACTIONS: Array[String] = [
 	ACTION_EOF,
 ]
 
-## Action-name → InputEventKey mapping.  Assign directly to rebind.
+## Action-name -> InputEventKey mapping.  Assign directly to rebind.
 @export var bindings: Dictionary = {}
 
 
 ## Returns a new TerminalKeymap populated with all default key bindings.
 ##
 ## Default bindings:
-##   copy          → Ctrl+Shift+C
-##   paste         → Ctrl+Shift+V
-##   clear         → Ctrl+L
-##   search        → Ctrl+Shift+F
-##   scroll_page_up   → Shift+PageUp
-##   scroll_page_down → Shift+PageDown
-##   new_tab       → Ctrl+T
-##   close_tab     → Ctrl+W
-##   next_tab      → Ctrl+Tab
-##   split_right   → Ctrl+Shift+Right
-##   split_down    → Ctrl+Shift+Down
-##   interrupt     → Ctrl+C
-##   eof           → Ctrl+D
+##   copy          -> Ctrl+Shift+C
+##   paste         -> Ctrl+Shift+V
+##   clear         -> Ctrl+L
+##   search        -> Ctrl+Shift+F
+##   scroll_page_up   -> Shift+PageUp
+##   scroll_page_down -> Shift+PageDown
+##   new_tab       -> Ctrl+T
+##   close_tab     -> Ctrl+W
+##   next_tab      -> Ctrl+Tab
+##   split_right   -> Ctrl+Shift+Right
+##   split_down    -> Ctrl+Shift+Down
+##   interrupt     -> Ctrl+C
+##   eof           -> Ctrl+D
 static func default() -> TerminalKeymap:
 	var km := TerminalKeymap.new()
 	km.bindings = {

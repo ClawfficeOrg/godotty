@@ -2,10 +2,10 @@
 #
 # Spec: docs/todo-v1.md (task 1.3.2)
 #
-# Covers: paste_text() wraps payload with ESC[200~…ESC[201~ when
+# Covers: paste_text() wraps payload with ESC[200~...ESC[201~ when
 # _bracketed_paste_mode is true; sends bare text when false.
 #
-# All tests run in mock mode — no GDExtension required.
+# All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TERMINAL_SCENE := preload("res://scenes/terminal.tscn")
@@ -35,7 +35,7 @@ func after_test() -> void:
 
 
 # ---------------------------------------------------------------------------
-# paste_text — bracketed mode ON
+# paste_text -- bracketed mode ON
 # ---------------------------------------------------------------------------
 
 
@@ -67,7 +67,7 @@ func test_paste_end_marker_present_when_mode_on() -> void:
 
 
 # ---------------------------------------------------------------------------
-# paste_text — bracketed mode OFF
+# paste_text -- bracketed mode OFF
 # ---------------------------------------------------------------------------
 
 
@@ -91,7 +91,7 @@ func test_paste_bare_has_no_end_marker_when_mode_off() -> void:
 
 
 # ---------------------------------------------------------------------------
-# paste_text — edge cases
+# paste_text -- edge cases
 # ---------------------------------------------------------------------------
 
 

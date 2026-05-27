@@ -5,7 +5,7 @@
 # Covers: get_cell, get_dimensions, resize.
 # Shell/IO methods live in terminal_manager_methods_test.gd.
 #
-# All tests run in mock mode — no GDExtension required.
+# All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 
@@ -79,7 +79,7 @@ func test_get_dimensions_mock_rows_is_24() -> void:
 
 
 # ---------------------------------------------------------------------------
-# resize  (mock mode is a no-op — must not crash)
+# resize  (mock mode is a no-op -- must not crash)
 # ---------------------------------------------------------------------------
 
 

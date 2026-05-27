@@ -3,17 +3,17 @@
 ## Spec: docs/todo-v3.md (task 3.0.3)
 ##
 ## Covers:
-##   1. test_get_tab_count_empty              — get_tab_count() returns 0 with no tabs.
-##   2. test_get_tab_count_with_tabs          — get_tab_count() returns correct count.
-##   3. test_get_active_shell_id_default      — get_active_shell_id() returns "" initially.
-##   4. test_get_active_shell_id_after_focus  — get_active_shell_id() returns focused tab's id.
-##   5. test_next_tab_cycles_to_second        — next_tab() advances from first to second tab.
-##   6. test_next_tab_wraps_around            — next_tab() wraps from last back to first tab.
-##   7. test_next_tab_single_tab              — next_tab() with one tab stays on same tab.
-##   8. test_next_tab_emits_tab_focused       — next_tab() emits tab_focused with next shell_id.
-##   9. test_next_tab_no_tabs                 — next_tab() is no-op when no tabs exist.
+##   1. test_get_tab_count_empty              -- get_tab_count() returns 0 with no tabs.
+##   2. test_get_tab_count_with_tabs          -- get_tab_count() returns correct count.
+##   3. test_get_active_shell_id_default      -- get_active_shell_id() returns "" initially.
+##   4. test_get_active_shell_id_after_focus  -- get_active_shell_id() returns focused tab's id.
+##   5. test_next_tab_cycles_to_second        -- next_tab() advances from first to second tab.
+##   6. test_next_tab_wraps_around            -- next_tab() wraps from last back to first tab.
+##   7. test_next_tab_single_tab              -- next_tab() with one tab stays on same tab.
+##   8. test_next_tab_emits_tab_focused       -- next_tab() emits tab_focused with next shell_id.
+##   9. test_next_tab_no_tabs                 -- next_tab() is no-op when no tabs exist.
 ##
-## All tests run in mock mode — no GDExtension required.
+## All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TAB_BAR_SCENE := preload("res://scenes/tab_bar.tscn")

@@ -3,7 +3,7 @@
 ## background, the selection persists in TerminalSettings, and that a
 ## freshly instantiated view restores the persisted theme on startup.
 ##
-## All tests run in mock mode — no GDExtension required.
+## All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TERMINAL_SCENE := preload("res://scenes/terminal.tscn")

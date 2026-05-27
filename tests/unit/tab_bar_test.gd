@@ -1,17 +1,17 @@
-## GdUnit4 tests: TerminalTabBar node — add/close tabs, indicator, title (task 3.0.2).
+## GdUnit4 tests: TerminalTabBar node -- add/close tabs, indicator, title (task 3.0.2).
 ##
 ## Spec: docs/todo-v3.md (task 3.0.2)
 ##
 ## Covers:
-##   1. tab_shows_shell_name          — label reflects the provided title.
-##   2. add_button_emits_new_tab      — + button emits new_tab_requested.
-##   3. close_button_emits_tab_close  — close button emits tab_close_requested.
-##   4. indicator_on_output           — notify_output sets indicator on inactive tab.
-##   5. indicator_clears_on_focus     — focus_tab clears the indicator.
-##   6. tab_removed_on_close          — remove_tab removes entry from _tabs.
-##   7. close_signal_disconnected     — disconnect uses same Callable (no leak).
+##   1. tab_shows_shell_name          -- label reflects the provided title.
+##   2. add_button_emits_new_tab      -- + button emits new_tab_requested.
+##   3. close_button_emits_tab_close  -- close button emits tab_close_requested.
+##   4. indicator_on_output           -- notify_output sets indicator on inactive tab.
+##   5. indicator_clears_on_focus     -- focus_tab clears the indicator.
+##   6. tab_removed_on_close          -- remove_tab removes entry from _tabs.
+##   7. close_signal_disconnected     -- disconnect uses same Callable (no leak).
 ##
-## All tests run in mock mode — no GDExtension required.
+## All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TAB_BAR_SCENE := preload("res://scenes/tab_bar.tscn")

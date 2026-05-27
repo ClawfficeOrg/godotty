@@ -6,7 +6,7 @@
 #         swapping current_theme at runtime changes get_effective_palette();
 #         theme change sets _needs_full_rerender flag.
 #
-# All tests run in mock mode — no GDExtension required.
+# All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TERMINAL_SCENE := preload("res://scenes/terminal.tscn")

@@ -5,7 +5,7 @@
 # Tests: cursor initial position, set_cursor, move_cursor, write_at_cursor,
 #        bounds-clamping, column-advance behaviour.
 #
-# TerminalGrid is a RefCounted — no scene tree needed.
+# TerminalGrid is a RefCounted -- no scene tree needed.
 extends GdUnitTestSuite
 
 

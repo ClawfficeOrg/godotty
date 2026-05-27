@@ -9,6 +9,22 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 
 ## [Unreleased]
 
+- **RC cut and multi-model review (task 3.0.5) — Phase 3.0.0 release gate.**
+  - Added `tests/unit/rc_multi_tab_independence_test.gd` (6 tests) — proves three
+    independent `TerminalManagerNode` instances in mock mode have fully isolated
+    shells, output buffers, CWDs, and command histories.
+  - Added `tests/unit/rc_close_middle_tab_test.gd` (7 tests) — proves that closing
+    the middle tab leaves the first and third tabs intact, resets `active_shell_id`,
+    and does not affect the remaining `TerminalManagerNode` instances.
+  - Added `tests/unit/rc_ctrl_tab_cycle_test.gd` (6 tests) — proves `next_tab()`
+    cycles 1→2→3→1, emits `tab_focused` each step, and adapts correctly after the
+    middle tab is removed (cycles 1→3→1).
+  - Added `scripts/cut-rc.sh` — helper that verifies lint + tests, creates the RC
+    branch, and prints the release-gate manual checklist.
+  - Added `.github/skills/review/multi-model-checklist/SKILL.md` — documents the
+    dual-model (Claude + GPT-5) review workflow and RC-specific gate criteria.
+  - Updated `.github/skills/INDEX.md` to list the new `multi-model-checklist` skill.
+
 - **OSC 0/2 tab-title sequences (task 3.0.4).**
   - `TerminalView` now emits `tab_title_changed(title: String)` when an OSC 0 or OSC 2
     sequence (`ESC]0;TITLE BEL` / `ESC]2;TITLE BEL`) is received.

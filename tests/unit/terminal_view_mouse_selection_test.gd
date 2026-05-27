@@ -9,7 +9,7 @@
 ##   - Selection overlay (ColorRect) is created, visible, and has correct rect.
 ##   - Out-of-bounds drag is clamped to grid dimensions.
 ##
-## All tests run in mock mode — no GDExtension required.
+## All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TERMINAL_SCENE := preload("res://scenes/terminal.tscn")
@@ -63,7 +63,7 @@ func _make_mouse_motion(pos: Vector2) -> InputEventMouseMotion:
 # ---------------------------------------------------------------------------
 
 
-## Press at cell (0,0), drag down to cell (0,4) → 5 cells selected.
+## Press at cell (0,0), drag down to cell (0,4) -> 5 cells selected.
 func test_mouse_down_and_drag_selects_five_cells() -> void:
 	var start_px := Vector2(0.0, 0.0)
 	# Cell (col=0, row=4): row 4 * CHAR_H pixels down.
@@ -77,7 +77,7 @@ func test_mouse_down_and_drag_selects_five_cells() -> void:
 	assert_int(_view.selected_cell_count()).is_equal(5)
 
 
-## Press at cell (0,5), drag up to cell (0,0) — reversed drag normalises.
+## Press at cell (0,5), drag up to cell (0,0) -- reversed drag normalises.
 func test_reverse_drag_selection_count_matches_forward() -> void:
 	var start_px := Vector2(0.0, 5.0 * TerminalView.CHAR_H)
 	var end_px := Vector2(0.0, 0.0)
@@ -91,7 +91,7 @@ func test_reverse_drag_selection_count_matches_forward() -> void:
 
 ## Verify _pixel_to_cell maps pixel offsets to correct cells via CHAR_W / CHAR_H.
 func test_pixel_to_cell_conversion_uses_char_metrics() -> void:
-	# col 3, row 2 → pixel (3*CHAR_W, 2*CHAR_H)
+	# col 3, row 2 -> pixel (3*CHAR_W, 2*CHAR_H)
 	var px := Vector2(3.0 * TerminalView.CHAR_W, 2.0 * TerminalView.CHAR_H)
 	_view._gui_input(_make_mouse_press(px))
 
@@ -108,7 +108,7 @@ func test_selection_overlay_exists_and_covers_selected_cells() -> void:
 
 	assert_object(_view._selection_overlay).is_not_null()
 	assert_bool(_view._selection_overlay.visible).is_true()
-	# Overlay should span 3 columns × 1 row.
+	# Overlay should span 3 columns ? 1 row.
 	assert_float(_view._selection_overlay.size.x).is_equal(3.0 * TerminalView.CHAR_W)
 	assert_float(_view._selection_overlay.size.y).is_equal(TerminalView.CHAR_H)
 

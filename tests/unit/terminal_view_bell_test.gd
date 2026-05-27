@@ -8,7 +8,7 @@
 #   - bell_color exported var defaults to Color.WHITE.
 #   - audio_bell enabled does not crash (DisplayServer.beep() is a no-op headless).
 #
-# All tests run in mock mode — no GDExtension required.
+# All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TERMINAL_SCENE := preload("res://scenes/terminal.tscn")
@@ -76,7 +76,7 @@ func test_bell_restores_self_modulate_after_duration() -> void:
 
 
 # ---------------------------------------------------------------------------
-# Audio bell does not crash (smoke test only — DisplayServer.beep() is no-op
+# Audio bell does not crash (smoke test only -- DisplayServer.beep() is no-op
 # in headless CI)
 # ---------------------------------------------------------------------------
 

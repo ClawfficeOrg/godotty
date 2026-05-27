@@ -10,7 +10,7 @@
 #   - Selecting Default sets TerminalSettings.font to null.
 #   - Selecting a named font loads the resource into TerminalSettings.font.
 #
-# All tests run in mock mode — no GDExtension required.
+# All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TERMINAL_SCENE := preload("res://scenes/terminal.tscn")
@@ -44,7 +44,7 @@ func after_test() -> void:
 
 
 # ---------------------------------------------------------------------------
-# SpinBox → TerminalSettings wiring
+# SpinBox -> TerminalSettings wiring
 # ---------------------------------------------------------------------------
 
 
@@ -86,7 +86,7 @@ func test_font_option_includes_jetbrains_mono_nerd() -> void:
 
 
 # ---------------------------------------------------------------------------
-# OptionButton → TerminalSettings wiring
+# OptionButton -> TerminalSettings wiring
 # ---------------------------------------------------------------------------
 
 

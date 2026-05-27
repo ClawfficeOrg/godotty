@@ -6,7 +6,7 @@
 # command_submitted round-trip. This file adds round-trip tests for the four
 # remaining signals and verifies that disconnect prevents further calls.
 #
-# Note: monitor_signals is intentionally avoided — it corrupts autoload
+# Note: monitor_signals is intentionally avoided -- it corrupts autoload
 # singletons in GdUnit4 v6.1.x (see .ralph/learnings/INDEX.md).
 extends GdUnitTestSuite
 

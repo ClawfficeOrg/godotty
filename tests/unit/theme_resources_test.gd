@@ -133,7 +133,7 @@ func test_theme_has_no_unexpected_subresources() -> void:
 	var theme := _load_theme("res://resources/themes/nord.tres")
 	assert_object(theme).is_not_null()
 	# TerminalTheme should have no nested resource properties other than
-	# the script itself — verify by confirming cast succeeds (implies correct type)
+	# the script itself -- verify by confirming cast succeeds (implies correct type)
 	# and all expected properties are present.
 	assert_bool(theme is TerminalTheme).is_true()
 	assert_bool(theme.color_background is Color).is_true()

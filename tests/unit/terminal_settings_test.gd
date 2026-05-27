@@ -49,7 +49,7 @@ func test_default_cursor_blink_rate_is_positive() -> void:
 
 
 # ---------------------------------------------------------------------------
-# Range clamping — font_size
+# Range clamping -- font_size
 # ---------------------------------------------------------------------------
 
 
@@ -78,7 +78,7 @@ func test_font_size_at_max_is_accepted() -> void:
 
 
 # ---------------------------------------------------------------------------
-# Range clamping — line_height_scale
+# Range clamping -- line_height_scale
 # ---------------------------------------------------------------------------
 
 
@@ -115,7 +115,7 @@ func test_line_height_scale_at_max_is_accepted() -> void:
 
 
 # ---------------------------------------------------------------------------
-# Range clamping — cursor_blink_rate
+# Range clamping -- cursor_blink_rate
 # ---------------------------------------------------------------------------
 
 

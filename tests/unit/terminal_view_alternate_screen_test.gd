@@ -6,7 +6,7 @@
 # SignalBus.output_ready; asserts buffer-switch flag and content
 # isolation / restoration semantics.
 #
-# All tests run in mock mode — no GDExtension required.
+# All tests run in mock mode -- no GDExtension required.
 # Note: monitor_signals is NOT used on autoloads (see learnings INDEX).
 extends GdUnitTestSuite
 
@@ -30,7 +30,7 @@ func after_test() -> void:
 
 
 # ---------------------------------------------------------------------------
-# ?1049h / ?1049l — enter/exit with primary buffer save and restore
+# ?1049h / ?1049l -- enter/exit with primary buffer save and restore
 # ---------------------------------------------------------------------------
 
 
@@ -69,7 +69,7 @@ func test_exit_1049_removes_alternate_content() -> void:
 
 
 # ---------------------------------------------------------------------------
-# ?47h / ?47l — enter/exit without save/restore
+# ?47h / ?47l -- enter/exit without save/restore
 # ---------------------------------------------------------------------------
 
 
@@ -88,12 +88,12 @@ func test_exit_47_does_not_restore_primary() -> void:
 	SignalBus.output_ready.emit("primary text\n")
 	SignalBus.output_ready.emit("\u001b[?47h")
 	SignalBus.output_ready.emit("\u001b[?47l")
-	# ?47 has no save/restore — display is empty after exit
+	# ?47 has no save/restore -- display is empty after exit
 	assert_bool(_view.output_display.get_parsed_text().contains("primary text")).is_false()
 
 
 # ---------------------------------------------------------------------------
-# ?1047h / ?1047l — treated like ?47 (no save/restore)
+# ?1047h / ?1047l -- treated like ?47 (no save/restore)
 # ---------------------------------------------------------------------------
 
 
