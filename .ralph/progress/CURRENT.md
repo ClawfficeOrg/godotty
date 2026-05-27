@@ -7,7 +7,22 @@
 
 ## Now doing
 
-Task `2.1.4` — DONE. Font settings panel in demo UI.
+Task `2.2.1` — DONE. Search bar overlay scene and show/hide logic.
+- `project/scenes/search_bar.tscn` — PanelContainer (hidden by default) with HBoxContainer
+  containing QueryEdit (LineEdit), MatchLabel, PrevButton (◀), NextButton (▶).
+- `project/scripts/search_bar.gd` — SearchBar class_name; public: show_search(),
+  hide_search(), set_match_display(); signals: search_submitted, navigate_prev,
+  navigate_next, search_canceled; _input() handles Escape.
+- `project/scenes/terminal.tscn` — SearchBar instanced as child of Terminal Control,
+  anchor top-right, z_index=10; load_steps bumped to 6.
+- `project/scripts/terminal_view.gd` — added search_bar @onready ref, _search_highlight_count
+  var, show_search_bar() method, KEY_F Ctrl+Shift+F handler, _on_search_canceled(), signal
+  connect/disconnect in _ready()/_exit_tree().
+- `tests/unit/search_bar_shortcut_test.gd` — 4 tests; ALL GREEN.
+- `tests/unit/search_bar_escape_test.gd` — 5 tests; ALL GREEN.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
+
 - `project/scenes/terminal.tscn` — added `FontOptionButton` and `FontSizeSpinBox` to TitleBar.
 - `project/scripts/terminal_settings.gd` — added `BUNDLED_FONT_NAMES`, `BUNDLED_FONT_PATHS` consts, `selected_font_name` static var.
 - `project/scripts/terminal_view.gd` — added `_font_option`/`_font_spinbox` onready refs, `_setup_font_panel()`, `_on_font_size_changed()`, `_on_font_family_selected()`, and proper _exit_tree() cleanup.

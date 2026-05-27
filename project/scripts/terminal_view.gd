@@ -135,6 +135,10 @@ var _selecting: bool = false
 ## Selection highlight overlay (created programmatically in _ready).
 var _selection_overlay: ColorRect = null
 
+## Number of active search highlights in the terminal output.
+## Set to 0 when the search bar is dismissed. Readable by tests.
+var _search_highlight_count: int = 0
+
 ## Reference to the output display
 @onready var output_display: RichTextLabel = $VBoxContainer/ScrollContainer/OutputDisplay
 
@@ -149,6 +153,9 @@ var _selection_overlay: ColorRect = null
 
 ## Block cursor overlay — floats above the text layer.
 @onready var cursor_overlay: ColorRect = $VBoxContainer/ScrollContainer/CursorOverlay
+
+## Overlay search bar anchored to the top-right of this control.
+@onready var search_bar: SearchBar = $SearchBar
 @onready var _theme_menu: MenuButton = $VBoxContainer/TitleBar/ThemeMenu
 @onready var _font_option: OptionButton = $VBoxContainer/TitleBar/FontOptionButton
 @onready var _font_spinbox: SpinBox = $VBoxContainer/TitleBar/FontSizeSpinBox
@@ -192,6 +199,10 @@ func _ready() -> void:
 	# Set up right-click context menu
 	_setup_context_menu()
 
+	# Connect search bar dismissed signal
+	if search_bar:
+		search_bar.search_canceled.connect(_on_search_canceled)
+
 
 func _input(event: InputEvent) -> void:
 	if not _is_ready:
@@ -226,6 +237,9 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 			KEY_V when event.ctrl_pressed and event.shift_pressed:
 				paste_text(_get_clipboard_text())
+				get_viewport().set_input_as_handled()
+			KEY_F when event.ctrl_pressed and event.shift_pressed:
+				show_search_bar()
 				get_viewport().set_input_as_handled()
 
 
@@ -370,6 +384,13 @@ func copy_selected_to_clipboard() -> void:
 		return
 	DisplayServer.clipboard_set(text)
 	_last_copied_text = text
+
+
+## Show the search bar overlay and give focus to its query field.
+## Called by the Ctrl+Shift+F shortcut.
+func show_search_bar() -> void:
+	if search_bar:
+		search_bar.show_search()
 
 
 ## Initialize the terminal
@@ -1169,3 +1190,11 @@ func _exit_tree() -> void:
 		_font_option.item_selected.disconnect(_on_font_family_selected)
 	if _font_spinbox and _font_spinbox.value_changed.is_connected(_on_font_size_changed):
 		_font_spinbox.value_changed.disconnect(_on_font_size_changed)
+	if search_bar and search_bar.search_canceled.is_connected(_on_search_canceled):
+		search_bar.search_canceled.disconnect(_on_search_canceled)
+
+
+## Called when the search bar emits search_canceled (Escape or hide_search()).
+## Clears the search highlight count.
+func _on_search_canceled() -> void:
+	_search_highlight_count = 0

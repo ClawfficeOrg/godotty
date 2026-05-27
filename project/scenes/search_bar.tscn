@@ -1,0 +1,30 @@
+[gd_scene load_steps=2 format=3 uid="uid://search_bar_scene_001"]
+
+[ext_resource type="Script" path="res://scripts/search_bar.gd" id="1_search_bar"]
+
+[node name="SearchBar" type="PanelContainer"]
+visible = false
+script = ExtResource("1_search_bar")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="QueryEdit" type="LineEdit" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search..."
+focus_mode = 2
+
+[node name="MatchLabel" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+text = "No results"
+vertical_alignment = 1
+
+[node name="PrevButton" type="Button" parent="HBoxContainer"]
+layout_mode = 2
+text = "\u25c0"
+
+[node name="NextButton" type="Button" parent="HBoxContainer"]
+layout_mode = 2
+text = "\u25b6"

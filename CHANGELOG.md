@@ -10,7 +10,27 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
-- **Font settings panel in demo UI (task 2.1.4).**
+- **Search bar overlay with show/hide logic (task 2.2.1).**
+  - `project/scenes/search_bar.tscn` — `PanelContainer` overlay anchored to
+    the top-right of `TerminalView`, containing a `LineEdit` (query),
+    `Label` (match count), and prev/next `Button`s; hidden by default.
+  - `project/scripts/search_bar.gd` — `SearchBar` class with `show_search()`,
+    `hide_search()`, `set_match_display()` public methods; emits
+    `search_submitted`, `navigate_prev`, `navigate_next`, `search_canceled`
+    signals; handles Escape key to dismiss.
+  - `project/scenes/terminal.tscn` — `SearchBar` added as a floating child of
+    the Terminal control, z_index=10.
+  - `project/scripts/terminal_view.gd` — added `show_search_bar()` public
+    method, Ctrl+Shift+F shortcut in `_input()`, `search_bar` onready ref,
+    and `_search_highlight_count` test accessor; `_on_search_canceled()` resets
+    the highlight count when the overlay is dismissed.
+  - `tests/unit/search_bar_shortcut_test.gd` — 4 tests: hidden by default,
+    `show_search_bar()` shows overlay, Ctrl+Shift+F triggers `_input()` wiring,
+    idempotent show.
+  - `tests/unit/search_bar_escape_test.gd` — 5 tests: `hide_search()` hides
+    overlay, clears query, resets highlight count; Escape key hides; safe on
+    already-hidden bar.
+
   - `project/scenes/terminal.tscn` — `FontOptionButton` (OptionButton) and
     `FontSizeSpinBox` (SpinBox) added to the TitleBar; selecting a font family
     or adjusting the size updates `TerminalSettings` and reflowing the terminal

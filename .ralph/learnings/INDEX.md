@@ -3,7 +3,14 @@
 Append-only log of non-obvious things the agent has learned.
 **Newest at top.** Each entry: date, one-line summary, evidence/links.
 
-## 2026-05-27 — gdlint `class-definitions-order` requires `const` before `static var`
+## 2026-05-27 — gdlint `class-definitions-order` requires public `@onready var` before private `_`-prefixed ones
+
+**Context:** Adding `@onready var search_bar: SearchBar = $SearchBar` after existing private `@onready var _theme_menu`, `_font_option`, `_font_spinbox` in `terminal_view.gd` (task 2.2.1).
+**Learning:** gdlint's `class-definitions-order` rule enforces public declarations before private (underscore-prefixed) declarations within each declaration class (var, onready var, etc.). A public `@onready var` placed after private `@onready var _xxx` triggers "Definition out of order in global scope". Fix: move all public onready vars before the private ones.
+**Evidence:** `project/scripts/terminal_view.gd` — task 2.2.1.
+**Tag:** gdscript · gdlint
+
+
 
 **Context:** Adding `BUNDLED_THEME_NAMES: Array[String]` constant to `TerminalSettings` after existing `static var` declarations (task 2.0.4).
 **Learning:** gdlint's `class-definitions-order` rule requires `const` definitions to appear before `var`/`static var` definitions in class scope. Placing a `const` after any `var` triggers "Definition out of order in global scope". Fix: always declare all `const` blocks first, then `var`/`static var` blocks.
