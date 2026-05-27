@@ -9,6 +9,16 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 
 ## [Unreleased]
 
+- **Fix: Reset `_current_fg` and `_current_bg` state in `_close_all_tags()` to prevent duplicate closing tags.**
+  - `_close_all_tags()` was emitting `[/bgcolor]` and `[/color]` closing tags but not clearing
+    `_current_bg` and `_current_fg`, causing the color state to persist incorrectly.
+  - This led to duplicate `[/bgcolor]` and `[/color]` tags being emitted by subsequent calls to
+    `_close_bg()` or `_close_fg()`, or extra closings from the next `_close_all_tags()` call.
+  - These orphaned closing tags (with no matching opening tag) are parsed by RichTextLabel but
+    rendered as literal plaintext because they don't match any open tag.
+  - Fix sets `_current_bg = ""` and `_current_fg = ""` after appending the closing tags,
+    matching the pattern for `_current_bold` and `_current_underline`.
+
 - **Fix: Reset `_current_bold` flag when closing bold tag to prevent duplicate `[/b]` tags.**
   - `_close_all_tags()` was generating `[/b]` closing tags but not resetting the `_current_bold`
     flag to `false`, causing bold state to persist incorrectly.

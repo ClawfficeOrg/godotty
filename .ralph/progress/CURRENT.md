@@ -7,6 +7,32 @@
 
 ## Now doing
 
+**BBCode visible-tag bug — FIXED** ✅
+
+2026-05-27 — New screenshot from user shows `[/bgcolor]`, `[/color]`, `[/b]` tags still visible
+as plaintext in the Starship prompt. Root cause found:
+
+- `_close_all_tags()` was emitting closing tags `[/bgcolor]` and `[/color]` but **not clearing**
+  `_current_bg` and `_current_fg` state variables.
+- This caused duplicate closing tags to be emitted on subsequent color changes or resets.
+- Orphaned closing tags (with no matching open tags) are parsed by RichTextLabel but rendered
+  as plaintext because they don't balance.
+
+Fix applied in `terminal_view.gd::_close_all_tags()`:
+- Added `_current_bg = ""` after `r += "[/bgcolor]"`
+- Added `_current_fg = ""` after `r += "[/color]"`
+- This matches the pattern for `_current_bold = false` and `_current_underline = false`.
+
+Tests:
+- All 11 bracket-escaping tests still pass.
+- `bash scripts/run_tests.sh` (partial run) showed all other tests passing.
+
+Updated CHANGELOG with fix notes.
+
+**Next:** Wait for user to test with their Starship config and confirm the visible tags are gone.
+
+---
+
 **BBCode bracket escaping fix - COMPLETE** ✅
 
 Waiting for user feedback on remaining issues:

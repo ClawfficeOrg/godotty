@@ -963,8 +963,10 @@ func _close_all_tags() -> String:
 		_current_bold = false
 	if not _current_bg.is_empty():
 		r += "[/bgcolor]"
+		_current_bg = ""
 	if not _current_fg.is_empty():
 		r += "[/color]"
+		_current_fg = ""
 	return r
 
 

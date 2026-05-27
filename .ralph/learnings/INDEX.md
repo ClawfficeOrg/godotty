@@ -3,6 +3,30 @@
 Append-only log of non-obvious things the agent has learned.
 **Newest at top.** Each entry: date, one-line summary, evidence/links.
 
+## 2026-05-27 — `_close_all_tags()` must clear all state vars, not just bold/underline
+
+**Context:** User reported visible BBCode tags (`[/bgcolor]`, `[/color]`, `[/b]`) in Starship prompt.
+
+**Root cause:**
+- `_close_all_tags()` emits `[/bgcolor]` and `[/color]` closing tags, but did **not** reset
+  `_current_bg` and `_current_fg` to empty strings.
+- It correctly reset `_current_bold = false` and `_current_underline = false`.
+- This inconsistency caused duplicate closing tags to be emitted on subsequent color changes
+  or SGR 0 resets.
+- Orphaned closing tags (no matching opening tag) are parsed by RichTextLabel but rendered
+  as plaintext because they don't balance with any open tag.
+
+**Fix:** Set `_current_bg = ""` and `_current_fg = ""` after appending the closing tags.
+
+**Lesson:** When state-tracking functions emit BBCode tags, **always** update the state vars
+in the same block. The pattern must be consistent: emit tag, then clear/update state.
+
+**Evidence:** `project/scripts/terminal_view.gd::_close_all_tags()` lines 956-970 — fixed 2026-05-27.
+
+**Tag:** godot · gdscript · bbcode · ansi · terminal-rendering · starship
+
+---
+
 ## 2026-05-27 — ResourceLoader.load() after spawn_shell() reliably triggers godot-rust cross-thread SIGTRAP
 
 **Context:** Real PTY mode crashing with signal 5 after rebuilding godotty-node against Godot 4.6
