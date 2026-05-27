@@ -13,7 +13,18 @@ Format:
 
 ---
 
-## 2026-05-27 — TerminalManager does not expose shell exit code publicly
+## 2026-05-27 — gdlint `max-public-methods` too low for GdUnit4 test suites
+
+**Context:** Writing `tests/unit/terminal_grid_test.gd` with 42 test_ methods.
+**Learning:** gdlint's default `max-public-methods` is 20. GdUnit4 test suites
+(which must expose every test case as a public `test_*` function) routinely
+exceed this. Add `max-public-methods: 100` (or a suitable large number) to
+`.gdlintrc` for the project. The existing lower limit is fine for production
+code; only test files hit it.
+**Evidence:** `.gdlintrc`, `tests/unit/terminal_grid_test.gd`.
+**Tag:** gdscript · gdunit · ci
+
+
 
 **Context:** Writing `exit_code_test.gd` — need to assert exit code propagation.
 **Learning:** `TerminalManager._on_real_shell_exited(code)` receives the PTY

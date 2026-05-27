@@ -7,10 +7,14 @@
 
 ## Now doing
 
-Task `0.4.3` — DONE. Unit test coverage expanded to ≥80% of autoload public methods.
-- Added 35 new test cases across 3 new test files (terminal_manager_methods_test.gd,
-  terminal_manager_grid_test.gd, signal_bus_methods_test.gd).
-- All 46 unit tests GREEN; lint clean.
+Task `1.0.1` — DONE. `TerminalGrid` 2-D cell backing store implemented.
+- `project/scripts/terminal_grid.gd` — `RefCounted` class with `resize`,
+  `set_cell`, `get_cell`, `clear_region`, `scroll_up`, `to_bbcode_line`.
+- `tests/unit/terminal_grid_test.gd` — 42 tests, ALL GREEN.
+- `.gdlintrc` — `max-public-methods: 100` added for test-suite compatibility.
+- `docs/todo-v1.md` — task 1.0.1 marked `[x]`.
+- `CHANGELOG.md` — entry added under `[Unreleased] / Added`.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → 88/88 GREEN.
 
 ## Done this session (continued)
 

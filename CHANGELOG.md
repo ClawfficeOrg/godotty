@@ -10,6 +10,17 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **`TerminalGrid` 2-D cell backing store (task 1.0.1).**
+  - `project/scripts/terminal_grid.gd` — `RefCounted`-based class with full
+    cell API: `resize(cols, rows)`, `set_cell`, `get_cell`, `clear_region`,
+    `scroll_up`, `to_bbcode_line`. Each cell carries `char`, `fg`, `bg`,
+    `bold`, `italic`, `underline`, `url`. Primary and alternate buffers are
+    separate `TerminalGrid` instances.
+  - `tests/unit/terminal_grid_test.gd` — 42 unit tests (cell round-trips,
+    resize truncate/pad, out-of-bounds guards, clear_region, scroll_up,
+    to_bbcode_line BBCode formatting, independent-instance isolation). All GREEN.
+  - `.gdlintrc` — added `max-public-methods: 100` to accommodate GdUnit4 test
+    suites that necessarily exceed the default cap of 20.
 - **Expanded unit test coverage to ≥80% of autoload methods (task 0.4.3).**
   - `tests/unit/terminal_manager_methods_test.gd` — 15 happy-path tests covering
     `spawn_shell`, `write_input`, `has_output`, `read_output`, and `clear` in mock mode.
