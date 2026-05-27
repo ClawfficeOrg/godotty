@@ -79,7 +79,7 @@ theme.
 
 **Prerequisite:** Phase 1.0.0 (`TerminalGrid` exists).
 
-- [ ] `1.1.1` Cursor rendering in `TerminalView`.
+- [x] `1.1.1` Cursor rendering in `TerminalView`.
   - Complexity: Low-Medium. Suggested model: standard coding model.
   - Owned paths: `project/scripts/terminal_view.gd`,
     `project/scenes/terminal.tscn`.

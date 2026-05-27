@@ -10,6 +10,19 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Cursor rendering in TerminalView (task 1.1.1).**
+  - `project/scripts/terminal_view.gd` — added `cursor_row`/`cursor_col` public
+    vars to track the primary-screen cursor position; `_update_cursor_overlay()`
+    syncs the overlay position whenever the cursor moves (primary or alt screen);
+    CSI H/f now updates primary-screen cursor in addition to the existing
+    alternate-screen `_alt_grid` path.
+  - `project/scenes/terminal.tscn` — added `CursorOverlay` (ColorRect) as a
+    free-positioned child of `VBoxContainer/ScrollContainer`; floats above the
+    text layer (`z_index = 1`); sized 8 × 16 px (CHAR_W × CHAR_H); semi-
+    transparent block style; `mouse_filter = IGNORE`.
+  - `tests/unit/terminal_view_cursor_test.gd` — 3 mock-mode unit tests:
+    overlay visible at startup, cursor at origin on startup, CSI 3;5H moves
+    overlay to col=4 × CHAR_W, row=2 × CHAR_H. All GREEN.
 - **Erase sequences in alternate screen (task 1.0.4).**
   - `project/scripts/terminal_grid.gd` — added `erase_display(mode)` (CSI J,
     modes 0/1/2: cursor-to-end, start-to-cursor, entire display) and

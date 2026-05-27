@@ -7,6 +7,17 @@
 
 ## Now doing
 
+Task `1.1.1` — DONE. Cursor rendering in TerminalView implemented.
+- `project/scripts/terminal_view.gd` — added `cursor_row`/`cursor_col` public
+  vars; `_update_cursor_overlay()` positions the ColorRect; CSI H/f now handles
+  primary-screen cursor tracking (in addition to existing alt-screen path).
+- `project/scenes/terminal.tscn` — added `CursorOverlay` ColorRect (8×16 px,
+  z_index=1, semi-transparent) as free-positioned child of ScrollContainer.
+- `tests/unit/terminal_view_cursor_test.gd` — 3 mock-mode tests, ALL GREEN.
+- `docs/todo-v1.md` — task 1.1.1 marked `[x]`.
+- `CHANGELOG.md` — entry added under `[Unreleased] / Added`.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
 Task `1.0.4` — DONE. Erase sequences in alternate screen implemented.
 - `project/scripts/terminal_grid.gd` — added `erase_display(mode)` and
   `erase_line(mode)` covering all three modes (0/1/2).
