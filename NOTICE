@@ -1,0 +1,40 @@
+NOTICE
+======
+
+This file documents third-party software and assets included in godotty.
+
+-------------------------------------------------------------------------------
+JetBrains Mono Nerd Font
+-------------------------------------------------------------------------------
+
+Files:
+  project/resources/fonts/JetBrainsMonoNerdFont-Regular.ttf
+
+Origin:
+  JetBrains Mono is a free and open-source typeface for developers, created by
+  Philipp Nurullin and Konstantin Bulenkov at JetBrains.
+  https://www.jetbrains.com/lp/mono/
+  https://github.com/JetBrains/JetBrainsMono
+
+  The copy bundled here is the "Nerd Fonts" patched variant (v3.4.0), which
+  adds Powerline symbols, file-type icons, and other developer glyphs.
+  https://nerdfonts.com
+  https://github.com/ryanoasis/nerd-fonts
+
+Copyright:
+  Copyright 2020 The JetBrains Mono Project Authors
+  (https://github.com/JetBrains/JetBrainsMono)
+
+License:
+  SIL Open Font License, Version 1.1
+
+  This Font Software is licensed under the SIL Open Font License,
+  Version 1.1. The full text is available at:
+  https://scripts.sil.org/OFL
+
+  Summary: the font may be used, studied, modified, and redistributed
+  freely, including bundled with software, as long as the font is not
+  sold by itself and the reserved font name is not reused for derivative
+  works.
+
+-------------------------------------------------------------------------------
