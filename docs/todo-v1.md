@@ -90,7 +90,7 @@ theme.
   - Tests: cursor node visible at position (0,0) on startup; moves after
     `CSI 3;5H`.
 
-- [ ] `1.1.2` Cursor style via DECSCUSR (`CSI Ps SP q`).
+- [x] `1.1.2` Cursor style via DECSCUSR (`CSI Ps SP q`).
   - Complexity: Low. Suggested model: standard coding model.
   - Owned paths: `project/scripts/terminal_view.gd`.
   - Work: parse `CSI 0/1/2 SP q` (block, blinking block), `CSI 3/4 SP q`
