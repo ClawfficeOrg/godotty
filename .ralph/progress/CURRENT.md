@@ -7,7 +7,13 @@
 
 ## Now doing
 
-Task `3.0.5` — DONE. RC cut and multi-model review.
+Runtime crash triage (2026-05-27 session):
+- Fixed `_load_and_apply_theme("")` -> `res://resources/themes/.tres` (empty slug path).
+- Added `GODOTTY_FORCE_MOCK=1` env-var escape hatch to `TerminalManager` autoload and
+  `TerminalManagerNode` to bypass a godot-rust ABI mismatch crash (API 4.3 vs runtime 4.6.2).
+- Updated CHANGELOG, learnings INDEX.
+
+Next: rebuild godotty-node against Godot 4.6 headers to restore real PTY mode.
 - Created `tests/unit/rc_multi_tab_independence_test.gd` (6 tests).
 - Created `tests/unit/rc_close_middle_tab_test.gd` (7 tests).
 - Created `tests/unit/rc_ctrl_tab_cycle_test.gd` (6 tests).

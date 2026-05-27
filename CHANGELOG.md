@@ -9,6 +9,23 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 
 ## [Unreleased]
 
+- **Fix: `\x1b[J]` (ED mode 0) in primary mode no longer wipes output one frame after render.**
+  - ZLE (zsh) and readline (bash) emit `CSI J` with no params after every command to clear below
+    the prompt. In Godotty's streaming model there is no fixed viewport, so this should be a no-op.
+  - Previously the code treated mode-0 the same as mode-2, calling `call_deferred("_clear_output")`
+    which ran one frame after the output was appended — causing the classic "flash and disappear".
+  - Fix: only call `_clear_output()` on `\x1b[2J]` (mode 2, explicit full-screen clear from
+    `clear`/Ctrl+L). Modes 0 and 1 are now no-ops in primary streaming mode.
+
+- **Feat: `GODOTTY_FORCE_MOCK=1` env var forces mock terminal regardless of extension presence.**
+  - Useful during development when the dylib is present but you want to test mock-mode UI,
+    or as a fallback if the extension is built against a mismatched Godot API version.
+  - Run as: `GODOTTY_FORCE_MOCK=1 godot .`
+
+- **Fix: `_load_and_apply_theme("")` no longer tries to load `res://resources/themes/.tres`.**
+  - `TerminalSettings.selected_theme_name` starts as `""` on first run; guard added to default
+    to `BUNDLED_THEME_NAMES[0]` ("Default") when the name is empty.
+
 - **RC cut and multi-model review (task 3.0.5) — Phase 3.0.0 release gate.**
   - Added `tests/unit/rc_multi_tab_independence_test.gd` (6 tests) — proves three
     independent `TerminalManagerNode` instances in mock mode have fully isolated

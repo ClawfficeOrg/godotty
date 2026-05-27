@@ -56,6 +56,14 @@ func _ready() -> void:
 
 ## Check if godotty-node GDExtension is available
 func _check_addon_availability() -> void:
+	# GODOTTY_FORCE_MOCK=1 lets you bypass the extension even when the dylib is present.
+	if OS.get_environment("GODOTTY_FORCE_MOCK") == "1":
+		is_addon_available = false
+		is_mock_mode = true
+		print("GODOTTY_FORCE_MOCK=1 set - using mock terminal")
+		SignalBus.addon_status_changed.emit(is_addon_available)
+		return
+
 	# Force mock mode on Windows - portable_pty has DLL initialization issues (0xc0000142)
 	if OS.has_feature("windows"):
 		is_addon_available = false

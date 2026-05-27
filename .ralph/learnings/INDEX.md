@@ -3,6 +3,67 @@
 Append-only log of non-obvious things the agent has learned.
 **Newest at top.** Each entry: date, one-line summary, evidence/links.
 
+## 2026-05-27 — ZLE/readline `\x1b[J` (ED mode 0) in primary mode wipes output one frame after it appears
+
+**Context:** Real PTY mode — typing `ls`, hitting Enter, watching the file list appear for ~1 frame then vanish.
+**Learning:** Zsh's Z Line Editor (and bash readline) emit `\x1b[J` (CSI J with no parameters = Erase
+Display mode 0, "erase from cursor to end of screen") each time they redraw the prompt after a
+command completes. In a real terminal with a fixed viewport this is harmless — it erases blank
+space below the current cursor row. In Godotty's streaming RichTextLabel model there is no fixed
+viewport, so `_ansi_to_bbcode` was incorrectly treating mode-0 the same as mode-2 (`\x1b[2J`)
+and calling `call_deferred("_clear_output")`. The deferred clear runs the frame AFTER the output
+was appended, causing the one-frame flash.
+Fix: only call `_clear_output()` on mode 2 (explicit full-screen clear, i.e. the `clear` command
+or Ctrl+L). Mode 0 and mode 1 are no-ops in primary streaming mode.
+**Evidence:** `project/scripts/terminal_view.gd:_ansi_to_bbcode` `J` case — fixed 2026-05-27.
+**Tag:** godot · gdscript · ansi · pty
+
+## 2026-05-27 — Unicode parsing warnings for U+25C0/U+25B6 come from Starship prompt via PTY, not GDScript files
+
+**Context:** Startup log shows `Unicode parsing error: Invalid unicode codepoint (25c0/25b6)` apparently
+before the "GodottyNode GDExtension detected" line.
+**Learning:** The characters U+25C0 (◀) and U+25B6 (▶) are Starship prompt glyphs. They are not in
+any `.gd` or resource file. The apparent log ordering is a flush/buffering artifact (Godot's stderr
+flushes before GDScript `print()` calls appear). What actually happens: the shell spawns, Starship
+renders its prompt (containing ◀ and ▶) into the PTY, the godotty-node Rust extension receives that
+output and calls `godot_print!()` with the raw bytes, and Godot's print path fails to represent
+those codepoints in a Latin-1 console environment, emitting the "Unicode parsing error" warnings.
+They are non-fatal cosmetic log noise. The fix sits in the godotty-node Rust crate: avoid
+`godot_print!()` on raw PTY output and emit only via the `output_received` GDScript signal.
+**Evidence:** Characters absent from all project `.gd` files; Starship is the active shell prompt.
+**Tag:** godot · godot-rust · gdextension · unicode · pty · starship
+
+## 2026-05-27 — godot-rust extension built against Godot 4.3 API crashes (SIGTRAP) on Godot 4.6.2 runtime — RESOLVED
+
+**Context:** Running Godotty with godotty-node dylib present. The log said
+`Initialize godot-rust (API v4.3.stable.official, runtime v4.6.2.stable.official)` then crashed
+with signal 5 immediately after `spawn_shell()` returned.
+**Learning:** godot-rust uses static binding; mismatching API and runtime versions can compile
+(the extension loads) but produce a SIGTRAP the moment a changed vtable entry is touched.
+GDScript cannot catch a native signal 5 — the process dies. Two mitigations:
+1. Set `GODOTTY_FORCE_MOCK=1` in the environment to bypass the extension entirely (now
+   wired into both `TerminalManager` autoload and `TerminalManagerNode`); use this while waiting
+   for a rebuilt dylib.
+2. Rebuild godotty-node locally with `cargo build` against the Godot 4.6 header set, then
+   replace `project/addons/godotty-node/bin/macos/libgodotty_node.dylib`.
+**Resolution:** Rebuilt godotty-node against Godot 4.6 on 2026-05-27. Real PTY mode stable.
+**Evidence:** crash output `handle_crash: Program crashed with signal 5`;
+`project/autoload/terminal_manager.gd:_check_addon_availability`.
+**Tag:** godot · godot-rust · gdextension · macos
+
+## 2026-05-27 — `_load_and_apply_theme("")` resolves to `res://resources/themes/.tres` (no file)
+
+**Context:** Opening the project; `TerminalSettings.selected_theme_name` starts as `""` (static
+var default). `_initialize_terminal` calls `_load_and_apply_theme("")`, slug becomes `""`, path
+becomes `res://resources/themes/.tres` which does not exist.
+**Learning:** Always guard `_load_and_apply_theme` against empty input — default to
+`BUNDLED_THEME_NAMES[0]` ("Default"). An `if tname.is_empty(): tname = BUNDLED_THEME_NAMES[0]`
+check at the top of the function is sufficient. `ResourceLoader.load` on a bad path logs three
+consecutive ERROR lines and returns null (safe), but the errors pollute the log and confuse
+debugging sessions.
+**Evidence:** `project/scripts/terminal_view.gd:_load_and_apply_theme` — fixed 2026-05-27.
+**Tag:** godot · gdscript · resources
+
 ## 2026-05-27 — OSC sequences (ESC]) are silently dropped by the `bracket_pos == -1` guard in `_ansi_to_bbcode`
 
 **Context:** Implementing task 3.0.4 — OSC 0/2 tab-title sequences.

@@ -529,18 +529,26 @@ func _ansi_to_bbcode(text: String) -> String:
 					"m":
 						output += _handle_sgr(params_str)
 					"J":
-						# Erase display. Alt screen: route to grid. Primary: full clear only.
+						# Erase display.
+						# Alt screen: route to grid.
+						# Primary mode:
+						#   mode 2 (\ x1b[2J) = intentional full clear (Ctrl+L / clear command) -> wipe display.
+						#   mode 0 (\ x1b[J, no params) = erase from cursor to end of screen.
+						#     ZLE/readline emit this when redrawing the prompt after a command. In a
+						#     streaming terminal we have no fixed viewport, so acting on it would
+						#     wipe the just-rendered output. Ignore mode 0 in primary mode.
 						var mode_j := 0
 						if params_str != "":
 							mode_j = int(params_str)
 						if _in_alternate_screen and _alt_grid != null:
 							_alt_grid.erase_display(mode_j)
-						elif mode_j == 2 or params_str == "":
+						elif mode_j == 2:
 							output += "[/color]"  # close any open tags
 							_current_fg = ""
 							_current_bg = ""
 							_current_bold = false
 							call_deferred("_clear_output")
+						# mode 0 (erase to end) and mode 1 (erase to start) are no-ops in primary mode.
 					"H", "f":
 						# Cursor home / position (1-based params -> 0-based grid).
 						if _in_alternate_screen and _alt_grid != null:

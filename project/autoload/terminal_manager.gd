@@ -62,6 +62,16 @@ func _exit_tree() -> void:
 
 ## Check if godotty-node GDExtension is available
 func _check_addon_availability() -> void:
+	# GODOTTY_FORCE_MOCK=1 lets you bypass the extension even when the dylib is present.
+	# Useful when the extension was built against a different Godot API version and
+	# causes a native crash (e.g. godot-rust API 4.3 vs runtime 4.6 -> SIGTRAP).
+	if OS.get_environment("GODOTTY_FORCE_MOCK") == "1":
+		is_addon_available = false
+		is_mock_mode = true
+		print("GODOTTY_FORCE_MOCK=1 set - using mock terminal")
+		SignalBus.addon_status_changed.emit(is_addon_available)
+		return
+
 	# Force mock mode on Windows - portable_pty has DLL initialization issues (0xc0000142)
 	# TODO: Re-enable real terminal on Windows once PTY issue is resolved
 	if OS.has_feature("windows"):
