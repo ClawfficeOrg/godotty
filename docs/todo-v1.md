@@ -24,7 +24,7 @@ and exit without corrupting the scrollback history.
 
 **Prerequisite:** Phase 0.4.0.
 
-- [ ] `1.0.1` `TerminalGrid` backing store.
+- [x] `1.0.1` `TerminalGrid` backing store.
   - Complexity: Medium. Suggested model: flagship model.
   - Owned paths: `project/scripts/terminal_grid.gd`,
     `tests/unit/terminal_grid_test.gd`.
