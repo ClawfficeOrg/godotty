@@ -6,6 +6,9 @@ extends Control
 
 ## Maximum lines to keep in scrollback buffer
 const MAX_LINES: int = 1000
+const PROMPT_SYMBOL: String = "❯"
+const CHAR_W: float = 8.0
+const CHAR_H: float = 16.0
 
 ## Command history for up/down navigation
 var _command_history: Array[String] = []
@@ -37,6 +40,13 @@ var _output_accumulator: String = ""
 ## Saved primary line count for save/restore
 var _primary_line_count_saved: int = 0
 
+## Alternate screen grid for cursor-positioned writing.
+var _alt_grid: TerminalGrid = null
+
+## Tracked terminal dimensions (cols x rows) for alt-screen grid sizing.
+var _terminal_cols: int = 80
+var _terminal_rows: int = 24
+
 ## Reference to the output display
 @onready var output_display: RichTextLabel = $VBoxContainer/ScrollContainer/OutputDisplay
 
@@ -63,7 +73,7 @@ func _ready() -> void:
 
 	# Setup prompt
 	if prompt_label:
-		prompt_label.text = "❯"
+		prompt_label.text = PROMPT_SYMBOL
 
 	# Initialize terminal
 	_initialize_terminal()
@@ -157,7 +167,45 @@ func _ansi_to_bbcode(text: String) -> String:
 							_current_bold = false
 							call_deferred("_clear_output")
 					"H", "f":
-						pass
+						# Cursor home / position (1-based params → 0-based grid).
+						if _in_alternate_screen and _alt_grid != null:
+							var r := 1
+							var c := 1
+							if params_str != "":
+								var parts := params_str.split(";")
+								if parts.size() >= 1 and parts[0] != "":
+									r = max(1, int(parts[0]))
+								if parts.size() >= 2 and parts[1] != "":
+									c = max(1, int(parts[1]))
+							_alt_grid.set_cursor(r - 1, c - 1)
+					"A":
+						# Cursor up.
+						if _in_alternate_screen and _alt_grid != null:
+							var n := 1
+							if params_str != "":
+								n = max(1, int(params_str))
+							_alt_grid.move_cursor(-n, 0)
+					"B":
+						# Cursor down.
+						if _in_alternate_screen and _alt_grid != null:
+							var n := 1
+							if params_str != "":
+								n = max(1, int(params_str))
+							_alt_grid.move_cursor(n, 0)
+					"C":
+						# Cursor right.
+						if _in_alternate_screen and _alt_grid != null:
+							var n := 1
+							if params_str != "":
+								n = max(1, int(params_str))
+							_alt_grid.move_cursor(0, n)
+					"D":
+						# Cursor left.
+						if _in_alternate_screen and _alt_grid != null:
+							var n := 1
+							if params_str != "":
+								n = max(1, int(params_str))
+							_alt_grid.move_cursor(0, -n)
 					"K":
 						pass
 					"h":
@@ -207,6 +255,8 @@ func _ansi_to_bbcode(text: String) -> String:
 			continue
 		else:
 			output += ch.xml_escape()
+			if _in_alternate_screen and _alt_grid != null:
+				_alt_grid.write_at_cursor(_make_cell_from_state(ch))
 			i += 1
 
 	return output
@@ -302,6 +352,25 @@ func _close_fg() -> String:
 		_current_fg = ""
 		return "[/color]"
 	return ""
+
+
+## Build a TerminalGrid cell dictionary from the current SGR rendering state.
+func _make_cell_from_state(ch: String) -> Dictionary:
+	var fg := Color.WHITE
+	if not _current_fg.is_empty():
+		fg = Color.html(_current_fg)
+	var bg := Color.BLACK
+	if not _current_bg.is_empty():
+		bg = Color.html(_current_bg)
+	return {
+		"char": ch,
+		"fg": fg,
+		"bg": bg,
+		"bold": _current_bold,
+		"italic": false,
+		"underline": false,
+		"url": "",
+	}
 
 
 ## Solarized Dark-inspired named color palette (indices 0-15)
@@ -421,6 +490,8 @@ func _enter_alternate_screen(save: bool) -> void:
 	_current_bg = ""
 	_current_bold = false
 	_partial_escape = ""
+	_alt_grid = TerminalGrid.new()
+	_alt_grid.resize(_terminal_cols, _terminal_rows)
 
 
 ## Exit alternate screen buffer.
@@ -430,6 +501,7 @@ func _exit_alternate_screen(restore: bool) -> void:
 	if not _in_alternate_screen:
 		return
 	_in_alternate_screen = false
+	_alt_grid = null
 	if output_display:
 		output_display.clear()
 	_line_count = 0
@@ -517,14 +589,18 @@ func _on_viewport_resize() -> void:
 	if not _is_ready:
 		return
 	# Estimate cols/rows from current size and assumed monospace char dimensions
-	var char_w := 8.0
-	var char_h := 16.0
+	var char_w := CHAR_W
+	var char_h := CHAR_H
 	var size := get_rect().size
 	if size.x > 0 and size.y > 0:
 		var cols := int(size.x / char_w)
 		var rows := int((size.y - 40.0) / char_h)  # subtract input bar height
 		cols = clampi(cols, 20, 220)
 		rows = clampi(rows, 5, 100)
+		_terminal_cols = cols
+		_terminal_rows = rows
+		if _alt_grid != null:
+			_alt_grid.resize(cols, rows)
 		TerminalManager.resize(cols, rows)
 
 
