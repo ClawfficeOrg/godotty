@@ -99,6 +99,7 @@ var _line_count: int = 0
 var _current_fg: String = ""
 var _current_bg: String = ""
 var _current_bold: bool = false
+var _current_underline: bool = false
 var _partial_escape: String = ""
 
 ## Whether the alternate screen is currently active
@@ -678,7 +679,13 @@ func _ansi_to_bbcode(text: String) -> String:
 			i += 1
 			continue
 		else:
-			output += ch.xml_escape()
+			# xml_escape handles &<>" but not [ which Godot treats as a BBCode
+			# tag opener. Escape [ -> [lb] so literal brackets in terminal output
+			# (e.g. Starship prompt segments like [%]) never leak as BBCode tags.
+			if ch == "[":
+				output += "[lb]"
+			else:
+				output += ch.xml_escape()
 			if _in_alternate_screen and _alt_grid != null:
 				_alt_grid.write_at_cursor(_make_cell_from_state(ch))
 			i += 1
@@ -695,6 +702,7 @@ func _handle_sgr(params_str: String) -> String:
 		_current_fg = ""
 		_current_bg = ""
 		_current_bold = false
+		_current_underline = false
 		return result
 
 	var codes := params_str.split(";")
@@ -708,6 +716,7 @@ func _handle_sgr(params_str: String) -> String:
 				_current_fg = ""
 				_current_bg = ""
 				_current_bold = false
+				_current_underline = false
 			1:
 				if not _current_bold:
 					_current_bold = true
@@ -717,7 +726,9 @@ func _handle_sgr(params_str: String) -> String:
 			3:
 				result += "[i]"
 			4:
-				result += "[u]"
+				if not _current_underline:
+					_current_underline = true
+					result += "[u]"
 			22:
 				if _current_bold:
 					_current_bold = false
@@ -725,7 +736,9 @@ func _handle_sgr(params_str: String) -> String:
 			23:
 				result += "[/i]"
 			24:
-				result += "[/u]"
+				if _current_underline:
+					_current_underline = false
+					result += "[/u]"
 			30, 31, 32, 33, 34, 35, 36, 37:
 				result += _close_fg()
 				_current_fg = _indexed_color(code - 30, false)
@@ -764,6 +777,9 @@ func _handle_sgr(params_str: String) -> String:
 
 func _close_all_tags() -> String:
 	var r := ""
+	if _current_underline:
+		r += "[/u]"
+		_current_underline = false
 	if _current_bold:
 		r += "[/b]"
 	if not _current_fg.is_empty():
@@ -865,6 +881,7 @@ func _enforce_scrollback_limit(limit: int) -> void:
 	_current_fg = ""
 	_current_bg = ""
 	_current_bold = false
+	_current_underline = false
 	_partial_escape = ""
 	var bbcode := _ansi_to_bbcode(_raw_accumulator)
 	output_display.append_text(bbcode)
@@ -879,6 +896,7 @@ func _clear_output() -> void:
 		_current_fg = ""
 		_current_bg = ""
 		_current_bold = false
+		_current_underline = false
 		_partial_escape = ""
 		if not _in_alternate_screen:
 			_output_accumulator = ""
@@ -954,6 +972,7 @@ func _enter_alternate_screen(save: bool) -> void:
 	_current_fg = ""
 	_current_bg = ""
 	_current_bold = false
+	_current_underline = false
 	_partial_escape = ""
 	_alt_grid = TerminalGrid.new()
 	_alt_grid.resize(_terminal_cols, _terminal_rows)
@@ -973,6 +992,7 @@ func _exit_alternate_screen(restore: bool) -> void:
 	_current_fg = ""
 	_current_bg = ""
 	_current_bold = false
+	_current_underline = false
 	_partial_escape = ""
 	var saved: String = _primary_bbcode
 	_primary_bbcode = ""
