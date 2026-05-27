@@ -12,11 +12,25 @@ signal shell_started
 ## Emitted when a shell process stops.
 signal shell_stopped
 
+## Emitted when the active color theme changes.
+signal theme_changed(theme: TerminalTheme)
+
 ## Whether godotty-node GDExtension is available
 var is_addon_available: bool = false
 
 ## Whether we're in mock mode
 var is_mock_mode: bool = false
+
+## Active terminal color theme. Assign a new TerminalTheme to change the palette
+## at runtime; emits theme_changed so TerminalView can re-render.
+var current_theme: TerminalTheme:
+	set(value):
+		_current_theme = value if value != null else TerminalTheme.new()
+		theme_changed.emit(_current_theme)
+	get:
+		return _current_theme
+
+var _current_theme: TerminalTheme = null
 
 ## Mock terminal state
 var _mock_output_buffer: Array[String] = []
@@ -30,6 +44,8 @@ var _real_terminal: Node = null
 
 
 func _ready() -> void:
+	if _current_theme == null:
+		_current_theme = TerminalTheme.new()
 	_check_addon_availability()
 	SignalBus.terminal_resized.connect(_on_terminal_resized)
 

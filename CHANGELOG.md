@@ -10,6 +10,22 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Wire TerminalTheme into TerminalView rendering (task 2.0.2).**
+  - `project/autoload/terminal_manager.gd` — added `signal theme_changed(theme)` and
+    `current_theme: TerminalTheme` property (settable at runtime); setter emits
+    `theme_changed`; `_ready()` initialises `_current_theme` to a default TerminalTheme.
+  - `project/scripts/terminal_view.gd` — removed hard-coded Solarized `PALETTE` const
+    from `_indexed_color()`; added `get_effective_palette() -> Array[Color]` public
+    getter that reads from `TerminalManager.current_theme.palette`; `_indexed_color()`
+    delegates to `get_effective_palette()` and converts `Color` → hex via `to_html()`;
+    raw ANSI accumulator (`_raw_accumulator`) enables full re-render on theme swap;
+    `_on_theme_changed()` clears display and re-processes the raw buffer with the new
+    palette; `_needs_full_rerender` flag set for test observability; signal connected
+    in `_ready()` and disconnected in `_exit_tree()`.
+  - `tests/unit/terminal_view_theme_test.gd` — 7 mock-mode tests covering
+    `get_effective_palette()` delegation, theme swap changing the palette, double-swap
+    reflecting the final theme, and `_needs_full_rerender` flag on change.
+
 - **TerminalTheme Resource (task 2.0.1).**
   - `project/resources/terminal_theme.gd` — `Resource` subclass with exported
     `color_background`, `color_foreground`, `color_cursor`, `color_selection_bg`,

@@ -113,6 +113,16 @@ var _context_menu: PopupMenu = null
 ## Set to true each time the context menu popup is requested (readable by tests).
 var _context_menu_popup_requested: bool = false
 
+## Raw ANSI text accumulator for primary screen (used for full theme re-render).
+var _raw_accumulator: String = ""
+
+## Saved raw accumulator when entering alternate screen with save=true (?1049).
+var _primary_raw_saved: String = ""
+
+## Set to true each time a theme change triggers a full re-render.
+## Readable by tests to confirm the re-render was requested.
+var _needs_full_rerender: bool = false
+
 ## Whether a left-button drag selection is currently in progress.
 var _selecting: bool = false
 
@@ -140,6 +150,7 @@ func _ready() -> void:
 	SignalBus.output_ready.connect(_on_output_ready)
 	SignalBus.terminal_cleared.connect(_on_terminal_cleared)
 	SignalBus.shell_status_changed.connect(_on_shell_status_changed)
+	TerminalManager.theme_changed.connect(_on_theme_changed)
 
 	# Setup input field
 	if input_field:
@@ -353,7 +364,9 @@ func _initialize_terminal() -> void:
 	_is_ready = true
 	_in_alternate_screen = false
 	_primary_bbcode = ""
+	_primary_raw_saved = ""
 	_output_accumulator = ""
+	_raw_accumulator = ""
 	_primary_line_count_saved = 0
 	cursor_row = 0
 	cursor_col = 0
@@ -642,28 +655,17 @@ func _make_cell_from_state(ch: String) -> Dictionary:
 	}
 
 
-## Solarized Dark-inspired named color palette (indices 0-15)
+## Returns the 16-entry ANSI color palette from the active TerminalTheme.
+## Used by _indexed_color() to map ANSI color indices to hex strings.
+func get_effective_palette() -> Array[Color]:
+	return TerminalManager.current_theme.palette
+
+
+## Map an ANSI color index (0-15) to a hex color string using the active theme palette.
 func _indexed_color(idx: int, _bright: bool) -> String:
-	const PALETTE := [
-		"#073642",  # 0  black
-		"#dc322f",  # 1  red
-		"#859900",  # 2  green
-		"#b58900",  # 3  yellow
-		"#268bd2",  # 4  blue
-		"#d33682",  # 5  magenta
-		"#2aa198",  # 6  cyan
-		"#eee8d5",  # 7  white
-		"#002b36",  # 8  bright black
-		"#cb4b16",  # 9  bright red (orange)
-		"#586e75",  # 10 bright green
-		"#657b83",  # 11 bright yellow
-		"#839496",  # 12 bright blue
-		"#6c71c4",  # 13 bright magenta (violet)
-		"#93a1a1",  # 14 bright cyan
-		"#fdf6e3",  # 15 bright white
-	]
-	if idx >= 0 and idx < PALETTE.size():
-		return PALETTE[idx]
+	var palette: Array[Color] = get_effective_palette()
+	if idx >= 0 and idx < palette.size():
+		return "#" + palette[idx].to_html(false)
 	return "#aaaaaa"
 
 
@@ -696,6 +698,7 @@ func _append_output(text: String) -> void:
 	output_display.append_text(processed)
 	if not _in_alternate_screen:
 		_output_accumulator += processed
+		_raw_accumulator += text
 	if _line_count > MAX_LINES:
 		_line_count = MAX_LINES
 
@@ -713,6 +716,7 @@ func _clear_output() -> void:
 		_partial_escape = ""
 		if not _in_alternate_screen:
 			_output_accumulator = ""
+			_raw_accumulator = ""
 
 
 ## Scroll to bottom of output
@@ -763,6 +767,7 @@ func _enter_alternate_screen(save: bool) -> void:
 		return
 	if save:
 		_primary_bbcode = _output_accumulator
+		_primary_raw_saved = _raw_accumulator
 		_primary_line_count_saved = _line_count
 	_in_alternate_screen = true
 	if output_display:
@@ -797,8 +802,10 @@ func _exit_alternate_screen(restore: bool) -> void:
 		output_display.append_text(saved)
 		_line_count = _primary_line_count_saved
 		_output_accumulator = saved
+		_raw_accumulator = _primary_raw_saved
 	else:
 		_output_accumulator = ""
+		_raw_accumulator = ""
 	_scroll_to_bottom()
 
 
@@ -855,6 +862,17 @@ func _on_output_ready(text: String) -> void:
 ## Handle terminal clear
 func _on_terminal_cleared() -> void:
 	_clear_output()
+
+
+## Re-render the primary screen with the new palette when the active theme changes.
+func _on_theme_changed(_theme: TerminalTheme) -> void:
+	_needs_full_rerender = true
+	if _in_alternate_screen or not output_display:
+		return
+	var raw := _raw_accumulator
+	_clear_output()
+	if not raw.is_empty():
+		_append_output(raw)
 
 
 ## Handle shell status change
@@ -1037,6 +1055,8 @@ func _exit_tree() -> void:
 		SignalBus.terminal_cleared.disconnect(_on_terminal_cleared)
 	if SignalBus.shell_status_changed.is_connected(_on_shell_status_changed):
 		SignalBus.shell_status_changed.disconnect(_on_shell_status_changed)
+	if TerminalManager.theme_changed.is_connected(_on_theme_changed):
+		TerminalManager.theme_changed.disconnect(_on_theme_changed)
 	if input_field and input_field.text_submitted.is_connected(_on_text_submitted):
 		input_field.text_submitted.disconnect(_on_text_submitted)
 	if (

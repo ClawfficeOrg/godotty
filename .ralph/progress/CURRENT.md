@@ -7,7 +7,17 @@
 
 ## Now doing
 
-Task `2.0.1` — DONE. TerminalTheme Resource definition.
+Task `2.0.2` — IN PROGRESS. Wire TerminalTheme into TerminalView rendering.
+- `project/autoload/terminal_manager.gd` — added `signal theme_changed(theme: TerminalTheme)`,
+  `current_theme: TerminalTheme` property with setter (emits theme_changed),
+  `_current_theme` backing var, initialised in `_ready()`.
+- `project/scripts/terminal_view.gd` — removed hard-coded PALETTE const; added
+  `get_effective_palette()` public getter (reads TerminalManager.current_theme.palette);
+  `_indexed_color()` delegates to `get_effective_palette()`; `_raw_accumulator` tracks
+  raw ANSI for primary screen; `_on_theme_changed()` clears + re-renders with new palette;
+  `_needs_full_rerender` flag for test observability; connected/disconnected in
+  `_ready()`/`_exit_tree()`.
+- `tests/unit/terminal_view_theme_test.gd` — 7 mock-mode tests, targeting GREEN.
 - `project/resources/terminal_theme.gd` — Resource subclass with 5 exported color vars
   + `palette: Array[Color]` (16 entries, validated via setter). `_init()` populates
   default ANSI palette.
