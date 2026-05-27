@@ -8,6 +8,9 @@ function-name: '(_on_)?_?[a-z][a-z0-9]*(_[a-z0-9]+)*'
 class-variable-name: '[a-z_][a-z0-9_]*'
 constant-name: '[A-Z][A-Z0-9_]*'
 
+# Line length — raised to 120 to accommodate long NodePath @onready declarations.
+max-line-length: 120
+
 # Function size
 max-file-lines: 1500
 function-arguments-number: 6
