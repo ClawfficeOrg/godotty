@@ -9,6 +9,40 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 
 ## [Unreleased]
 
+- **Fix: Cross-chunk CR line-rewrite now correctly clears previously committed display content.**
+  - `_append_output` only called `_ansi_to_bbcode` on the current PTY chunk. When a `\r`
+    (line-rewrite) arrived in chunk N+1 but chunk N had already appended partial text to
+    `_output_accumulator` and `output_display`, the old partial text was never removed and
+    the rewritten line was appended after it, producing duplicated text (e.g. `lls` instead
+    of `ls`).
+  - Fix: `_ansi_to_bbcode` now sets `_pending_line_clear` when a standalone CR is processed
+    (guarded by `_in_rerender` to prevent recursion). `_append_output` checks this flag after
+    each chunk: when set, it trims the current (partial) line from `_raw_accumulator`, appends
+    the new raw chunk, then performs a full display rebuild from the updated raw accumulator.
+  - `_enforce_scrollback_limit` now sets `_in_rerender = true` around its `_ansi_to_bbcode`
+    call, preventing stale `_pending_line_clear` flags from being set during scrollback trims.
+  - `_clear_output`, `_enter_alternate_screen`, `_exit_alternate_screen` reset
+    `_pending_line_clear` to prevent carry-over across screen-mode transitions.
+  - Adds 4 cross-chunk regression tests to `terminal_view_cr_line_rewrite_test.gd`:
+    `test_cross_chunk_cr_plain_text`, `test_cross_chunk_cr_erase_then_text`,
+    `test_cross_chunk_cr_preserves_previous_lines`, `test_cross_chunk_cr_with_color_in_second_chunk`.
+
+- **Fix: CR before escape sequence now correctly clears the current line (double leading character bug).**
+  - `_ansi_to_bbcode` was only clearing the current line on `\r` when the next character was
+    printable text. When `\r` was followed by `\033` (an escape sequence), the guard
+    `elif next_ch != "\u001b"` prevented the clear, leaving the old line in the output.
+  - Shells (ZSH/zle, Starship, readline) redraw prompts with `\r\033[K<new-prompt>` or
+    `\r\033[?2004h<new-prompt>` — CR immediately followed by escape sequences — so the old
+    prompt text was never removed and the new prompt was appended after it.
+  - Since both old and new prompts start with the same character (e.g. `~` from the cwd)
+    this appeared as a doubled first character in the terminal display.
+  - Fix: a bare `\r` (not followed by `\n`) now unconditionally clears the current output
+    line regardless of what follows. `\r\n` pairs (standard line endings) are unchanged.
+  - Adds `tests/unit/terminal_view_cr_line_rewrite_test.gd` with 10 regression tests
+    covering CR-before-text, CR-before-escape, CR-at-end-of-chunk, `\r\n` preservation,
+    and multi-line safety.
+
+
 - **Fix: Maintain proper BBCode tag nesting (LIFO) when changing colors to prevent orphaned closing tags.**
   - When changing FG color while a BG color is active, `_close_fg()` now closes tags in LIFO order:
     close bgcolor, close color, reopen bgcolor with same value, then open new color.

@@ -177,7 +177,9 @@ func test_compound_sgr_bgcolor_then_fgcolor_produces_balanced_tags() -> void:
 	# e.g. ESC[48;2;214;93;14;38;2;251;241;199m (set bg orange, fg cream in one seq).
 	# Old one-pass code generated: [color=orange][bgcolor=orange][/color][color=cream]
 	# which has an orphaned [/color] (no matching open between [bgcolor] and it).
-	SignalBus.output_ready.emit(esc + "[38;2;214;93;14m" + esc + "[48;2;214;93;14;38;2;251;241;199mhello" + esc + "[0m")
+	SignalBus.output_ready.emit(
+		esc + "[38;2;214;93;14m" + esc + "[48;2;214;93;14;38;2;251;241;199mhello" + esc + "[0m"
+	)
 	await get_tree().process_frame
 	var bbcode := _view._output_accumulator
 	# Tags must balance.

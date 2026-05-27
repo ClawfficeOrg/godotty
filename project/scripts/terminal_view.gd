@@ -158,6 +158,17 @@ var _primary_raw_saved: String = ""
 ## Readable by tests to confirm the re-render was requested.
 var _needs_full_rerender: bool = false
 
+## True while _ansi_to_bbcode is being called as part of a display re-render
+## (scrollback-limit enforcement, cross-chunk line-rewrite rebuild, etc.).
+## Prevents recursive / re-entrant triggering of the line-clear path.
+var _in_rerender: bool = false
+
+## Set by _ansi_to_bbcode when a standalone CR (line-rewrite) is detected.
+## _append_output checks this flag after each chunk and, when true, clears the
+## current (partial) line from the persistent accumulators before committing
+## the new content -- fixing doubling across PTY-read-chunk boundaries.
+var _pending_line_clear: bool = false
+
 ## Whether a left-button drag selection is currently in progress.
 var _selecting: bool = false
 
@@ -793,26 +804,27 @@ func _ansi_to_bbcode(text: String) -> String:
 				continue
 
 		elif ch == "\r":
-			# Carriage return: move cursor to start of line.
-			# In streaming text mode, if CR is followed by non-newline text, we need
-			# to handle line rewrites (e.g., shell prompt redraws during editing).
-			# Look ahead: if next char is \n, output nothing (\r\n -> \n).
-			# If next char is printable, remove the current line from output.
-			if i + 1 < input.length():
-				var next_ch := input[i + 1]
-				if next_ch == "\n":
-					# \r\n sequence - just skip the \r, emit \n next iteration
-					i += 1
-					continue
-				elif next_ch != "\u001b":  # Not an escape sequence
-					# Shell is rewriting the current line. Remove everything after
-					# the last newline from output (so the rewrite replaces it).
-					var last_newline := output.rfind("\n")
-					if last_newline != -1:
-						output = output.substr(0, last_newline + 1)
-					else:
-						# No newline yet - clear entire output buffer
-						output = ""
+			# Carriage return: move cursor to column 0.
+			# \r\n is a standard line ending — skip the \r, let \n emit the newline.
+			# For any other \r (including \r followed by escape sequences) the shell
+			# is rewriting the current line (ZSH/zle, readline, Starship prompt
+			# redraws all use \r\033[...m<new text>).  Clear the current line from
+			# the output buffer so the replacement text overwrites it rather than
+			# being appended after it.
+			if i + 1 < input.length() and input[i + 1] == "\n":
+				# \r\n — skip the \r; the \n will be emitted on the next iteration.
+				i += 1
+				continue
+			# Standalone CR (or CR at end of chunk): clear the current output line.
+			var last_newline := output.rfind("\n")
+			if last_newline != -1:
+				output = output.substr(0, last_newline + 1)
+			else:
+				output = ""
+			# Flag that the persistent accumulators also need their current line
+			# cleared.  Not set during re-render passes to prevent recursion.
+			if not _in_alternate_screen and not _in_rerender:
+				_pending_line_clear = true
 			i += 1
 			continue
 		elif ch == "\n":
@@ -899,14 +911,20 @@ func _handle_sgr(params_str: String) -> String:
 						new_fg = _xterm256_hex(int(codes[idx + 2]))
 						idx += 2
 					elif idx + 4 < codes.size() and int(codes[idx + 1]) == 2:
-						new_fg = "#%02x%02x%02x" % [int(codes[idx + 2]), int(codes[idx + 3]), int(codes[idx + 4])]
+						new_fg = (
+							"#%02x%02x%02x"
+							% [int(codes[idx + 2]), int(codes[idx + 3]), int(codes[idx + 4])]
+						)
 						idx += 4
 				48:
 					if idx + 2 < codes.size() and int(codes[idx + 1]) == 5:
 						new_bg = _xterm256_hex(int(codes[idx + 2]))
 						idx += 2
 					elif idx + 4 < codes.size() and int(codes[idx + 1]) == 2:
-						new_bg = "#%02x%02x%02x" % [int(codes[idx + 2]), int(codes[idx + 3]), int(codes[idx + 4])]
+						new_bg = (
+							"#%02x%02x%02x"
+							% [int(codes[idx + 2]), int(codes[idx + 3]), int(codes[idx + 4])]
+						)
 						idx += 4
 				100, 101, 102, 103, 104, 105, 106, 107:
 					new_bg = _indexed_color(code - 100 + 8, false)
@@ -1019,6 +1037,36 @@ func _append_output(text: String) -> void:
 		return
 
 	var processed := _ansi_to_bbcode(text)
+
+	# A standalone CR in `text` may span a PTY-read-chunk boundary: the partial
+	# line that was already written to _output_accumulator / output_display in an
+	# earlier chunk must be cleared before appending the rewritten content.
+	if _pending_line_clear and not _in_alternate_screen:
+		_pending_line_clear = false
+		# Trim the current (partial) line from the raw accumulator, keeping only
+		# the text up to and including the last completed newline.
+		var raw_nl := _raw_accumulator.rfind("\n")
+		_raw_accumulator = _raw_accumulator.substr(0, raw_nl + 1)
+		_raw_accumulator += text
+		# Rebuild the display from scratch using the updated raw accumulator.
+		output_display.clear()
+		_current_fg = ""
+		_current_bg = ""
+		_current_bold = false
+		_current_underline = false
+		_partial_escape = ""
+		_in_rerender = true
+		var rebuilt := _ansi_to_bbcode(_raw_accumulator)
+		_in_rerender = false
+		_output_accumulator = rebuilt
+		_line_count = rebuilt.count("\n")
+		output_display.append_text(rebuilt)
+		var limit: int = clampi(TerminalSettings.scrollback_lines, 1, 100000)
+		if _line_count > limit:
+			_enforce_scrollback_limit(limit)
+		_scroll_to_bottom()
+		return
+
 	if processed.is_empty():
 		return
 
@@ -1055,7 +1103,9 @@ func _enforce_scrollback_limit(limit: int) -> void:
 	_current_bold = false
 	_current_underline = false
 	_partial_escape = ""
+	_in_rerender = true
 	var bbcode := _ansi_to_bbcode(_raw_accumulator)
+	_in_rerender = false
 	output_display.append_text(bbcode)
 	_output_accumulator = bbcode
 
@@ -1073,6 +1123,7 @@ func _clear_output() -> void:
 		if not _in_alternate_screen:
 			_output_accumulator = ""
 			_raw_accumulator = ""
+		_pending_line_clear = false
 
 
 ## Scroll to bottom of output
@@ -1138,6 +1189,7 @@ func _enter_alternate_screen(save: bool) -> void:
 		_primary_raw_saved = _raw_accumulator
 		_primary_line_count_saved = _line_count
 	_in_alternate_screen = true
+	_pending_line_clear = false
 	if output_display:
 		output_display.clear()
 	_line_count = 0
@@ -1158,6 +1210,7 @@ func _exit_alternate_screen(restore: bool) -> void:
 		return
 	_in_alternate_screen = false
 	_alt_grid = null
+	_pending_line_clear = false
 	if output_display:
 		output_display.clear()
 	_line_count = 0
