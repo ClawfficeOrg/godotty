@@ -84,7 +84,7 @@ blank boxes.
     `cursor_blink_rate: float`. Validate ranges on `_validate_property`.
   - Tests: default values correct; resource round-trips to `.tres`.
 
-- [ ] `2.1.2` Apply `TerminalSettings` font to `OutputDisplay`.
+- [x] `2.1.2` Apply `TerminalSettings` font to `OutputDisplay`.
   - Complexity: Low. Suggested model: standard coding model.
   - Owned paths: `project/scripts/terminal_view.gd`.
   - Work: on settings change, set `output_display.add_theme_font_override`

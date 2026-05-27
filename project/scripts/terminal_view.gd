@@ -34,6 +34,14 @@ const MENU_LABEL_COPY: String = "Copy"
 const MENU_LABEL_PASTE: String = "Paste"
 const MENU_LABEL_CLEAR: String = "Clear"
 
+## Computed character cell width in pixels (TerminalSettings.font_size × 0.5).
+## Updated by apply_font_settings(). Used for cursor and selection positioning.
+var char_width: float = CHAR_W
+
+## Computed line height in pixels (TerminalSettings.font_size × 1.0).
+## Updated by apply_font_settings(). Used for cursor and selection positioning.
+var line_height: float = CHAR_H
+
 ## Current cursor shape set by DECSCUSR (CSI Ps SP q).
 var cursor_style: CursorStyle = CursorStyle.BLINKING_BLOCK
 
@@ -163,6 +171,8 @@ func _ready() -> void:
 	# Initialize terminal
 	_setup_theme_picker()
 	_initialize_terminal()
+	# Apply font settings after terminal is initialized so output_display is ready
+	apply_font_settings()
 
 	# Handle resize
 	get_tree().get_root().size_changed.connect(_on_viewport_resize)
@@ -239,8 +249,8 @@ func _gui_input(event: InputEvent) -> void:
 ## Convert a local pixel position to a grid cell coordinate (col, row).
 ## Clamped to [0, _terminal_cols-1] × [0, _terminal_rows-1].
 func _pixel_to_cell(pos: Vector2) -> Vector2i:
-	var col := int(floor(pos.x / CHAR_W))
-	var row := int(floor(pos.y / CHAR_H))
+	var col := int(floor(pos.x / char_width))
+	var row := int(floor(pos.y / line_height))
 	col = clampi(col, 0, max(0, _terminal_cols - 1))
 	row = clampi(row, 0, max(0, _terminal_rows - 1))
 	return Vector2i(col, row)
@@ -297,9 +307,9 @@ func _update_selection_overlay() -> void:
 	var max_col: int = max(selection_start.x, selection_end.x)
 	var min_row: int = min(selection_start.y, selection_end.y)
 	var max_row: int = max(selection_start.y, selection_end.y)
-	_selection_overlay.position = Vector2(float(min_col) * CHAR_W, float(min_row) * CHAR_H)
+	_selection_overlay.position = Vector2(float(min_col) * char_width, float(min_row) * line_height)
 	_selection_overlay.size = Vector2(
-		float(max_col - min_col + 1) * CHAR_W, float(max_row - min_row + 1) * CHAR_H
+		float(max_col - min_col + 1) * char_width, float(max_row - min_row + 1) * line_height
 	)
 	_selection_overlay.visible = true
 
@@ -885,6 +895,19 @@ func _on_shell_status_changed(running: bool) -> void:
 		_append_output("\n[color=#b58900]Shell exited. Terminal waiting for restart.[/color]\n")
 
 
+## Apply TerminalSettings font properties to OutputDisplay and recompute
+## char_width / line_height for cursor and selection positioning.
+## Call this whenever TerminalSettings.font_size or font changes.
+func apply_font_settings() -> void:
+	char_width = float(TerminalSettings.font_size) * 0.5
+	line_height = float(TerminalSettings.font_size)
+	if output_display:
+		if TerminalSettings.font != null:
+			output_display.add_theme_font_override("normal_font", TerminalSettings.font)
+		output_display.add_theme_font_size_override("normal_font_size", TerminalSettings.font_size)
+	_update_cursor_overlay()
+
+
 ## Handle viewport resize — compute cols/rows from pixel size and font_size,
 ## emit SignalBus.terminal_resized, then update TerminalManager.
 func _on_viewport_resize() -> void:
@@ -944,16 +967,16 @@ func _update_cursor_overlay() -> void:
 	if _in_alternate_screen and _alt_grid != null:
 		row = _alt_grid.cursor_row
 		col = _alt_grid.cursor_col
-	var base_pos := Vector2(col * CHAR_W, row * CHAR_H)
+	var base_pos := Vector2(col * char_width, row * line_height)
 	match cursor_style:
 		CursorStyle.BLINKING_BLOCK, CursorStyle.STEADY_BLOCK:
-			cursor_overlay.size = Vector2(CHAR_W, CHAR_H)
+			cursor_overlay.size = Vector2(char_width, line_height)
 			cursor_overlay.position = base_pos
 		CursorStyle.BLINKING_UNDERLINE, CursorStyle.STEADY_UNDERLINE:
-			cursor_overlay.size = Vector2(CHAR_W, 2.0)
-			cursor_overlay.position = base_pos + Vector2(0.0, CHAR_H - 2.0)
+			cursor_overlay.size = Vector2(char_width, 2.0)
+			cursor_overlay.position = base_pos + Vector2(0.0, line_height - 2.0)
 		CursorStyle.BLINKING_BAR, CursorStyle.STEADY_BAR:
-			cursor_overlay.size = Vector2(2.0, CHAR_H)
+			cursor_overlay.size = Vector2(2.0, line_height)
 			cursor_overlay.position = base_pos
 
 
