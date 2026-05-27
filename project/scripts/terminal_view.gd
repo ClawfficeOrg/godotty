@@ -746,6 +746,26 @@ func _ansi_to_bbcode(text: String) -> String:
 				continue
 
 		elif ch == "\r":
+			# Carriage return: move cursor to start of line.
+			# In streaming text mode, if CR is followed by non-newline text, we need
+			# to handle line rewrites (e.g., shell prompt redraws during editing).
+			# Look ahead: if next char is \n, output nothing (\r\n -> \n).
+			# If next char is printable, remove the current line from output.
+			if i + 1 < input.length():
+				var next_ch := input[i + 1]
+				if next_ch == "\n":
+					# \r\n sequence - just skip the \r, emit \n next iteration
+					i += 1
+					continue
+				elif next_ch != "\u001b":  # Not an escape sequence
+					# Shell is rewriting the current line. Remove everything after
+					# the last newline from output (so the rewrite replaces it).
+					var last_newline := output.rfind("\n")
+					if last_newline != -1:
+						output = output.substr(0, last_newline + 1)
+					else:
+						# No newline yet - clear entire output buffer
+						output = ""
 			i += 1
 			continue
 		elif ch == "\n":
