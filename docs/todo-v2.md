@@ -74,7 +74,7 @@ blank boxes.
 
 **Prerequisite:** Phase 2.0.0 (`TerminalSettings` Resource pattern established).
 
-- [ ] `2.1.1` `TerminalSettings` Resource.
+- [x] `2.1.1` `TerminalSettings` Resource.
   - Complexity: Low. Suggested model: standard coding model.
   - Owned paths: `project/resources/terminal_settings.gd`,
     `tests/unit/terminal_settings_test.gd`.

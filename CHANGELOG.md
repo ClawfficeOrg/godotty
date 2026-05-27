@@ -10,6 +10,17 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **TerminalSettings Resource (task 2.1.1).**
+  - `project/resources/terminal_settings.gd` — `Resource` subclass with exported
+    properties: `font: FontFile` (null → engine default), `font_size: int` (default 14),
+    `line_height_scale: float` (default 1.2), `theme: TerminalTheme`, and
+    `cursor_blink_rate: float` (default 0.5). Values are silently clamped to
+    declared ranges via property setters; `_validate_property` adds
+    `PROPERTY_HINT_RANGE` metadata for the Inspector.
+  - `tests/unit/terminal_settings_test.gd` — 17 tests covering default values,
+    range clamping (min/max boundaries for all three numeric properties), and
+    `.tres` round-trip via ResourceSaver/ResourceLoader.
+
 - **Theme picker UI (task 2.0.4).**
   - `project/scenes/terminal.tscn` — added `TitleBar` (`HBoxContainer`) with a
     `TitleLabel` and `ThemeMenu` (`MenuButton`) in the terminal title bar.
