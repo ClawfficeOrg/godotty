@@ -21,6 +21,19 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
     to_bbcode_line BBCode formatting, independent-instance isolation). All GREEN.
   - `.gdlintrc` — added `max-public-methods: 100` to accommodate GdUnit4 test
     suites that necessarily exceed the default cap of 20.
+- **Alternate screen buffer support in `TerminalView` (task 1.0.2).**
+  - `project/scripts/terminal_view.gd` — detects `CSI ?1049h/l` (enter/exit
+    with primary buffer save/restore), `CSI ?47h/l` and `CSI ?1047h/l`
+    (enter/exit without save/restore). On enter: saves primary BBCode
+    accumulator and clears display. On exit with restore: restores primary
+    content and scrolls to bottom. Partial escape sequences split across
+    `output_ready` chunks are handled correctly via existing `_partial_escape`
+    buffering. Also fixed pre-existing Godot 3-style `disconnect`/`is_connected`
+    calls in `_exit_tree` and `\x` hex escape sequences to Godot 4.x
+    `\uXXXX` form.
+  - `tests/unit/terminal_view_alternate_screen_test.gd` — 13 mock-mode unit
+    tests covering all three CSI variants, partial-escape splitting, and
+    save/restore semantics. All GREEN.
 - **Expanded unit test coverage to ≥80% of autoload methods (task 0.4.3).**
   - `tests/unit/terminal_manager_methods_test.gd` — 15 happy-path tests covering
     `spawn_shell`, `write_input`, `has_output`, `read_output`, and `clear` in mock mode.

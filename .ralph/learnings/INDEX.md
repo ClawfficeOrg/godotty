@@ -13,6 +13,20 @@ Format:
 
 ---
 
+## 2026-05-27 — `\x` hex escapes in GDScript cause runtime parse error in Godot 4.6.2
+
+**Context:** Writing the first test that loads `terminal_view.gd` (via `preload` of terminal.tscn). The file contained `"\x04"`, `"\x1b"`, `"\x07"`, `"\x08"`, `"\x03"` string literals.
+**Learning:** `gdformat` and `gdlint` accept `\xNN` hex escape syntax, but Godot 4.6.2's runtime parser rejects them with `Parse Error: Invalid escape in string`. The file was never loaded by prior tests (which only touched autoloads), so the bug was latent. Always use the `\uXXXX` four-digit Unicode form (e.g. `"\u001b"` for ESC, `"\u0003"` for Ctrl+C, `"\u0004"` for Ctrl+D, `"\u0007"` for BEL, `"\u0008"` for BS). `char(N)` also works.
+**Evidence:** `project/scripts/terminal_view.gd` — escape fix in task 1.0.2.
+**Tag:** godot · gdscript
+
+## 2026-05-27 — Godot 3-style `disconnect`/`is_connected` causes parse error in Godot 4.x
+
+**Context:** `_exit_tree` in `terminal_view.gd` used `SignalBus.is_connected("output_ready", self, "_on_output_ready")` and `SignalBus.disconnect("output_ready", self, "_on_output_ready")` — the old Godot 3 three-argument signature.
+**Learning:** In Godot 4, `is_connected` and `disconnect` only accept a `Callable` as the second argument (`signal.is_connected(callable)`, `signal.disconnect(callable)`). The three-argument string form is a parse error. GdUnit4's scanner surfaces this as `Parse Error: argument 2 should be "Callable" but is "TerminalView"`. This was also latent because the file was never loaded by prior tests.
+**Evidence:** `project/scripts/terminal_view.gd:_exit_tree` — fixed in task 1.0.2.
+**Tag:** godot · gdscript
+
 ## 2026-05-27 — gdlint `max-public-methods` too low for GdUnit4 test suites
 
 **Context:** Writing `tests/unit/terminal_grid_test.gd` with 42 test_ methods.

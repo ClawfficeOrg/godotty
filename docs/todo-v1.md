@@ -36,7 +36,7 @@ and exit without corrupting the scrollback history.
     Primary buffer and alternate buffer are separate `TerminalGrid` instances.
   - Tests: cell round-trips; resize truncates/pads; scroll_up shifts rows.
 
-- [ ] `1.0.2` Alternate screen enter/exit in `TerminalView`.
+- [x] `1.0.2` Alternate screen enter/exit in `TerminalView`.
   - Complexity: Medium. Suggested model: standard coding model.
   - Owned paths: `project/scripts/terminal_view.gd`.
   - Work: detect `CSI ?1049h` (enter alternate screen) and `CSI ?1049l`

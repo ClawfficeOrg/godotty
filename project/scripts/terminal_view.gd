@@ -25,6 +25,18 @@ var _current_bg: String = ""
 var _current_bold: bool = false
 var _partial_escape: String = ""
 
+## Whether the alternate screen is currently active
+var _in_alternate_screen: bool = false
+
+## Saved primary buffer BBCode for ?1049 save/restore
+var _primary_bbcode: String = ""
+
+## Accumulated primary buffer BBCode (mirrors what has been appended in primary mode)
+var _output_accumulator: String = ""
+
+## Saved primary line count for save/restore
+var _primary_line_count_saved: int = 0
+
 ## Reference to the output display
 @onready var output_display: RichTextLabel = $VBoxContainer/ScrollContainer/OutputDisplay
 
@@ -80,13 +92,17 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 			KEY_D when event.ctrl_pressed:
 				# Send EOF
-				TerminalManager.write_input("\x04")
+				TerminalManager.write_input("\u0004")
 				get_viewport().set_input_as_handled()
 
 
 ## Initialize the terminal
 func _initialize_terminal() -> void:
 	_is_ready = true
+	_in_alternate_screen = false
+	_primary_bbcode = ""
+	_output_accumulator = ""
+	_primary_line_count_saved = 0
 	_clear_output()
 	TerminalManager.spawn_shell()
 
@@ -103,7 +119,7 @@ func _ansi_to_bbcode(text: String) -> String:
 	while i < input.length():
 		var ch := input[i]
 
-		if ch == "\x1b":
+		if ch == "\u001b":
 			# Check if we have a complete sequence
 			var rest := input.substr(i)
 			# If we see an escape at the end of buffer without closing 'm', save for next chunk
@@ -144,6 +160,10 @@ func _ansi_to_bbcode(text: String) -> String:
 						pass
 					"K":
 						pass
+					"h":
+						_handle_private_mode_set(params_str)
+					"l":
+						_handle_private_mode_reset(params_str)
 					_:
 						pass
 
@@ -152,9 +172,9 @@ func _ansi_to_bbcode(text: String) -> String:
 
 			elif rest.length() > 1 and rest[1] == "]":
 				# OSC sequence (title, hyperlink, etc.) — skip to ST (BEL or ESC\)
-				var osc_end := rest.find("\x07")
+				var osc_end := rest.find("\u0007")
 				if osc_end == -1:
-					osc_end = rest.find("\x1b\\")
+					osc_end = rest.find("\u001b\\")
 					if osc_end != -1:
 						osc_end += 2
 				if osc_end == -1:
@@ -175,13 +195,13 @@ func _ansi_to_bbcode(text: String) -> String:
 			output += "\n"
 			i += 1
 			continue
-		elif ch == "\x08":
+		elif ch == "\u0008":
 			# Backspace
 			if output.length() > 0:
 				output = output.substr(0, output.length() - 1)
 			i += 1
 			continue
-		elif ch == "\x07":
+		elif ch == "\u0007":
 			# Bell — ignore
 			i += 1
 			continue
@@ -336,7 +356,8 @@ func _append_output(text: String) -> void:
 	_line_count += new_lines
 
 	output_display.append_text(processed)
-
+	if not _in_alternate_screen:
+		_output_accumulator += processed
 	if _line_count > MAX_LINES:
 		_line_count = MAX_LINES
 
@@ -352,6 +373,8 @@ func _clear_output() -> void:
 		_current_bg = ""
 		_current_bold = false
 		_partial_escape = ""
+		if not _in_alternate_screen:
+			_output_accumulator = ""
 
 
 ## Scroll to bottom of output
@@ -361,6 +384,68 @@ func _scroll_to_bottom() -> void:
 		var scrollbar: VScrollBar = scroll_container.get_v_scroll_bar()
 		if scrollbar:
 			scrollbar.value = scrollbar.max_value
+
+
+## Dispatch CSI private mode set (?-prefixed params with 'h' command).
+func _handle_private_mode_set(params_str: String) -> void:
+	match params_str:
+		"?47", "?1047":
+			_enter_alternate_screen(false)
+		"?1049":
+			_enter_alternate_screen(true)
+
+
+## Dispatch CSI private mode reset (?-prefixed params with 'l' command).
+func _handle_private_mode_reset(params_str: String) -> void:
+	match params_str:
+		"?47", "?1047":
+			_exit_alternate_screen(false)
+		"?1049":
+			_exit_alternate_screen(true)
+
+
+## Enter alternate screen buffer.
+## If save is true (?1049 semantics), primary buffer is saved for later restore.
+## If save is false (?47/?1047 semantics), display is cleared without saving.
+func _enter_alternate_screen(save: bool) -> void:
+	if _in_alternate_screen:
+		return
+	if save:
+		_primary_bbcode = _output_accumulator
+		_primary_line_count_saved = _line_count
+	_in_alternate_screen = true
+	if output_display:
+		output_display.clear()
+	_line_count = 0
+	_current_fg = ""
+	_current_bg = ""
+	_current_bold = false
+	_partial_escape = ""
+
+
+## Exit alternate screen buffer.
+## If restore is true (?1049 semantics), primary buffer content is restored.
+## If restore is false (?47/?1047 semantics), display is cleared without restore.
+func _exit_alternate_screen(restore: bool) -> void:
+	if not _in_alternate_screen:
+		return
+	_in_alternate_screen = false
+	if output_display:
+		output_display.clear()
+	_line_count = 0
+	_current_fg = ""
+	_current_bg = ""
+	_current_bold = false
+	_partial_escape = ""
+	var saved: String = _primary_bbcode
+	_primary_bbcode = ""
+	if restore and not saved.is_empty():
+		output_display.append_text(saved)
+		_line_count = _primary_line_count_saved
+		_output_accumulator = saved
+	else:
+		_output_accumulator = ""
+	_scroll_to_bottom()
 
 
 ## Navigate command history
@@ -380,7 +465,7 @@ func _navigate_history(direction: int) -> void:
 
 ## Handle Ctrl+C interrupt
 func _handle_interrupt() -> void:
-	TerminalManager.write_input("\x03")  # Send real SIGINT via PTY
+	TerminalManager.write_input("\u0003")  # Send real SIGINT via PTY
 	input_field.text = ""
 	_history_index = -1
 
@@ -445,17 +530,17 @@ func _on_viewport_resize() -> void:
 
 func _exit_tree() -> void:
 	# Disconnect signals to avoid leaking callbacks if this node is freed
-	if SignalBus.is_connected("output_ready", self, "_on_output_ready"):
-		SignalBus.disconnect("output_ready", self, "_on_output_ready")
-	if SignalBus.is_connected("terminal_cleared", self, "_on_terminal_cleared"):
-		SignalBus.disconnect("terminal_cleared", self, "_on_terminal_cleared")
-	if SignalBus.is_connected("shell_status_changed", self, "_on_shell_status_changed"):
-		SignalBus.disconnect("shell_status_changed", self, "_on_shell_status_changed")
-	if input_field and input_field.is_connected("text_submitted", self, "_on_text_submitted"):
-		input_field.disconnect("text_submitted", self, "_on_text_submitted")
+	if SignalBus.output_ready.is_connected(_on_output_ready):
+		SignalBus.output_ready.disconnect(_on_output_ready)
+	if SignalBus.terminal_cleared.is_connected(_on_terminal_cleared):
+		SignalBus.terminal_cleared.disconnect(_on_terminal_cleared)
+	if SignalBus.shell_status_changed.is_connected(_on_shell_status_changed):
+		SignalBus.shell_status_changed.disconnect(_on_shell_status_changed)
+	if input_field and input_field.text_submitted.is_connected(_on_text_submitted):
+		input_field.text_submitted.disconnect(_on_text_submitted)
 	if (
 		get_tree()
 		and get_tree().get_root()
-		and get_tree().get_root().is_connected("size_changed", self, "_on_viewport_resize")
+		and get_tree().get_root().size_changed.is_connected(_on_viewport_resize)
 	):
-		get_tree().get_root().disconnect("size_changed", self, "_on_viewport_resize")
+		get_tree().get_root().size_changed.disconnect(_on_viewport_resize)
