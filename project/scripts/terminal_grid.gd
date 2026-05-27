@@ -116,6 +116,40 @@ func move_cursor(delta_row: int, delta_col: int) -> void:
 	set_cursor(cursor_row + delta_row, cursor_col + delta_col)
 
 
+## Erase display cells (CSI J).
+## mode 0: cursor position to end of display.
+## mode 1: beginning of display to cursor position (inclusive).
+## mode 2: entire display.
+## Cursor position is not changed.
+func erase_display(mode: int) -> void:
+	match mode:
+		0:
+			clear_region(cursor_row, cursor_col, 1, _cols - cursor_col)
+			if cursor_row + 1 < _rows:
+				clear_region(cursor_row + 1, 0, _rows - cursor_row - 1, _cols)
+		1:
+			if cursor_row > 0:
+				clear_region(0, 0, cursor_row, _cols)
+			clear_region(cursor_row, 0, 1, cursor_col + 1)
+		2:
+			clear_region(0, 0, _rows, _cols)
+
+
+## Erase line cells (CSI K).
+## mode 0: cursor position to end of current line.
+## mode 1: beginning of current line to cursor position (inclusive).
+## mode 2: entire current line.
+## Cursor position is not changed.
+func erase_line(mode: int) -> void:
+	match mode:
+		0:
+			clear_region(cursor_row, cursor_col, 1, _cols - cursor_col)
+		1:
+			clear_region(cursor_row, 0, 1, cursor_col + 1)
+		2:
+			clear_region(cursor_row, 0, 1, _cols)
+
+
 ## Write a cell at the current cursor position and advance the column by one.
 ## Column does not advance past the last column.
 func write_at_cursor(cell: Dictionary) -> void:

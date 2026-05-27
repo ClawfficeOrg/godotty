@@ -58,7 +58,7 @@ and exit without corrupting the scrollback history.
     characters at the tracked cursor position rather than appending lines.
   - Tests: cursor moves to (3, 5); subsequent character lands at that cell.
 
-- [ ] `1.0.4` Erase sequences in alternate screen.
+- [x] `1.0.4` Erase sequences in alternate screen.
   - Complexity: Low. Suggested model: standard coding model.
   - Owned paths: `project/scripts/terminal_view.gd`,
     `project/scripts/terminal_grid.gd`.
