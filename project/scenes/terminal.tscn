@@ -57,6 +57,16 @@ text = "Terminal"
 layout_mode = 2
 text = "Theme"
 
+[node name="FontOptionButton" type="OptionButton" parent="VBoxContainer/TitleBar"]
+layout_mode = 2
+
+[node name="FontSizeSpinBox" type="SpinBox" parent="VBoxContainer/TitleBar"]
+layout_mode = 2
+min_value = 8.0
+max_value = 72.0
+step = 1.0
+value = 16.0
+
 [node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3

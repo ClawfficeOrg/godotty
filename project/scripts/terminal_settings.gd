@@ -18,6 +18,19 @@ const BUNDLED_THEME_NAMES: Array[String] = [
 	"Catppuccin Mocha",
 ]
 
+## All bundled font display names. The font picker populates its menu from
+## this list. "Default" means no override (engine built-in monospace font).
+const BUNDLED_FONT_NAMES: Array[String] = [
+	"Default",
+	"JetBrains Mono Nerd",
+]
+
+## Maps each bundled font display name to its resource path under
+## resources/fonts/. "Default" is intentionally absent — it means null.
+const BUNDLED_FONT_PATHS: Dictionary = {
+	"JetBrains Mono Nerd": "res://resources/fonts/JetBrainsMonoNerdFont-Regular.ttf",
+}
+
 ## Cursor blink interval in seconds. Governs the Timer in TerminalView.
 ## Default: 0.5 s (two half-second phases per full blink cycle).
 static var cursor_blink_rate: float = 0.5
@@ -35,3 +48,7 @@ static var font_size: int = 16
 ## Name of the last theme the user picked. Empty string means "use default".
 ## Persists across scene reloads because static vars survive within a process.
 static var selected_theme_name: String = ""
+
+## Name of the last font the user picked. "Default" means no override.
+## Persists across scene reloads because static vars survive within a process.
+static var selected_font_name: String = "Default"

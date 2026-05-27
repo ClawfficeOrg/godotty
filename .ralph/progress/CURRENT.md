@@ -7,6 +7,13 @@
 
 ## Now doing
 
+Task `2.1.4` — DONE. Font settings panel in demo UI.
+- `project/scenes/terminal.tscn` — added `FontOptionButton` and `FontSizeSpinBox` to TitleBar.
+- `project/scripts/terminal_settings.gd` — added `BUNDLED_FONT_NAMES`, `BUNDLED_FONT_PATHS` consts, `selected_font_name` static var.
+- `project/scripts/terminal_view.gd` — added `_font_option`/`_font_spinbox` onready refs, `_setup_font_panel()`, `_on_font_size_changed()`, `_on_font_family_selected()`, and proper _exit_tree() cleanup.
+- `tests/unit/terminal_settings_panel_ui_test.gd` — 9 mock-mode tests; ALL GREEN.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
 Task `2.1.3` — DONE. Bundle JetBrains Mono Nerd Font for demo use.
 - `project/resources/fonts/JetBrainsMonoNerdFont-Regular.ttf` — Nerd Fonts v3.4.0 patched
   JetBrains Mono Regular (OFL); enables Powerline / file-type icon rendering out of the box.

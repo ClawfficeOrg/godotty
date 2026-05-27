@@ -10,6 +10,20 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Font settings panel in demo UI (task 2.1.4).**
+  - `project/scenes/terminal.tscn` — `FontOptionButton` (OptionButton) and
+    `FontSizeSpinBox` (SpinBox) added to the TitleBar; selecting a font family
+    or adjusting the size updates `TerminalSettings` and reflowing the terminal
+    output immediately.
+  - `project/scripts/terminal_settings.gd` — added `BUNDLED_FONT_NAMES`,
+    `BUNDLED_FONT_PATHS` constants and `selected_font_name` static var for
+    runtime persistence.
+  - `project/scripts/terminal_view.gd` — added `_setup_font_panel()`,
+    `_on_font_size_changed()`, and `_on_font_family_selected()` handlers with
+    proper signal connect/disconnect lifecycle.
+  - `tests/unit/terminal_settings_panel_ui_test.gd` — 9 mock-mode tests
+    covering SpinBox→font_size update, OutputDisplay reflow, OptionButton
+    population, and font resource loading.
 - **Bundle JetBrains Mono Nerd Font for demo use (task 2.1.3).**
   - `project/resources/fonts/JetBrainsMonoNerdFont-Regular.ttf` — Nerd Fonts v3.4.0
     patched JetBrains Mono (Regular), OFL-licensed; ships so Powerline / file-type
