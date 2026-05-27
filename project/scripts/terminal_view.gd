@@ -215,6 +215,7 @@ func _ready() -> void:
 	SignalBus.output_ready.connect(_on_output_ready)
 	SignalBus.terminal_cleared.connect(_on_terminal_cleared)
 	SignalBus.shell_status_changed.connect(_on_shell_status_changed)
+	SignalBus.addon_status_changed.connect(_on_addon_status_changed)
 	_get_manager().theme_changed.connect(_on_theme_changed)
 
 	# Setup input field
@@ -1254,6 +1255,14 @@ func _on_shell_status_changed(running: bool) -> void:
 		_append_output("\n[color=#b58900]Shell exited. Terminal waiting for restart.[/color]\n")
 
 
+## Update input bar visibility when addon availability is confirmed.
+## Guards against a race where _initialize_terminal ran before the autoload
+## finished _check_addon_availability and is_mock_mode was still the default.
+func _on_addon_status_changed(_available: bool) -> void:
+	if _input_bar:
+		_input_bar.visible = _get_manager().is_mock_mode
+
+
 ## Apply TerminalSettings font properties to OutputDisplay and recompute
 ## char_width / line_height for cursor and selection positioning.
 ## Call this whenever TerminalSettings.font_size or font changes.
@@ -1567,6 +1576,8 @@ func _exit_tree() -> void:
 		SignalBus.terminal_cleared.disconnect(_on_terminal_cleared)
 	if SignalBus.shell_status_changed.is_connected(_on_shell_status_changed):
 		SignalBus.shell_status_changed.disconnect(_on_shell_status_changed)
+	if SignalBus.addon_status_changed.is_connected(_on_addon_status_changed):
+		SignalBus.addon_status_changed.disconnect(_on_addon_status_changed)
 	var mgr := _get_manager()
 	if mgr.theme_changed.is_connected(_on_theme_changed):
 		mgr.theme_changed.disconnect(_on_theme_changed)
