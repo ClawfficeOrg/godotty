@@ -42,7 +42,7 @@ at runtime.
     triggers a full re-render of the visible viewport.
   - Tests: swap theme at runtime; rendered colors change.
 
-- [ ] `2.0.3` Bundle built-in themes.
+- [x] `2.0.3` Bundle built-in themes.
   - Complexity: Low. Suggested model: standard coding model.
   - Owned paths: `project/resources/themes/`.
   - Work: create `.tres` files for: **Solarized Dark** (current palette,

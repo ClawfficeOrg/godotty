@@ -10,6 +10,18 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Bundle built-in color themes (task 2.0.3).**
+  - `project/resources/themes/solarized_dark.tres` — Solarized Dark palette (16-color ANSI).
+  - `project/resources/themes/solarized_light.tres` — Solarized Light palette.
+  - `project/resources/themes/dracula.tres` — Dracula palette.
+  - `project/resources/themes/tokyo_night.tres` — Tokyo Night palette.
+  - `project/resources/themes/gruvbox_dark.tres` — Gruvbox Dark palette.
+  - `project/resources/themes/catppuccin_mocha.tres` — Catppuccin Mocha palette.
+  - `project/resources/themes/nord.tres` — Nord palette.
+  - `project/resources/themes/one_dark.tres` — One Dark palette.
+  - `tests/unit/theme_resources_test.gd` — 12 tests: load sanity, 16-entry palette
+    count per theme, color type and range checks, self-contained resource shape.
+
 - **Wire TerminalTheme into TerminalView rendering (task 2.0.2).**
   - `project/autoload/terminal_manager.gd` — added `signal theme_changed(theme)` and
     `current_theme: TerminalTheme` property (settable at runtime); setter emits

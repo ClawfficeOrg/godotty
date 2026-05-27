@@ -7,7 +7,17 @@
 
 ## Now doing
 
-Task `2.0.2` — IN PROGRESS. Wire TerminalTheme into TerminalView rendering.
+Task `2.0.3` — DONE. Bundle built-in color themes.
+- Created 8 `.tres` files under `project/resources/themes/`:
+  `solarized_dark`, `solarized_light`, `dracula`, `tokyo_night`,
+  `gruvbox_dark`, `catppuccin_mocha`, `nord`, `one_dark`.
+- Each is a self-contained `TerminalTheme` resource with 16-entry ANSI palette.
+- `tests/unit/theme_resources_test.gd` — 12 tests: load sanity, palette count,
+  color type/range, self-contained shape. ALL GREEN.
+- `CHANGELOG.md` updated under [Unreleased].
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
+Task `2.0.2` — DONE. Wire TerminalTheme into TerminalView rendering.
 - `project/autoload/terminal_manager.gd` — added `signal theme_changed(theme: TerminalTheme)`,
   `current_theme: TerminalTheme` property with setter (emits theme_changed),
   `_current_theme` backing var, initialised in `_ready()`.
