@@ -7,6 +7,13 @@
 
 ## Now doing
 
+Task `2.3.1` — DONE. TerminalKeymap resource.
+- `project/resources/terminal_keymap.gd` — Resource with `bindings: Dictionary`;
+  12 built-in action constants + `BUILTIN_ACTIONS`; static `default()` factory;
+  `find_action(event)` resolver; `_make_key` / `_keys_match` helpers.
+- `tests/unit/terminal_keymap_test.gd` — 7 tests; ALL GREEN.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
 Task `2.2.3` — DONE. Navigate matches.
 - `project/scripts/search_bar.gd` — _input() intercepts Enter/Shift+Enter to
   emit navigate_next/navigate_prev (consumed so LineEdit text_submitted is skipped).
