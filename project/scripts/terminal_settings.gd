@@ -67,3 +67,8 @@ static var padding: Vector2i = Vector2i(4, 4)
 ## Whether to emit an audio beep (via DisplayServer.beep()) on BEL (\u0007).
 ## Disabled by default; the visual flash is always shown.
 static var audio_bell: bool = false
+
+## Maximum number of lines to retain in the primary scrollback buffer.
+## When the terminal exceeds this limit, oldest lines are discarded at write time.
+## Range: 1 to 100_000. Default: 1000.
+static var scrollback_lines: int = 1000

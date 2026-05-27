@@ -10,6 +10,13 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Scrollback buffer size setting (task 2.4.4).**
+  - `TerminalSettings.scrollback_lines: int` (default `1000`, max `100_000`) — configures
+    how many lines the primary-screen scrollback buffer retains.
+  - `TerminalView._enforce_scrollback_limit()` — trims oldest lines from `_raw_accumulator`
+    and re-renders `output_display` when `_line_count` exceeds the limit. Enforced at write
+    time; the effective limit is `clampi(TerminalSettings.scrollback_lines, 1, 100_000)`.
+  - Replaced the hard-coded `MAX_LINES = 1000` constant with the live settings value.
 - **Visual bell (task 2.4.3).**
   - `TerminalView.bell_color: Color` (exported, default `Color.WHITE`) — the flash
     colour applied to `self_modulate` when a BEL (`\u0007`) character is received.

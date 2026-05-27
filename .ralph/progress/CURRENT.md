@@ -7,7 +7,13 @@
 
 ## Now doing
 
-Task `2.4.2` — DONE. Configurable padding.
+Task `2.4.4` — DONE. Scrollback buffer size setting.
+- `project/scripts/terminal_settings.gd` — added `static var scrollback_lines: int = 1000`.
+- `project/scripts/terminal_view.gd` — removed `MAX_LINES` const; replaced hard-coded limit with
+  `clampi(TerminalSettings.scrollback_lines, 1, 100000)`; added `_enforce_scrollback_limit()` which
+  trims `_raw_accumulator` by scanning newlines and re-renders `output_display` from the trimmed content.
+- `tests/unit/terminal_view_scrollback_test.gd` — new GdUnit4 suite: 4 test cases covering default
+  value, line count limit, last-line content, and _line_count invariant.
 - `project/scripts/terminal_settings.gd` — added `static var padding: Vector2i = Vector2i(4, 4)`.
 - `project/scenes/terminal.tscn` — added `PaddingContainer` (MarginContainer) wrapping VBoxContainer.
 - `project/scripts/terminal_view.gd` — updated @onready paths, added `padding_container` public var,
