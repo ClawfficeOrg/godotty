@@ -3,6 +3,16 @@
 ## Handles user input and command submission
 class_name TerminalView
 extends Control
+
+## Emitted when the user triggers the new_tab keymap action.
+signal tab_new_requested
+
+## Emitted when the user triggers the close_tab keymap action.
+signal tab_close_requested
+
+## Emitted when the user triggers the next_tab keymap action.
+signal tab_next_requested
+
 ## DECSCUSR cursor style values (CSI Ps SP q).
 ## Ps=0/1 → blinking block (default), Ps=2 → steady block,
 ## Ps=3 → blinking underline, Ps=4 → steady underline,
@@ -294,6 +304,12 @@ func _execute_action(action: String) -> void:
 		TerminalKeymap.ACTION_SCROLL_PAGE_DOWN:
 			if scroll_container:
 				scroll_container.scroll_vertical += int(scroll_container.size.y)
+		TerminalKeymap.ACTION_NEW_TAB:
+			tab_new_requested.emit()
+		TerminalKeymap.ACTION_CLOSE_TAB:
+			tab_close_requested.emit()
+		TerminalKeymap.ACTION_NEXT_TAB:
+			tab_next_requested.emit()
 
 
 ## Handle GUI mouse events for click-drag text selection and right-click context menu.

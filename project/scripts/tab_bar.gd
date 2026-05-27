@@ -28,6 +28,9 @@ const DEFAULT_TITLE: String = "Shell"
 ## Map from shell_id (String) to TerminalTabButton.
 var _tabs: Dictionary = {}
 
+## Insertion-ordered list of shell_ids (used for cycling with next_tab).
+var _tab_order: Array[String] = []
+
 ## shell_id of the tab that currently has focus.
 var _active_shell_id: String = ""
 
@@ -60,6 +63,7 @@ func add_tab(shell_id: String, title: String = DEFAULT_TITLE) -> void:
 	btn.close_requested.connect(_on_tab_close_requested)
 	btn.focused.connect(_on_tab_focused)
 	_tabs[shell_id] = btn
+	_tab_order.append(shell_id)
 
 
 ## Remove the tab for shell_id and free its node.  No-op if absent.
@@ -69,9 +73,30 @@ func remove_tab(shell_id: String) -> void:
 	var btn: TerminalTabButton = _tabs[shell_id] as TerminalTabButton
 	_disconnect_tab(btn)
 	_tabs.erase(shell_id)
+	_tab_order.erase(shell_id)
 	btn.queue_free()
 	if _active_shell_id == shell_id:
 		_active_shell_id = ""
+
+
+## Returns the number of open tabs.
+func get_tab_count() -> int:
+	return _tab_order.size()
+
+
+## Returns the shell_id of the currently active tab, or "" if none is focused.
+func get_active_shell_id() -> String:
+	return _active_shell_id
+
+
+## Cycle focus to the tab after the currently active one (wraps around).
+## Emits tab_focused. No-op when there are no tabs.
+func next_tab() -> void:
+	if _tab_order.is_empty():
+		return
+	var idx: int = _tab_order.find(_active_shell_id)
+	var next_idx: int = (idx + 1) % _tab_order.size()
+	focus_tab(_tab_order[next_idx])
 
 
 ## Update the displayed title for an existing tab.

@@ -7,6 +7,15 @@
 
 ## Now doing
 
+Task `3.0.3` — DONE. Ctrl+T / Ctrl+W / Ctrl+Tab tab management keybindings.
+- `TerminalKeymap`: added `ACTION_NEXT_TAB = "next_tab"` (Ctrl+Tab default); changed `new_tab` default Ctrl+Shift+T → Ctrl+T; changed `close_tab` default Ctrl+Shift+W → Ctrl+W.
+- `TerminalTabBar`: added `_tab_order: Array[String]`, `next_tab()`, `get_tab_count()`, `get_active_shell_id()`.
+- `TerminalView`: added signals `tab_new_requested`, `tab_close_requested`, `tab_next_requested`; `_execute_action` handles the three new tab actions.
+- Created `tests/unit/terminal_keybindings_test.gd` (8 tests).
+- Created `tests/unit/terminal_tab_management_test.gd` (9 tests).
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
+
 Task `3.0.2` — DONE. TabBar with add/close buttons and output indicators.
 - Created `project/scripts/tab_button.gd` (`class_name TerminalTabButton`) — per-tab Control
   with title label, output-indicator ColorRect, and close Button; all children built in _ready().

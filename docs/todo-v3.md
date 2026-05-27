@@ -43,7 +43,7 @@ Planned scope:
     or process argv), a close button, and an indicator dot when output
     has arrived since last focus.
 
-- [ ] `3.0.3` Ctrl+T / Ctrl+W / Ctrl+Tab keybindings for tab management.
+- [x] `3.0.3` Ctrl+T / Ctrl+W / Ctrl+Tab keybindings for tab management.
   - Integrated with `TerminalKeymap` (Phase 2.3.0).
 
 - [ ] `3.0.4` Tab title updates from OSC 0/2 (window title sequences).

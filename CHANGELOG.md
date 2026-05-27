@@ -9,6 +9,15 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 
 ## [Unreleased]
 
+- **Ctrl+T / Ctrl+W / Ctrl+Tab tab management keybindings (task 3.0.3).**
+  - Added `TerminalKeymap.ACTION_NEXT_TAB` constant (`"next_tab"`) with default binding Ctrl+Tab.
+  - Changed default `new_tab` binding from Ctrl+Shift+T to Ctrl+T; `close_tab` from Ctrl+Shift+W to Ctrl+W.
+  - `TerminalView` now emits `tab_new_requested`, `tab_close_requested`, `tab_next_requested` signals
+    when the corresponding keymap actions fire (fully remappable via `TerminalKeymap`).
+  - `TerminalTabBar` gains `next_tab()`, `get_tab_count()`, `get_active_shell_id()`, and tracks
+    insertion-ordered tab list in `_tab_order` for deterministic cycling.
+  - Added `tests/unit/terminal_keybindings_test.gd` (8 tests) and
+    `tests/unit/terminal_tab_management_test.gd` (9 tests).
 - **TabBar with add/close buttons and output indicators (task 3.0.2).**
   - Added `TerminalTabButton` (`project/scripts/tab_button.gd`) — reusable per-tab Control
     with title label, output-indicator dot, and close button; created programmatically.
