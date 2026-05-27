@@ -10,6 +10,19 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Pinned godotty-node ref as one-line-bump workflow env var (spec 0003, task 0.3.3).**
+  - `GODOTTY_NODE_REF` is now a workflow-level env var in
+    `.github/workflows/nightly-real.yml`; bumping the pin is a single
+    quoted-string change in that block.
+  - `scripts/bump_godotty_node_ref.sh` — helper that edits both the workflow
+    and `scripts/install_godotty_node.sh`, prints a diff, and gives copy-
+    paste commit instructions.
+  - `tests/ci/workflow_contains_ref_test.sh` — 10 static assertions: env var
+    declared, value safe, install script references it, log step present,
+    dispatch override present, refs match across files, bump script exists.
+  - `tests/ci/workflow-syntax-test.sh` — validates workflow YAML parses
+    cleanly (yamllint or python3 fallback).
+  - `scripts/README.md` — table of all scripts and step-by-step bump procedure.
 - **Real-mode integration test suite skeleton (spec 0003, task 0.3.2).**
   - `tests/integration/real/__init__.gd` (`RealIntegrationBase`) — shared base
     class providing `run_and_await()`, `_require_real_mode()`, and async
