@@ -29,11 +29,19 @@ var cursor_row: int = 0
 ## Current cursor column (0-based). Updated by set_cursor, move_cursor, and resize.
 var cursor_col: int = 0
 
+## Rows scrolled up from the bottom (0 = viewing most recent content).
+## Reset to 0 on every resize so the newest line remains visible.
+var scrollback_offset: int = 0
+
 var _cols: int = 0
 var _rows: int = 0
 
 ## Row-major 2-D array: _cells[row][col] → Dictionary
 var _cells: Array = []
+
+## Parallel bool array: _wrapped[r] is true when row r is a soft-wrapped
+## continuation of row r-1 (i.e., the logical line overflowed into row r).
+var _wrapped: Array = []
 
 
 ## Return a fresh default cell dictionary.
@@ -41,25 +49,97 @@ func _blank_cell() -> Dictionary:
 	return DEFAULT_CELL.duplicate()
 
 
-## Resize the grid to (cols × rows).
-## Existing content is preserved where it fits; new cells are blank.
-## Excess rows/columns are truncated.
+## Return true when cell matches the default blank template exactly.
+func _is_blank_cell(cell: Dictionary) -> bool:
+	return (
+		cell["char"] == " "
+		and cell["fg"] == Color.WHITE
+		and cell["bg"] == Color.BLACK
+		and not cell["bold"]
+		and not cell["italic"]
+		and not cell["underline"]
+		and cell["url"] == ""
+	)
+
+
+## Resize the grid to (cols × rows) with line reflow.
+##
+## Existing logical lines (sequences of consecutive rows where each
+## continuation row has _wrapped=true) are re-wrapped at the new col width.
+## Rows shorter than cols gain blank cells; long logical lines are split
+## across multiple physical rows.  If the total physical rows exceed `rows`,
+## the oldest rows are discarded.  scrollback_offset is reset to 0 so the
+## most recent content remains visible.
 func resize(cols: int, rows: int) -> void:
-	var new_cells: Array = []
-	for r in range(rows):
-		var row: Array = []
-		for c in range(cols):
-			if r < _rows and c < _cols:
-				row.append(_cells[r][c])
+	if cols <= 0 or rows <= 0:
+		_cols = cols
+		_rows = rows
+		_cells = []
+		_wrapped = []
+		return
+
+	# Step 1: Extract logical lines from current content.
+	var logical_lines: Array = []
+	if _rows > 0:
+		var current_line: Array = []
+		for r in range(_rows):
+			if r > 0 and _wrapped.size() > r and _wrapped[r]:
+				current_line.append_array(_cells[r])
 			else:
-				row.append(_blank_cell())
-		new_cells.append(row)
+				if not current_line.is_empty():
+					logical_lines.append(current_line)
+				current_line = _cells[r].duplicate()
+		if not current_line.is_empty():
+			logical_lines.append(current_line)
+
+	# Step 2: Re-wrap each logical line at the new col width.
+	var new_cells: Array = []
+	var new_wrapped: Array = []
+	for logical_line in logical_lines:
+		# Strip trailing blank cells so pure-blank rows stay single-row.
+		var trimmed: Array = logical_line.duplicate()
+		while not trimmed.is_empty() and _is_blank_cell(trimmed.back()):
+			trimmed.remove_at(trimmed.size() - 1)
+
+		if trimmed.is_empty():
+			var blank_row: Array = []
+			for _c in range(cols):
+				blank_row.append(_blank_cell())
+			new_cells.append(blank_row)
+			new_wrapped.append(false)
+		else:
+			var first := true
+			var idx := 0
+			while idx < trimmed.size():
+				var row: Array = []
+				for c in range(cols):
+					if idx + c < trimmed.size():
+						row.append(trimmed[idx + c].duplicate())
+					else:
+						row.append(_blank_cell())
+				new_cells.append(row)
+				new_wrapped.append(not first)
+				first = false
+				idx += cols
+
+	# Step 3: Trim oldest rows if overflow; pad bottom with blank rows.
+	while new_cells.size() > rows:
+		new_cells.remove_at(0)
+		new_wrapped.remove_at(0)
+	while new_cells.size() < rows:
+		var blank_row: Array = []
+		for _c in range(cols):
+			blank_row.append(_blank_cell())
+		new_cells.append(blank_row)
+		new_wrapped.append(false)
+
 	_cols = cols
 	_rows = rows
 	_cells = new_cells
-	# Clamp cursor to new bounds after resize.
+	_wrapped = new_wrapped
 	cursor_row = clampi(cursor_row, 0, max(0, _rows - 1))
 	cursor_col = clampi(cursor_col, 0, max(0, _cols - 1))
+	scrollback_offset = 0
 
 
 ## Write a cell at (row, col). Out-of-bounds writes are silently ignored.
@@ -96,11 +176,13 @@ func scroll_up(n: int) -> void:
 	var drop: int = min(n, _rows)
 	for _i in range(drop):
 		_cells.remove_at(0)
+		_wrapped.remove_at(0)
 	for _i in range(drop):
 		var row: Array = []
 		for _c in range(_cols):
 			row.append(_blank_cell())
 		_cells.append(row)
+		_wrapped.append(false)
 
 
 ## Move cursor to an absolute 0-based (row, col).

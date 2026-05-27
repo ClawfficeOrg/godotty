@@ -7,6 +7,16 @@
 
 ## Now doing
 
+Task `1.2.3` — DONE. Grid reflow on resize.
+- `project/scripts/terminal_grid.gd` — added `scrollback_offset: int = 0` and
+  `_wrapped: Array`; `resize()` rewrites reflow logic: extracts logical lines,
+  strips trailing blanks, re-wraps at new `cols`, trims oldest rows if overflow,
+  pads bottom with blanks; `scrollback_offset` reset to 0; `scroll_up()` maintains
+  `_wrapped`.
+- `tests/unit/terminal_grid_resize_test.gd` — 14 tests, ALL GREEN.
+- CHANGELOG.md and docs/todo-v1.md updated.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
 Task `1.2.2` — DONE. Resize propagation to TerminalManager and godotty-node.
 - `project/autoload/terminal_manager.gd` — added `_mock_cols`/`_mock_rows` vars;
   `_ready()` connects `SignalBus.terminal_resized` → `_on_terminal_resized`;
