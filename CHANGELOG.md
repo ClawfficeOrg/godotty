@@ -10,6 +10,17 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **TerminalTheme Resource (task 2.0.1).**
+  - `project/resources/terminal_theme.gd` — `Resource` subclass with exported
+    `color_background`, `color_foreground`, `color_cursor`, `color_selection_bg`,
+    `color_selection_fg`, and `palette: Array[Color]` (16 ANSI entries 0–15).
+    Palette setter validates size and rejects wrong-sized arrays via `push_error`.
+    `_init()` populates the default 16-color ANSI palette.
+  - `project/resources/themes/default_theme.tres` — shipped default dark theme.
+  - `tests/unit/terminal_theme_test.gd` — 11 tests: default palette size,
+    entry type checks, validation rejection (wrong/empty size), accepts-16
+    round-trip, ResourceSaver/ResourceLoader round-trip, palette content
+    preservation, and loading the shipped `.tres` asset.
 - **Right-click context menu in TerminalView (task 1.4.4).**
   - `project/scripts/terminal_view.gd` — `_gui_input` handles
     `MOUSE_BUTTON_RIGHT` press; `_show_context_menu()` positions a
