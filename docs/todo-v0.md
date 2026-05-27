@@ -93,7 +93,7 @@ fully gdformat-clean and gdlint-strict.
     `gdformat --check` in `scripts/lint.sh` so it stays clean.
   - Tests: `bash scripts/lint.sh` exits 0 after reformat.
 
-- [ ] `0.4.2` Tighten gdlint rules.
+- [x] `0.4.2` Tighten gdlint rules.
   - Complexity: Low. Suggested model: standard coding model.
   - Owned paths: `.gdlintrc`, `project/autoload/`, `project/scripts/`.
   - Work: remove the `disable` exceptions added in 0.2.x one by one, fixing

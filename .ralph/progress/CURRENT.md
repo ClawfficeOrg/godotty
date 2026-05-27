@@ -7,11 +7,22 @@
 
 ## Now doing
 
-Task `0.4.1` — DONE. gdformat reformat complete; `gdformat --check` re-enabled in lint.
+Task `0.4.2` — DONE. All gdlint `disable` exceptions removed; stricter rules restored.
 
 ## Done this session (continued)
 
-- Task `0.4.1` — one-shot gdformat reformat:
+- Task `0.4.2` — tighten gdlint rules:
+  - `.gdlintrc` — removed all 10 `disable` exceptions.
+  - `project/autoload/terminal_manager.gd` — signals before vars, guard-clause
+    style, `TermClass`→`term_class`, extracted 5 `_mock_cmd_*` helpers to
+    satisfy `max-returns`, flattened `elif`/`else` in ls/cat handlers.
+  - `project/scripts/main.gd` — `available`→`_available` for unused-arg rule.
+  - `project/scripts/terminal_view.gd` — @onready vars after regular vars,
+    flattened `_xterm256_hex` if-chain.
+  - `bash scripts/lint.sh` → clean (exit 0).
+  - `bash scripts/run_tests.sh tests/unit` → 11/11 GREEN.
+
+- Task `0.4.1` — one-shot gdformat reformat complete; `gdformat --check` re-enabled in lint.
   - `project/autoload/signal_bus.gd`, `terminal_manager.gd` — reformatted.
   - `project/scripts/main.gd`, `terminal_view.gd` — reformatted.
   - `tests/integration/real/__init__.gd`, `echo_test.gd`, `exit_code_test.gd`, `pwd_test.gd` — reformatted.

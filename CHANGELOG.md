@@ -10,7 +10,25 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Changed
-- **One-shot gdformat reformat of all project GDScript files (spec 0004, task 0.4.1).**
+- **Tightened gdlint rules — removed all `disable` exceptions (spec 0004, task 0.4.2).**
+  - Removed all 10 `disable` exceptions from `.gdlintrc` by fixing the
+    underlying code issues rather than suppressing them.
+  - `terminal_manager.gd`: moved signal declarations before variable
+    declarations (`class-definitions-order`); removed `else:` after `return`
+    in `spawn_shell`, `has_output`, `read_output` (`no-else-return`);
+    renamed local `TermClass` → `term_class` (`function-variable-name`);
+    extracted `_mock_cmd_basic`, `_mock_cmd_cd`, `_mock_cmd_ls`,
+    `_mock_cmd_cat`, `_mock_cmd_exit` helpers to bring `_mock_process_command`
+    within the 6-return limit (`max-returns`); flattened `elif`/`else` chains
+    in `_mock_cmd_ls` and `_mock_cmd_cat` (`no-elif-return`, `no-else-return`).
+  - `main.gd`: prefixed unused signal-handler arg `available` → `_available`
+    (`unused-argument`).
+  - `terminal_view.gd`: moved `@onready` var declarations after regular
+    variable declarations (`class-definitions-order`); flattened `elif`/`else`
+    in `_xterm256_hex` (`no-elif-return`, `no-else-return`).
+  - `bash scripts/lint.sh` → clean (exit 0) with stricter rules.
+
+
   - All `.gd` files under `project/` and `tests/` (excluding `addons/`) reformatted
     to canonical `gdformat` style.
   - `scripts/lint.sh` re-enabled `gdformat --check` so formatting is enforced on

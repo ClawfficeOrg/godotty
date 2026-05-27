@@ -7,18 +7,6 @@ extends Control
 ## Maximum lines to keep in scrollback buffer
 const MAX_LINES: int = 1000
 
-## Reference to the output display
-@onready var output_display: RichTextLabel = $VBoxContainer/ScrollContainer/OutputDisplay
-
-## Reference to the input field
-@onready var input_field: LineEdit = $VBoxContainer/InputBar/HBoxContainer/InputField
-
-## Reference to the prompt label
-@onready var prompt_label: Label = $VBoxContainer/InputBar/HBoxContainer/PromptLabel
-
-## Reference to the scroll container
-@onready var scroll_container: ScrollContainer = $VBoxContainer/ScrollContainer
-
 ## Command history for up/down navigation
 var _command_history: Array[String] = []
 
@@ -36,6 +24,18 @@ var _current_fg: String = ""
 var _current_bg: String = ""
 var _current_bold: bool = false
 var _partial_escape: String = ""
+
+## Reference to the output display
+@onready var output_display: RichTextLabel = $VBoxContainer/ScrollContainer/OutputDisplay
+
+## Reference to the input field
+@onready var input_field: LineEdit = $VBoxContainer/InputBar/HBoxContainer/InputField
+
+## Reference to the prompt label
+@onready var prompt_label: Label = $VBoxContainer/InputBar/HBoxContainer/PromptLabel
+
+## Reference to the scroll container
+@onready var scroll_container: ScrollContainer = $VBoxContainer/ScrollContainer
 
 
 func _ready() -> void:
@@ -313,15 +313,14 @@ func _indexed_color(idx: int, _bright: bool) -> String:
 func _xterm256_hex(idx: int) -> String:
 	if idx < 16:
 		return _indexed_color(idx, false)
-	elif idx < 232:
+	if idx < 232:
 		var i := idx - 16
 		var b := (i % 6) * 51
 		var g := ((i / 6) % 6) * 51
 		var r := ((i / 36) % 6) * 51
 		return "#%02x%02x%02x" % [r, g, b]
-	else:
-		var v := 8 + (idx - 232) * 10
-		return "#%02x%02x%02x" % [v, v, v]
+	var v := 8 + (idx - 232) * 10
+	return "#%02x%02x%02x" % [v, v, v]
 
 
 ## Append text to output with proper scrollback management
