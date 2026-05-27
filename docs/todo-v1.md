@@ -206,7 +206,7 @@ terminal emulators.
     Store `_selection_start: Vector2i` and `_selection_end: Vector2i`.
   - Tests: mouse-down at (0,0), drag to (0,5); assert 5 cells selected.
 
-- [ ] `1.4.2` Copy selection to clipboard.
+- [x] `1.4.2` Copy selection to clipboard.
   - Complexity: Low. Suggested model: standard coding model.
   - Owned paths: `project/scripts/terminal_view.gd`.
   - Work: on double-click (select word) or when selection is non-empty,

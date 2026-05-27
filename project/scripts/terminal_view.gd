@@ -87,6 +87,9 @@ var _cursor_dec_visible: bool = true
 ## Enabled by CSI ?2004h, disabled by CSI ?2004l.
 var _bracketed_paste_mode: bool = false
 
+## Last text copied to clipboard. Readable by tests in headless mode.
+var _last_copied_text: String = ""
+
 ## Timer that drives cursor blinking (created in _setup_cursor_blink).
 var _blink_timer: Timer = null
 
@@ -155,8 +158,14 @@ func _input(event: InputEvent) -> void:
 			KEY_DOWN:
 				_navigate_history(1)
 				get_viewport().set_input_as_handled()
+			KEY_C when event.ctrl_pressed and event.shift_pressed:
+				copy_selected_to_clipboard()
+				get_viewport().set_input_as_handled()
 			KEY_C when event.ctrl_pressed:
 				_handle_interrupt()
+				get_viewport().set_input_as_handled()
+			KEY_INSERT when event.ctrl_pressed:
+				copy_selected_to_clipboard()
 				get_viewport().set_input_as_handled()
 			KEY_L when event.ctrl_pressed:
 				TerminalManager.clear()
@@ -216,10 +225,10 @@ func _update_selection_overlay() -> void:
 	if selection_start == Vector2i(-1, -1):
 		_selection_overlay.visible = false
 		return
-	var min_col := mini(selection_start.x, selection_end.x)
-	var max_col := maxi(selection_start.x, selection_end.x)
-	var min_row := mini(selection_start.y, selection_end.y)
-	var max_row := maxi(selection_start.y, selection_end.y)
+	var min_col: int = min(selection_start.x, selection_end.x)
+	var max_col: int = max(selection_start.x, selection_end.x)
+	var min_row: int = min(selection_start.y, selection_end.y)
+	var max_row: int = max(selection_start.y, selection_end.y)
 	_selection_overlay.position = Vector2(float(min_col) * CHAR_W, float(min_row) * CHAR_H)
 	_selection_overlay.size = Vector2(
 		float(max_col - min_col + 1) * CHAR_W, float(max_row - min_row + 1) * CHAR_H
@@ -235,6 +244,51 @@ func selected_cell_count() -> int:
 	var cols: int = abs(selection_end.x - selection_start.x) + 1
 	var rows: int = abs(selection_end.y - selection_start.y) + 1
 	return cols * rows
+
+
+## Extract plain text from the currently selected region.
+## In alternate screen, reads characters from _alt_grid cells.
+## In primary screen, reads from the parsed RichTextLabel output.
+## Returns "" when there is no active selection.
+func get_selected_text() -> String:
+	if selection_start == Vector2i(-1, -1):
+		return ""
+	var min_col: int = min(selection_start.x, selection_end.x)
+	var max_col: int = max(selection_start.x, selection_end.x)
+	var min_row: int = min(selection_start.y, selection_end.y)
+	var max_row: int = max(selection_start.y, selection_end.y)
+	if _in_alternate_screen and _alt_grid != null:
+		var result := ""
+		for row in range(min_row, max_row + 1):
+			if row > min_row:
+				result += "\n"
+			for col in range(min_col, max_col + 1):
+				var cell := _alt_grid.get_cell(row, col)
+				result += cell.get("char", " ")
+		return result
+	if not output_display:
+		return ""
+	var lines := output_display.get_parsed_text().split("\n")
+	var result := ""
+	for row in range(min_row, min(max_row + 1, lines.size())):
+		if row > min_row:
+			result += "\n"
+		var line: String = lines[row]
+		var end_c: int = min(max_col + 1, line.length())
+		if min_col < line.length():
+			result += line.substr(min_col, end_c - min_col)
+	return result
+
+
+## Copy the currently selected text to the system clipboard.
+## Stores the text in _last_copied_text for test visibility in headless mode.
+## Does nothing when the selection is empty.
+func copy_selected_to_clipboard() -> void:
+	var text := get_selected_text()
+	if text.is_empty():
+		return
+	DisplayServer.clipboard_set(text)
+	_last_copied_text = text
 
 
 ## Initialize the terminal

@@ -3,7 +3,14 @@
 Append-only log of non-obvious things the agent has learned.
 **Newest at top.** Each entry: date, one-line summary, evidence/links.
 
-## 2026-05-27 — GdUnit4 v6 `assert_str` has no `does_not_start_with`/`does_not_end_with`
+## 2026-05-27 — Godot 4.6 treats `min()` return as Variant — always annotate the type
+
+**Context:** Adding `get_selected_text()` in `terminal_view.gd` with `var end_c := min(...)`.
+**Learning:** Godot 4.6's GDScript compiler treats `min(a, b)` as returning `Variant` (since it's a polymorphic built-in), so `:=` inference produces a Variant variable. The engine treats this as a warning elevated to error (`"variable type inferred as Variant"`), which prevents the script from loading. Fix: use explicit typing — `var end_c: int = min(max_col + 1, line.length())`.
+**Evidence:** `project/scripts/terminal_view.gd:277` — task 1.4.2.
+**Tag:** godot · gdscript
+
+
 
 **Context:** Writing `test_paste_bare_has_no_start_marker_when_mode_off` in the bracketed paste test suite.
 **Learning:** `GdUnitStringAssertImpl` in GdUnit4 v6.1.x does not expose `does_not_start_with` or `does_not_end_with`. Calling them causes a runtime script error ("Nonexistent function"). Use `assert_str(...).is_equal(expected_value)` to prove absence of markers — an exact equality check is a stronger assertion anyway.

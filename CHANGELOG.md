@@ -10,6 +10,16 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Clipboard copy from selection in TerminalView (task 1.4.2).**
+  - `project/scripts/terminal_view.gd` — added `_last_copied_text` (test-visible
+    fallback); `get_selected_text()` extracts plain text from alt-grid cells or
+    primary-screen `RichTextLabel`; `copy_selected_to_clipboard()` calls
+    `DisplayServer.clipboard_set(text)` and stores in `_last_copied_text`; Ctrl+Shift+C
+    and Ctrl+Insert key bindings in `_input()` invoke `copy_selected_to_clipboard()`.
+  - `tests/unit/terminal_view_copy_test.gd` — 8 mock-mode tests covering
+    Ctrl+Shift+C copy, Ctrl+Insert copy, partial selection, empty-selection no-op,
+    direct method call, and that plain Ctrl+C does not trigger a copy.
+  - `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
 - **Click-drag text selection in TerminalView (task 1.4.1).**
   - `project/scripts/terminal_view.gd` — added `selection_start`, `selection_end`
     (`Vector2i`) public state; `_gui_input()` handles `InputEventMouseButton` (left
