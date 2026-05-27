@@ -223,7 +223,7 @@ terminal emulators.
   - Tests: set clipboard to "hello world"; Ctrl+Shift+V; assert write_input
     called with "hello world".
 
-- [ ] `1.4.4` Right-click context menu.
+- [x] `1.4.4` Right-click context menu.
   - Complexity: Low. Suggested model: standard coding model.
   - Owned paths: `project/scripts/terminal_view.gd`,
     `project/scenes/terminal.tscn`.

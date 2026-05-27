@@ -10,6 +10,17 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Right-click context menu in TerminalView (task 1.4.4).**
+  - `project/scripts/terminal_view.gd` — `_gui_input` handles
+    `MOUSE_BUTTON_RIGHT` press; `_show_context_menu()` positions a
+    `PopupMenu` at the cursor and disables Copy when no text is selected;
+    `_on_context_menu_id_pressed()` dispatches Copy / Paste / Clear;
+    `_setup_context_menu()` wires the PopupMenu in `_ready`; signal
+    disconnected in `_exit_tree`; `_context_menu_popup_requested` flag
+    for headless test assertion.
+  - `tests/unit/terminal_view_context_menu_test.gd` — 8 mock-mode tests:
+    popup requested on right-click; Copy disabled / enabled based on
+    selection; Copy / Paste / Clear actions; left-click regression guard.
 - **Paste from clipboard in TerminalView (task 1.4.3).**
   - `project/scripts/terminal_view.gd` — added `_clipboard_override` var for
     headless-test-safe clipboard stubbing; `_get_clipboard_text()` helper returns
