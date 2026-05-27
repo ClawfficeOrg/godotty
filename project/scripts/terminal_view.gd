@@ -4,11 +4,27 @@
 class_name TerminalView
 extends Control
 
+## DECSCUSR cursor style values (CSI Ps SP q).
+## Ps=0/1 → blinking block (default), Ps=2 → steady block,
+## Ps=3 → blinking underline, Ps=4 → steady underline,
+## Ps=5 → blinking bar, Ps=6 → steady bar.
+enum CursorStyle {
+	BLINKING_BLOCK = 0,
+	STEADY_BLOCK = 2,
+	BLINKING_UNDERLINE = 3,
+	STEADY_UNDERLINE = 4,
+	BLINKING_BAR = 5,
+	STEADY_BAR = 6,
+}
+
 ## Maximum lines to keep in scrollback buffer
 const MAX_LINES: int = 1000
 const PROMPT_SYMBOL: String = "❯"
 const CHAR_W: float = 8.0
 const CHAR_H: float = 16.0
+
+## Current cursor shape set by DECSCUSR (CSI Ps SP q).
+var cursor_style: CursorStyle = CursorStyle.BLINKING_BLOCK
 
 ## Primary-screen cursor position (0-based). Updated on CSI H/f in primary mode.
 var cursor_row: int = 0
@@ -247,6 +263,8 @@ func _ansi_to_bbcode(text: String) -> String:
 						_handle_private_mode_set(params_str)
 					"l":
 						_handle_private_mode_reset(params_str)
+					"q":
+						_handle_decscusr(params_str)
 					_:
 						pass
 
@@ -639,8 +657,36 @@ func _on_viewport_resize() -> void:
 		TerminalManager.resize(cols, rows)
 
 
+## Handle DECSCUSR — set cursor style (CSI Ps SP q).
+## The intermediate byte (SP) is absorbed into params_str by the CSI scanner;
+## strip it before parsing the numeric Ps value.
+func _handle_decscusr(params_str: String) -> void:
+	var ps_str := params_str.strip_edges()
+	var ps := 0
+	if ps_str != "":
+		ps = int(ps_str)
+	match ps:
+		1:
+			cursor_style = CursorStyle.BLINKING_BLOCK
+		2:
+			cursor_style = CursorStyle.STEADY_BLOCK
+		3:
+			cursor_style = CursorStyle.BLINKING_UNDERLINE
+		4:
+			cursor_style = CursorStyle.STEADY_UNDERLINE
+		5:
+			cursor_style = CursorStyle.BLINKING_BAR
+		6:
+			cursor_style = CursorStyle.STEADY_BAR
+		_:
+			# 0 and unknown → default blinking block
+			cursor_style = CursorStyle.BLINKING_BLOCK
+	_update_cursor_overlay()
+
+
 ## Update the cursor overlay position to match the tracked cursor.
 ## In alternate screen, syncs from _alt_grid; otherwise uses cursor_row/cursor_col.
+## Also updates overlay size/offset to reflect the current cursor_style.
 func _update_cursor_overlay() -> void:
 	if not cursor_overlay:
 		return
@@ -649,7 +695,17 @@ func _update_cursor_overlay() -> void:
 	if _in_alternate_screen and _alt_grid != null:
 		row = _alt_grid.cursor_row
 		col = _alt_grid.cursor_col
-	cursor_overlay.position = Vector2(col * CHAR_W, row * CHAR_H)
+	var base_pos := Vector2(col * CHAR_W, row * CHAR_H)
+	match cursor_style:
+		CursorStyle.BLINKING_BLOCK, CursorStyle.STEADY_BLOCK:
+			cursor_overlay.size = Vector2(CHAR_W, CHAR_H)
+			cursor_overlay.position = base_pos
+		CursorStyle.BLINKING_UNDERLINE, CursorStyle.STEADY_UNDERLINE:
+			cursor_overlay.size = Vector2(CHAR_W, 2.0)
+			cursor_overlay.position = base_pos + Vector2(0.0, CHAR_H - 2.0)
+		CursorStyle.BLINKING_BAR, CursorStyle.STEADY_BAR:
+			cursor_overlay.size = Vector2(2.0, CHAR_H)
+			cursor_overlay.position = base_pos
 
 
 func _exit_tree() -> void:

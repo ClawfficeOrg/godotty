@@ -7,6 +7,15 @@
 
 ## Now doing
 
+Task `1.1.2` — DONE. Cursor style via DECSCUSR (CSI Ps SP q) implemented.
+- `project/scripts/terminal_view.gd` — added `CursorStyle` enum; `cursor_style`
+  public property; `_handle_decscusr(params_str)` parser for Ps 0–6;
+  `_update_cursor_overlay()` resizes overlay (block/underline/bar shapes).
+  `.gdlintrc` `max-file-lines` bumped to 750.
+- `tests/unit/terminal_view_cursor_style_test.gd` — 11 mock-mode tests, ALL GREEN.
+- `CHANGELOG.md` — entry added under `[Unreleased] / Added`.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
 Task `1.1.1` — DONE. Cursor rendering in TerminalView implemented.
 - `project/scripts/terminal_view.gd` — added `cursor_row`/`cursor_col` public
   vars; `_update_cursor_overlay()` positions the ColorRect; CSI H/f now handles

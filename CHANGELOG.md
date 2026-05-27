@@ -10,6 +10,15 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Cursor style via DECSCUSR (task 1.1.2).**
+  - `project/scripts/terminal_view.gd` — added `CursorStyle` enum (BLINKING_BLOCK,
+    STEADY_BLOCK, BLINKING_UNDERLINE, STEADY_UNDERLINE, BLINKING_BAR, STEADY_BAR)
+    and `cursor_style` public property; parse `CSI Ps SP q` sequences (Ps 0–6);
+    `_update_cursor_overlay()` now resizes the overlay to block (CHAR_W × CHAR_H),
+    underline (CHAR_W × 2 px), or bar (2 px × CHAR_H) based on the active style.
+  - `tests/unit/terminal_view_cursor_style_test.gd` — 11 mock-mode unit tests
+    covering default state, all 7 Ps values, and overlay size for each shape class.
+    All GREEN.
 - **Cursor rendering in TerminalView (task 1.1.1).**
   - `project/scripts/terminal_view.gd` — added `cursor_row`/`cursor_col` public
     vars to track the primary-screen cursor position; `_update_cursor_overlay()`
