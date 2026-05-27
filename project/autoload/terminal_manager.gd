@@ -21,6 +21,9 @@ var is_addon_available: bool = false
 ## Whether we're in mock mode
 var is_mock_mode: bool = false
 
+## Active keymap for terminal actions. Assign a new TerminalKeymap to rebind keys at runtime.
+var keymap: TerminalKeymap = TerminalKeymap.default()
+
 ## Active terminal color theme. Assign a new TerminalTheme to change the palette
 ## at runtime; emits theme_changed so TerminalView can re-render.
 var current_theme: TerminalTheme:
