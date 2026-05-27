@@ -14,9 +14,7 @@ func test_echo_hello_returns_hello() -> void:
 		return
 
 	var output := await run_and_await(
-		"echo hello",
-		func(line: String) -> bool:
-			return "hello" in line
+		"echo hello", func(line: String) -> bool: return "hello" in line
 	)
 
 	assert_str(output).contains("hello")

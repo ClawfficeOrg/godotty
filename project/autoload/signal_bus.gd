@@ -10,7 +10,7 @@ signal command_submitted(command: String)
 signal output_ready(text: String)
 
 ## Emitted when terminal is cleared
-signal terminal_cleared()
+signal terminal_cleared
 
 ## Emitted when godotty-node availability changes
 signal addon_status_changed(available: bool)

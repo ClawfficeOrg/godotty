@@ -443,6 +443,7 @@ func _on_viewport_resize() -> void:
 		rows = clampi(rows, 5, 100)
 		TerminalManager.resize(cols, rows)
 
+
 func _exit_tree() -> void:
 	# Disconnect signals to avoid leaking callbacks if this node is freed
 	if SignalBus.is_connected("output_ready", self, "_on_output_ready"):
@@ -453,5 +454,9 @@ func _exit_tree() -> void:
 		SignalBus.disconnect("shell_status_changed", self, "_on_shell_status_changed")
 	if input_field and input_field.is_connected("text_submitted", self, "_on_text_submitted"):
 		input_field.disconnect("text_submitted", self, "_on_text_submitted")
-	if get_tree() and get_tree().get_root() and get_tree().get_root().is_connected("size_changed", self, "_on_viewport_resize"):
+	if (
+		get_tree()
+		and get_tree().get_root()
+		and get_tree().get_root().is_connected("size_changed", self, "_on_viewport_resize")
+	):
 		get_tree().get_root().disconnect("size_changed", self, "_on_viewport_resize")

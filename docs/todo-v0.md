@@ -85,7 +85,7 @@ fully gdformat-clean and gdlint-strict.
 
 **Prerequisite:** Phase 0.3.0 (or can run in parallel after 0.2.0 merges).
 
-- [ ] `0.4.1` One-shot gdformat reformat of `project/` (excluding addons).
+- [x] `0.4.1` One-shot gdformat reformat of `project/` (excluding addons).
   - Complexity: Low. Suggested model: standard coding model.
   - Owned paths: `project/autoload/`, `project/scripts/`.
   - Work: run `gdformat` on all project GDScript files; commit the diff as

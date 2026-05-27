@@ -19,8 +19,8 @@ var _real_terminal: Node = null
 
 # Signals
 signal output_received(text: String)
-signal shell_started()
-signal shell_stopped()
+signal shell_started
+signal shell_stopped
 
 
 func _ready() -> void:
@@ -37,10 +37,10 @@ func _check_addon_availability() -> void:
 		print("Windows detected - using mock terminal (PTY issues)")
 		SignalBus.addon_status_changed.emit(is_addon_available)
 		return
-	
+
 	# Try to load the GDExtension class
 	var terminal_class = ClassDB.class_get_method_list("TerminalNode2D")
-	
+
 	if terminal_class != null and terminal_class.size() > 0:
 		is_addon_available = true
 		is_mock_mode = false
@@ -49,7 +49,7 @@ func _check_addon_availability() -> void:
 		is_addon_available = false
 		is_mock_mode = true
 		print("GodottyNode GDExtension not found - using mock terminal")
-	
+
 	SignalBus.addon_status_changed.emit(is_addon_available)
 
 
@@ -91,11 +91,12 @@ func clear() -> void:
 		_mock_clear()
 	else:
 		_real_clear()
-	
+
 	SignalBus.terminal_cleared.emit()
 
 
 # === Mock Terminal Implementation ===
+
 
 func _mock_spawn_shell() -> bool:
 	_mock_output_buffer.clear()
@@ -111,24 +112,24 @@ func _mock_spawn_shell() -> bool:
 func _mock_write_input(text: String) -> void:
 	if text.strip_edges() == "":
 		return
-	
+
 	# Add to history
 	_mock_history.append(text)
-	
+
 	# Echo the command
 	var esc: String = char(27)
 	_mock_output_buffer.append(esc + "[36m%s%s[0m" % [text, esc])
-	
+
 	# Process command
 	var parts: PackedStringArray = text.strip_edges().split(" ", false, 1)
 	var cmd: String = parts[0].to_lower() if parts.size() > 0 else ""
 	var args: String = parts[1] if parts.size() > 1 else ""
-	
+
 	var output: String = _mock_process_command(cmd, args)
 	if output != "":
 		for line in output.split("\n"):
 			_mock_output_buffer.append(line)
-	
+
 	# Notify output ready
 	while _mock_output_buffer.size() > 0:
 		var line = _mock_output_buffer.pop_front()
@@ -150,17 +151,17 @@ func _mock_process_command(cmd: String, args: String) -> String:
   date     - Show current date/time
   whoami   - Show current user
   exit     - Exit the shell"""
-		
+
 		"clear":
 			_mock_output_buffer.clear()
 			return ""
-		
+
 		"echo":
 			return args
-		
+
 		"pwd":
 			return _mock_current_dir
-		
+
 		"cd":
 			if args == "" or args == "~":
 				_mock_current_dir = "/home/user"
@@ -176,53 +177,62 @@ func _mock_process_command(cmd: String, args: String) -> String:
 				else:
 					_mock_current_dir = _mock_current_dir.path_join(args)
 			return ""
-		
+
 		"ls":
 			var esc: String = char(27)
 			if _mock_current_dir == "/home/user":
-				return """{esc}[34mdocuments{esc}[0m
+				return (
+					"""{esc}[34mdocuments{esc}[0m
 {esc}[34mdownloads{esc}[0m
 {esc}[34mprojects{esc}[0m
 {esc}[32mconfig.txt{esc}[0m
-{esc}[32mreadme.md{esc}[0m""".format({"esc": esc})
+{esc}[32mreadme.md{esc}[0m"""
+					. format({"esc": esc})
+				)
 			elif _mock_current_dir == "/":
-				return """{esc}[34mhome{esc}[0m
+				return (
+					"""{esc}[34mhome{esc}[0m
 {esc}[34metc{esc}[0m
 {esc}[34musr{esc}[0m
-{esc}[34mvar{esc}[0m""".format({"esc": esc})
+{esc}[34mvar{esc}[0m"""
+					. format({"esc": esc})
+				)
 			else:
 				return "(empty directory)"
-		
+
 		"cat":
 			var esc: String = char(27)
 			if args == "readme.md" and _mock_current_dir == "/home/user":
-				return """# Godotty Reference App
+				return (
+					"""# Godotty Reference App
 
 This is a demonstration terminal for the godotty-node GDExtension.
 
 Currently running in {esc}[33mMOCK MODE{esc}[0m.
 
-Build the godotty-node extension for real terminal emulation!""".format({"esc": esc})
+Build the godotty-node extension for real terminal emulation!"""
+					. format({"esc": esc})
+				)
 			elif args == "config.txt" and _mock_current_dir == "/home/user":
 				return """theme=retro
 font=monospace
 size=16"""
 			else:
 				return "cat: %s: No such file or directory" % args
-		
+
 		"date":
 			return Time.get_datetime_string_from_system()
-		
+
 		"whoami":
 			return "user"
-		
+
 		"exit":
 			var esc: String = char(27)
 			_mock_output_buffer.append(esc + "[33mGoodbye!" + esc + "[0m")
 			shell_stopped.emit()
 			SignalBus.shell_status_changed.emit(false)
 			return ""
-		
+
 		_:
 			var esc: String = char(27)
 			return "%s[31mCommand not found: %s%s[0m" % [esc, cmd, esc]
@@ -243,6 +253,7 @@ func _mock_clear() -> void:
 
 
 # === Real Terminal Implementation ===
+
 
 func _real_spawn_shell() -> bool:
 	if not is_addon_available:

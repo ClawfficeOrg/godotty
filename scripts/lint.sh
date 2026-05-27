@@ -30,12 +30,11 @@ done < <(
 )
 
 # --- gdformat ---
-# NOTE: `gdformat --check` is intentionally disabled here. The legacy demo
-# scripts predate lint/format enforcement; a one-shot reformat pass is
-# tracked in the spec backlog (follow-up to spec 0002). Re-enable once
-# that lands.
 if command -v gdformat >/dev/null 2>&1; then
-	echo "lint: gdformat (skipped — see follow-up spec)"
+	echo "lint: gdformat --check"
+	if (( ${#GD_FILES[@]} > 0 )) && ! gdformat --check "${GD_FILES[@]}" 2>&1; then
+		errors=$(( errors + 1 ))
+	fi
 else
 	echo "lint: gdformat not installed (pip install gdtoolkit)" >&2
 	warned=$(( warned + 1 ))
