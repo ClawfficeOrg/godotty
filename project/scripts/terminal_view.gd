@@ -150,6 +150,8 @@ var _selection_overlay: ColorRect = null
 ## Block cursor overlay — floats above the text layer.
 @onready var cursor_overlay: ColorRect = $VBoxContainer/ScrollContainer/CursorOverlay
 @onready var _theme_menu: MenuButton = $VBoxContainer/TitleBar/ThemeMenu
+@onready var _font_option: OptionButton = $VBoxContainer/TitleBar/FontOptionButton
+@onready var _font_spinbox: SpinBox = $VBoxContainer/TitleBar/FontSizeSpinBox
 
 
 func _ready() -> void:
@@ -173,6 +175,7 @@ func _ready() -> void:
 	_initialize_terminal()
 	# Apply font settings after terminal is initialized so output_display is ready
 	apply_font_settings()
+	_setup_font_panel()
 
 	# Handle resize
 	get_tree().get_root().size_changed.connect(_on_viewport_resize)
@@ -1076,6 +1079,47 @@ func _setup_theme_picker() -> void:
 		popup.index_pressed.connect(_on_theme_menu_index_pressed)
 
 
+func _setup_font_panel() -> void:
+	if _font_option:
+		_font_option.clear()
+		for fname: String in TerminalSettings.BUNDLED_FONT_NAMES:
+			_font_option.add_item(fname)
+		var idx: int = TerminalSettings.BUNDLED_FONT_NAMES.find(TerminalSettings.selected_font_name)
+		if idx < 0:
+			idx = 0
+		_font_option.selected = idx
+		if not _font_option.item_selected.is_connected(_on_font_family_selected):
+			_font_option.item_selected.connect(_on_font_family_selected)
+	if _font_spinbox:
+		_font_spinbox.min_value = 8.0
+		_font_spinbox.max_value = 72.0
+		_font_spinbox.step = 1.0
+		_font_spinbox.set_value_no_signal(float(TerminalSettings.font_size))
+		if not _font_spinbox.value_changed.is_connected(_on_font_size_changed):
+			_font_spinbox.value_changed.connect(_on_font_size_changed)
+
+
+## Update TerminalSettings.font_size from the SpinBox and reflow the terminal.
+func _on_font_size_changed(value: float) -> void:
+	TerminalSettings.font_size = int(value)
+	apply_font_settings()
+
+
+## Update TerminalSettings.font from the OptionButton selection and reflow.
+func _on_font_family_selected(index: int) -> void:
+	var fname: String = TerminalSettings.BUNDLED_FONT_NAMES[index]
+	TerminalSettings.selected_font_name = fname
+	if fname == "Default":
+		TerminalSettings.font = null
+	else:
+		var path: String = TerminalSettings.BUNDLED_FONT_PATHS.get(fname, "")
+		if path != "":
+			TerminalSettings.font = load(path)
+		else:
+			TerminalSettings.font = null
+	apply_font_settings()
+
+
 func _on_theme_menu_index_pressed(index: int) -> void:
 	TerminalSettings.selected_theme_name = TerminalSettings.BUNDLED_THEME_NAMES[index]
 	_load_and_apply_theme(TerminalSettings.selected_theme_name)
@@ -1121,3 +1165,7 @@ func _exit_tree() -> void:
 		var popup := _theme_menu.get_popup()
 		if popup.index_pressed.is_connected(_on_theme_menu_index_pressed):
 			popup.index_pressed.disconnect(_on_theme_menu_index_pressed)
+	if _font_option and _font_option.item_selected.is_connected(_on_font_family_selected):
+		_font_option.item_selected.disconnect(_on_font_family_selected)
+	if _font_spinbox and _font_spinbox.value_changed.is_connected(_on_font_size_changed):
+		_font_spinbox.value_changed.disconnect(_on_font_size_changed)

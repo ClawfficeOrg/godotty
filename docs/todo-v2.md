@@ -101,7 +101,7 @@ blank boxes.
     in `LICENSE` or a `NOTICE` file.
   - Tests: font file loads; powerline separator U+E0B0 renders visible.
 
-- [ ] `2.1.4` Font settings panel in demo UI.
+- [x] `2.1.4` Font settings panel in demo UI.
   - Complexity: Low. Suggested model: standard coding model.
   - Owned paths: `project/scenes/terminal.tscn`.
   - Work: a simple settings panel (SpinBox for size, OptionButton for font
