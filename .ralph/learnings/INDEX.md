@@ -3,6 +3,16 @@
 Append-only log of non-obvious things the agent has learned.
 **Newest at top.** Each entry: date, one-line summary, evidence/links.
 
+## 2026-05-27 — Godot 4 has native `TabBar` and `TabButton` classes — never use those as `class_name`
+
+**Context:** Implementing task 3.0.2 — a custom tab bar widget with `class_name TabBar`.
+**Learning:** Godot 4 exposes `TabBar` and `TabButton` as native (C++) classes. A GDScript file with
+`class_name TabBar` triggers `Parse Error: Class "TabBar" hides a native class` and then causes all
+calls to `add_tab(...)` to fail with "argument 2 should be Texture2D" (the native method signature).
+Fix: prefix custom class names — e.g. `TerminalTabBar` / `TerminalTabButton`.
+**Evidence:** `project/scripts/tab_bar.gd`, `project/scripts/tab_button.gd` — task 3.0.2.
+**Tag:** godot · gdscript
+
 ## 2026-05-27 — gdlint `class-definitions-order` requires public `@onready var` before private `_`-prefixed ones
 
 **Context:** Adding `@onready var search_bar: SearchBar = $SearchBar` after existing private `@onready var _theme_menu`, `_font_option`, `_font_spinbox` in `terminal_view.gd` (task 2.2.1).

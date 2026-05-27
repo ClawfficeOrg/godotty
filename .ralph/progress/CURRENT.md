@@ -7,6 +7,18 @@
 
 ## Now doing
 
+Task `3.0.2` — DONE. TabBar with add/close buttons and output indicators.
+- Created `project/scripts/tab_button.gd` (`class_name TerminalTabButton`) — per-tab Control
+  with title label, output-indicator ColorRect, and close Button; all children built in _ready().
+- Created `project/scripts/tab_bar.gd` (`class_name TerminalTabBar`) — HBoxContainer-based tab
+  bar; `_tabs: Dictionary` (shell_id → TerminalTabButton); `_active_shell_id`; `@onready _add_button`.
+  Public API: `add_tab`, `remove_tab`, `set_tab_title`, `notify_output`, `focus_tab`.
+  Signals: `new_tab_requested`, `tab_close_requested(shell_id)`, `tab_focused(shell_id)`.
+- Created `project/scenes/tab_bar.tscn` (uid://tab_bar_scene_001) — TerminalTabBar + AddButton.
+- Created `tests/unit/tab_bar_test.gd` — 11 GdUnit4 tests (all passing).
+- NOTE: class names prefixed `Terminal` to avoid shadowing Godot 4 native `TabBar`/`TabButton`.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
 Task `3.0.1` — DONE. Multi-instance `TerminalManager`.
 - Created `project/scripts/terminal_manager_node.gd` (`class_name TerminalManagerNode`) — full
   terminal logic (mock + real) as an instanceable Node; no SignalBus.terminal_resized in _ready().

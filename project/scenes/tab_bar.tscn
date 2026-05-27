@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3 uid="uid://tab_bar_scene_001"]
+
+[ext_resource type="Script" path="res://scripts/tab_bar.gd" id="1_tab_bar"]
+
+[node name="TabBar" type="HBoxContainer"]
+script = ExtResource("1_tab_bar")
+
+[node name="AddButton" type="Button" parent="."]
+layout_mode = 2
+text = "+"
