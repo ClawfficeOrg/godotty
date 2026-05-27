@@ -7,6 +7,17 @@
 
 ## Now doing
 
+Task `2.0.1` — DONE. TerminalTheme Resource definition.
+- `project/resources/terminal_theme.gd` — Resource subclass with 5 exported color vars
+  + `palette: Array[Color]` (16 entries, validated via setter). `_init()` populates
+  default ANSI palette.
+- `project/resources/themes/default_theme.tres` — shipped default dark theme asset.
+- `tests/unit/terminal_theme_test.gd` — 11 tests: defaults, validation rejection,
+  round-trip via ResourceSaver/Loader, shipped .tres loading. ALL GREEN.
+- `docs/todo-v2.md` task `2.0.1` marked `[x]`.
+- `CHANGELOG.md` updated under [Unreleased].
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
 Task `1.4.4` — DONE. Right-click context menu.
 - `project/scripts/terminal_view.gd` — added `MENU_ID_COPY/PASTE/CLEAR` constants;
   `_context_menu: PopupMenu` and `_context_menu_popup_requested: bool` vars;

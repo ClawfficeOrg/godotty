@@ -21,7 +21,7 @@ at runtime.
 
 **Prerequisite:** Phase 1.4.0.
 
-- [ ] `2.0.1` `TerminalTheme` Resource definition.
+- [x] `2.0.1` `TerminalTheme` Resource definition.
   - Complexity: Low. Suggested model: standard coding model.
   - Owned paths: `project/resources/terminal_theme.gd`,
     `project/resources/themes/`,
