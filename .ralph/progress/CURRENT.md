@@ -7,6 +7,14 @@
 
 ## Now doing
 
+Task `2.1.3` — DONE. Bundle JetBrains Mono Nerd Font for demo use.
+- `project/resources/fonts/JetBrainsMonoNerdFont-Regular.ttf` — Nerd Fonts v3.4.0 patched
+  JetBrains Mono Regular (OFL); enables Powerline / file-type icon rendering out of the box.
+- `project/resources/fonts/README.md` — font provenance, usage, and attribution.
+- `NOTICE` — repo-root third-party attribution + SIL OFL link.
+- `tests/unit/font_bundling_test.gd` — 3 tests (font loads, is FontFile, U+E0B0 present); ALL GREEN.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
 Task `2.1.2` — DONE. Apply TerminalSettings font to OutputDisplay.
 - `project/scripts/terminal_settings.gd` — added `static var font: Font = null` to give
   TerminalView somewhere to read a font override from.

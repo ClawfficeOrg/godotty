@@ -92,7 +92,7 @@ blank boxes.
     `line_height` for cursor positioning and resize calculations.
   - Tests: change font_size; char_width and cursor position update.
 
-- [ ] `2.1.3` Bundle a Nerd Font for demo use.
+- [x] `2.1.3` Bundle a Nerd Font for demo use.
   - Complexity: Low. Suggested model: standard coding model.
   - Owned paths: `project/resources/fonts/`.
   - Work: include a single Nerd Fonts–patched monospace font (e.g.,

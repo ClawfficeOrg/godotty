@@ -10,6 +10,14 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Bundle JetBrains Mono Nerd Font for demo use (task 2.1.3).**
+  - `project/resources/fonts/JetBrainsMonoNerdFont-Regular.ttf` — Nerd Fonts v3.4.0
+    patched JetBrains Mono (Regular), OFL-licensed; ships so Powerline / file-type
+    icons render out of the box without a separate user install.
+  - `project/resources/fonts/README.md` — font provenance, usage example, attribution.
+  - `NOTICE` (repo root) — full third-party attribution + link to SIL OFL terms.
+  - `tests/unit/font_bundling_test.gd` — 3 tests: font loads as `FontFile`, cast
+    succeeds, and glyph U+E0B0 (Powerline right arrow) is present in the font.
 - **Apply TerminalSettings font to OutputDisplay (task 2.1.2).**
   - `project/scripts/terminal_settings.gd` — added `static var font: Font = null`
     so callers can supply an optional monospace font override.
