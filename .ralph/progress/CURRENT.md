@@ -7,7 +7,21 @@
 
 ## Now doing
 
-Task `2.2.2` — DONE. Scrollback search logic.
+Task `2.2.3` — DONE. Navigate matches.
+- `project/scripts/search_bar.gd` — _input() intercepts Enter/Shift+Enter to
+  emit navigate_next/navigate_prev (consumed so LineEdit text_submitted is skipped).
+- `project/scripts/terminal_view.gd` — SEARCH_ACCENT_BG const (#b58900);
+  _search_match_index var; _on_navigate_next/_on_navigate_prev handlers;
+  _navigate_search_match(direction) with wrap + scroll + label update;
+  _scroll_to_match_line(); get_highlighted_line() gains optional accent_col param;
+  _render_highlighted_scrollback() applies accent to current match; signal
+  connect/disconnect in _ready()/_exit_tree(); search_scrollback() and
+  _on_search_canceled() reset _search_match_index.
+- `.gdlintrc` — max-file-lines bumped 1400→1500.
+- `tests/unit/search_navigation_test.gd` — 7 tests; ALL GREEN.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
+
 - `project/scripts/terminal_view.gd` — search_scrollback(query, use_regex=false) returning
   Array[Vector2i]; _strip_ansi() helper; get_highlighted_line() BBCode injector;
   _render_highlighted_scrollback(); _on_search_submitted() wired to SearchBar.search_submitted;

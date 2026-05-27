@@ -144,7 +144,7 @@ the scrollback; Enter / Shift+Enter navigates between them.
     matching lines. Display match count.
   - Tests: 3 occurrences of "error" in scrollback; search returns 3 matches.
 
-- [ ] `2.2.3` Navigate matches.
+- [x] `2.2.3` Navigate matches.
   - Complexity: Low. Suggested model: standard coding model.
   - Owned paths: `project/scripts/search_bar.gd`,
     `project/scripts/terminal_view.gd`.

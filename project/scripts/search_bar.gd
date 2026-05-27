@@ -47,13 +47,22 @@ func _exit_tree() -> void:
 			query_edit.text_changed.disconnect(_on_query_changed)
 
 
-## Handle Escape key to dismiss the search bar while it is visible.
+## Handle Escape (dismiss) and Enter/Shift+Enter (navigate) while visible.
 func _input(event: InputEvent) -> void:
 	if not visible:
 		return
-	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
-		hide_search()
-		get_viewport().set_input_as_handled()
+	if not (event is InputEventKey and event.pressed):
+		return
+	match event.keycode:
+		KEY_ESCAPE:
+			hide_search()
+			get_viewport().set_input_as_handled()
+		KEY_ENTER, KEY_KP_ENTER:
+			if event.shift_pressed:
+				navigate_prev.emit()
+			else:
+				navigate_next.emit()
+			get_viewport().set_input_as_handled()
 
 
 ## Show the search bar and give keyboard focus to the query field.
