@@ -10,6 +10,13 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Cursor hide/show via DEC private mode 25 (task 1.1.4).**
+  - `project/scripts/terminal_view.gd` — added `_cursor_dec_visible` bool tracking
+    DEC private mode 25 state; `CSI ?25l` hides the cursor overlay unconditionally;
+    `CSI ?25h` restores it; blink timer, focus-enter, and focus-exit all respect
+    `_cursor_dec_visible` so the cursor stays hidden through any blink cycle or
+    focus change while DEC mode 25 is off.
+  - `tests/unit/terminal_view_cursor_hide_test.gd` — 12 mock-mode tests, all GREEN.
 - **Cursor blink (task 1.1.3).**
   - `project/scripts/terminal_settings.gd` — new `TerminalSettings` class
     (plain class, not autoload) with `static var cursor_blink_rate: float = 0.5`.

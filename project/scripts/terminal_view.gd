@@ -70,6 +70,10 @@ var _terminal_rows: int = 24
 ## Whether the cursor is currently visible in the blink cycle.
 var _cursor_blink_visible: bool = true
 
+## DEC private mode 25: true = cursor visible (default), false = cursor hidden.
+## Controlled by CSI ?25h (show) and CSI ?25l (hide).
+var _cursor_dec_visible: bool = true
+
 ## Timer that drives cursor blinking (created in _setup_cursor_blink).
 var _blink_timer: Timer = null
 
@@ -520,6 +524,11 @@ func _scroll_to_bottom() -> void:
 ## Dispatch CSI private mode set (?-prefixed params with 'h' command).
 func _handle_private_mode_set(params_str: String) -> void:
 	match params_str:
+		"?25":
+			_cursor_dec_visible = true
+			if cursor_overlay:
+				cursor_overlay.visible = _cursor_blink_visible
+			_update_cursor_overlay()
 		"?47", "?1047":
 			_enter_alternate_screen(false)
 		"?1049":
@@ -529,6 +538,10 @@ func _handle_private_mode_set(params_str: String) -> void:
 ## Dispatch CSI private mode reset (?-prefixed params with 'l' command).
 func _handle_private_mode_reset(params_str: String) -> void:
 	match params_str:
+		"?25":
+			_cursor_dec_visible = false
+			if cursor_overlay:
+				cursor_overlay.visible = false
 		"?47", "?1047":
 			_exit_alternate_screen(false)
 		"?1049":
@@ -733,7 +746,12 @@ func _setup_cursor_blink() -> void:
 
 ## Toggle cursor visibility on each timer tick.
 ## Steady cursor styles are unaffected — they remain always visible.
+## DEC mode 25 (off) keeps cursor hidden regardless of blink state.
 func _on_blink_timeout() -> void:
+	if not _cursor_dec_visible:
+		if cursor_overlay:
+			cursor_overlay.visible = false
+		return
 	match cursor_style:
 		CursorStyle.STEADY_BLOCK, CursorStyle.STEADY_UNDERLINE, CursorStyle.STEADY_BAR:
 			_cursor_blink_visible = true
@@ -752,21 +770,23 @@ func _on_input_focus_exited() -> void:
 
 
 ## Start the blink timer; cursor is set to visible immediately.
+## Respects DEC mode 25: cursor stays hidden if _cursor_dec_visible is false.
 func _start_blinking() -> void:
 	_cursor_blink_visible = true
 	if cursor_overlay:
-		cursor_overlay.visible = true
+		cursor_overlay.visible = _cursor_dec_visible
 	if _blink_timer:
 		_blink_timer.start()
 
 
 ## Stop the blink timer; cursor is held visible (steady while unfocused).
+## Respects DEC mode 25: cursor stays hidden if _cursor_dec_visible is false.
 func _stop_blinking() -> void:
 	if _blink_timer:
 		_blink_timer.stop()
 	_cursor_blink_visible = true
 	if cursor_overlay:
-		cursor_overlay.visible = true
+		cursor_overlay.visible = _cursor_dec_visible
 
 
 func _exit_tree() -> void:

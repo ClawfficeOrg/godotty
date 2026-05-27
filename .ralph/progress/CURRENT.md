@@ -7,6 +7,16 @@
 
 ## Now doing
 
+Task `1.1.4` — DONE. Cursor hide/show via DEC private mode 25 implemented.
+- `project/scripts/terminal_view.gd` — added `_cursor_dec_visible: bool = true`;
+  `_handle_private_mode_set("?25")` sets it true and restores overlay;
+  `_handle_private_mode_reset("?25")` sets it false and hides overlay;
+  `_on_blink_timeout`, `_start_blinking`, `_stop_blinking` all guard on
+  `_cursor_dec_visible` so no blink or focus event can override a DEC hide.
+- `tests/unit/terminal_view_cursor_hide_test.gd` — 12 mock-mode tests, ALL GREEN.
+- `CHANGELOG.md` and `docs/todo-v1.md` — updated.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
 Task `1.1.3` — DONE. Cursor blink implemented.
 - `project/scripts/terminal_settings.gd` — new `TerminalSettings` class (plain
   class_name, not autoload) with `static var cursor_blink_rate: float = 0.5`.
