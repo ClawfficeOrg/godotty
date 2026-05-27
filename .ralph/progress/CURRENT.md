@@ -7,7 +7,22 @@
 
 ## Now doing
 
-Task `2.1.1` — DONE. TerminalSettings Resource.
+Task `2.1.2` — DONE. Apply TerminalSettings font to OutputDisplay.
+- `project/scripts/terminal_settings.gd` — added `static var font: Font = null` to give
+  TerminalView somewhere to read a font override from.
+- `project/scripts/terminal_view.gd` — added `char_width: float` and `line_height: float`
+  instance vars (default to CHAR_W/CHAR_H); added `apply_font_settings()` public method
+  that derives metrics from TerminalSettings.font_size, calls
+  `output_display.add_theme_font_size_override("normal_font_size", …)` and
+  `output_display.add_theme_font_override("normal_font", …)` when font ≠ null,
+  then calls `_update_cursor_overlay()`; `_update_cursor_overlay()`,
+  `_pixel_to_cell()`, and `_update_selection_overlay()` all now reference
+  `char_width`/`line_height` instance vars instead of CHAR_W/CHAR_H constants;
+  `_ready()` calls `apply_font_settings()` after `_initialize_terminal()`.
+- `tests/unit/terminal_view_font_test.gd` — 10 mock-mode tests, ALL GREEN.
+- `.gdlintrc` `max-file-lines` bumped to 1200 (file grew to 1123 lines).
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
 - `project/resources/terminal_settings.gd` — `extends Resource` (no class_name to avoid
   collision with existing `TerminalSettings` static class). Exports: `font: FontFile`,
   `font_size: int` (default 14, clamped [8,72]), `line_height_scale: float` (default 1.2,

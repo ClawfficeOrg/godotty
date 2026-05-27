@@ -10,6 +10,24 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Apply TerminalSettings font to OutputDisplay (task 2.1.2).**
+  - `project/scripts/terminal_settings.gd` — added `static var font: Font = null`
+    so callers can supply an optional monospace font override.
+  - `project/scripts/terminal_view.gd` — added `char_width: float` and
+    `line_height: float` instance variables (derived from `TerminalSettings.font_size`
+    as `font_size × 0.5` and `font_size × 1.0` respectively); added public
+    `apply_font_settings()` method that recomputes these metrics, calls
+    `output_display.add_theme_font_size_override("normal_font_size", …)` and,
+    when `TerminalSettings.font ≠ null`, `output_display.add_theme_font_override
+    ("normal_font", …)`; `_update_cursor_overlay()`, `_pixel_to_cell()`, and
+    `_update_selection_overlay()` now use `char_width`/`line_height` instance
+    variables instead of the `CHAR_W`/`CHAR_H` constants so font changes propagate
+    immediately to cursor and selection positioning; `_ready()` calls
+    `apply_font_settings()` on startup.
+  - `tests/unit/terminal_view_font_test.gd` — 10 mock-mode tests: metrics
+    recomputed on font_size change, cursor overlay pixel position updates,
+    font_size theme override applied to OutputDisplay.
+
 - **TerminalSettings Resource (task 2.1.1).**
   - `project/resources/terminal_settings.gd` — `Resource` subclass with exported
     properties: `font: FontFile` (null → engine default), `font_size: int` (default 14),
