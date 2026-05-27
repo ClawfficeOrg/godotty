@@ -7,7 +7,16 @@
 
 ## Now doing
 
-Task `1.3.2` — DONE. Wrap clipboard paste in markers when mode is active.
+Task `1.4.2` — DONE. Copy selection to clipboard.
+- `project/scripts/terminal_view.gd` — added `_last_copied_text` var; `get_selected_text()`
+  reads from alt-grid cells or primary-screen RichTextLabel; `copy_selected_to_clipboard()`
+  calls `DisplayServer.clipboard_set(text)` and stores `_last_copied_text`; Ctrl+Shift+C
+  and Ctrl+Insert handlers added before existing KEY_C match arm.
+- `tests/unit/terminal_view_copy_test.gd` — 8 mock-mode tests, ALL GREEN.
+- CHANGELOG.md and docs/todo-v1.md updated.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
+Task `1.4.1` — DONE. Click-drag text selection in TerminalView.
 - `project/scripts/terminal_view.gd` — added `BRACKETED_PASTE_START`/`BRACKETED_PASTE_END`
   constants; `paste_text(text)` public method wraps with ESC[200~…ESC[201~ when
   `_bracketed_paste_mode` is true, sends bare text otherwise; Ctrl+Shift+V handler.
