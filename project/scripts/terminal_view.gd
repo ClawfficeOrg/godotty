@@ -37,6 +37,9 @@ const MENU_LABEL_CLEAR: String = "Clear"
 ## BBCode background colour used to highlight search matches.
 const SEARCH_HIGHLIGHT_BG: String = "#3a3a00"
 
+## BBCode background colour for the currently-selected (navigated) search match.
+const SEARCH_ACCENT_BG: String = "#b58900"
+
 ## Computed character cell width in pixels (TerminalSettings.font_size × 0.5).
 ## Updated by apply_font_settings(). Used for cursor and selection positioning.
 var char_width: float = CHAR_W
@@ -145,6 +148,10 @@ var _search_highlight_count: int = 0
 ## Positions (line, col) of all current search matches in the scrollback.
 var _search_matches: Array[Vector2i] = []
 
+## Index of the currently-selected (accent-highlighted) search match.
+## -1 means no match is selected.
+var _search_match_index: int = -1
+
 ## Query string from the last search_scrollback() call (used when re-rendering).
 var _last_search_query: String = ""
 
@@ -215,6 +222,8 @@ func _ready() -> void:
 	if search_bar:
 		search_bar.search_canceled.connect(_on_search_canceled)
 		search_bar.search_submitted.connect(_on_search_submitted)
+		search_bar.navigate_next.connect(_on_navigate_next)
+		search_bar.navigate_prev.connect(_on_navigate_prev)
 
 
 func _input(event: InputEvent) -> void:
@@ -1207,6 +1216,10 @@ func _exit_tree() -> void:
 		search_bar.search_canceled.disconnect(_on_search_canceled)
 	if search_bar and search_bar.search_submitted.is_connected(_on_search_submitted):
 		search_bar.search_submitted.disconnect(_on_search_submitted)
+	if search_bar and search_bar.navigate_next.is_connected(_on_navigate_next):
+		search_bar.navigate_next.disconnect(_on_navigate_next)
+	if search_bar and search_bar.navigate_prev.is_connected(_on_navigate_prev):
+		search_bar.navigate_prev.disconnect(_on_navigate_prev)
 
 
 ## Called when the search bar emits search_canceled (Escape or hide_search()).
@@ -1214,6 +1227,7 @@ func _exit_tree() -> void:
 func _on_search_canceled() -> void:
 	_search_highlight_count = 0
 	_search_matches.clear()
+	_search_match_index = -1
 	_last_search_query = ""
 	if output_display and not _in_alternate_screen:
 		output_display.clear()
@@ -1231,12 +1245,47 @@ func _on_search_submitted(query: String) -> void:
 		search_bar.set_match_display(0, matches.size())
 
 
+## Advance to the next search match (wraps from last to first).
+func _on_navigate_next() -> void:
+	_navigate_search_match(1)
+
+
+## Move to the previous search match (wraps from first to last).
+func _on_navigate_prev() -> void:
+	_navigate_search_match(-1)
+
+
+## Advance or retreat the current match by direction (+1 or -1), wrap around,
+## re-render with accent on the selected match, scroll to its line, and
+## update the SearchBar match-count label.
+func _navigate_search_match(direction: int) -> void:
+	var total: int = _search_matches.size()
+	if total == 0:
+		return
+	if _search_match_index == -1:
+		_search_match_index = 0 if direction > 0 else total - 1
+	else:
+		_search_match_index = (_search_match_index + direction + total) % total
+	_render_highlighted_scrollback()
+	_scroll_to_match_line(_search_matches[_search_match_index].x)
+	if search_bar:
+		search_bar.set_match_display(_search_match_index + 1, total)
+
+
+## Scroll the ScrollContainer so the given line index is visible.
+func _scroll_to_match_line(line_idx: int) -> void:
+	if scroll_container:
+		scroll_container.scroll_vertical = int(float(line_idx) * line_height)
+
+
 ## Search the scrollback buffer for all occurrences of query.
 ## Plain search is case-insensitive by default. Set use_regex=true for regex mode.
 ## Returns an Array[Vector2i] where each entry is (line_index, col_index).
 ## Also re-renders the output with match highlights and updates _search_highlight_count.
+## Resets _search_match_index to -1 (no match selected) on each new search.
 func search_scrollback(query: String, use_regex: bool = false) -> Array[Vector2i]:
 	_search_matches.clear()
+	_search_match_index = -1
 	_last_search_query = query
 	_last_search_use_regex = use_regex
 	if query.is_empty():
@@ -1273,7 +1322,11 @@ func search_scrollback(query: String, use_regex: bool = false) -> Array[Vector2i
 ## Return a BBCode string for line_text with [bgcolor=][/bgcolor] tags wrapped
 ## around every occurrence of query. Uses case-insensitive plain search by
 ## default; set use_regex=true for regex mode. Non-matching text is xml_escaped.
-func get_highlighted_line(line_text: String, query: String, use_regex: bool = false) -> String:
+## accent_col: column of the match to highlight with SEARCH_ACCENT_BG; all
+## other matches use SEARCH_HIGHLIGHT_BG. Pass -1 (default) for no accent.
+func get_highlighted_line(
+	line_text: String, query: String, use_regex: bool = false, accent_col: int = -1
+) -> String:
 	if query.is_empty() or line_text.is_empty():
 		return line_text.xml_escape()
 	if use_regex:
@@ -1284,7 +1337,10 @@ func get_highlighted_line(line_text: String, query: String, use_regex: bool = fa
 		var pos: int = 0
 		for m: RegExMatch in re.search_all(line_text):
 			result += line_text.substr(pos, m.get_start() - pos).xml_escape()
-			result += "[bgcolor=%s]" % SEARCH_HIGHLIGHT_BG
+			var bg: String = (
+				SEARCH_ACCENT_BG if m.get_start() == accent_col else SEARCH_HIGHLIGHT_BG
+			)
+			result += "[bgcolor=%s]" % bg
 			result += m.get_string().xml_escape()
 			result += "[/bgcolor]"
 			pos = m.get_start() + m.get_string().length()
@@ -1302,7 +1358,8 @@ func get_highlighted_line(line_text: String, query: String, use_regex: bool = fa
 			result += line_text.substr(pos).xml_escape()
 			break
 		result += line_text.substr(pos, idx - pos).xml_escape()
-		result += "[bgcolor=%s]" % SEARCH_HIGHLIGHT_BG
+		var bg: String = SEARCH_ACCENT_BG if idx == accent_col else SEARCH_HIGHLIGHT_BG
+		result += "[bgcolor=%s]" % bg
 		result += line_text.substr(idx, q_len).xml_escape()
 		result += "[/bgcolor]"
 		pos = idx + q_len
@@ -1321,6 +1378,7 @@ func _strip_ansi(text: String) -> String:
 ## Matching lines are shown as plain text with [bgcolor=] tags; non-matching
 ## lines are also shown as plain text (ANSI colour is dropped while a search
 ## is active, which keeps the renderer simple and allocation-free).
+## The match at _search_match_index is highlighted with SEARCH_ACCENT_BG.
 func _render_highlighted_scrollback() -> void:
 	if not output_display or _in_alternate_screen:
 		return
@@ -1328,6 +1386,11 @@ func _render_highlighted_scrollback() -> void:
 	if _search_matches.is_empty():
 		output_display.append_text(_output_accumulator)
 		return
+	var current_line: int = -1
+	var current_col: int = -1
+	if _search_match_index >= 0 and _search_match_index < _search_matches.size():
+		current_line = _search_matches[_search_match_index].x
+		current_col = _search_matches[_search_match_index].y
 	var matched_lines: Dictionary = {}
 	for m: Vector2i in _search_matches:
 		matched_lines[m.x] = true
@@ -1335,8 +1398,9 @@ func _render_highlighted_scrollback() -> void:
 	for line_idx: int in range(lines.size()):
 		var plain: String = _strip_ansi(lines[line_idx])
 		if matched_lines.has(line_idx):
+			var accent: int = current_col if line_idx == current_line else -1
 			output_display.append_text(
-				get_highlighted_line(plain, _last_search_query, _last_search_use_regex)
+				get_highlighted_line(plain, _last_search_query, _last_search_use_regex, accent)
 			)
 		else:
 			output_display.append_text(plain.xml_escape())

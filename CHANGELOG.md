@@ -10,6 +10,29 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Search match navigation (task 2.2.3).**
+  - `project/scripts/search_bar.gd` — `_input()` now intercepts `KEY_ENTER`/
+    `KEY_KP_ENTER`: plain Enter emits `navigate_next`, Shift+Enter emits
+    `navigate_prev`; event is consumed so the `LineEdit` does not also fire
+    `text_submitted`.
+  - `project/scripts/terminal_view.gd` — `SEARCH_ACCENT_BG` constant
+    (`#b58900`) for the current-match highlight; `_search_match_index` private
+    var; `_on_navigate_next()` / `_on_navigate_prev()` signal handlers;
+    `_navigate_search_match(direction)` advances/retreats the index with wrap,
+    calls `_render_highlighted_scrollback()` with accent on the selected match,
+    scrolls the `ScrollContainer` to the match line, and updates the match-count
+    label to `"<current> / <total>"` (1-indexed).  `get_highlighted_line()` gains
+    an optional `accent_col: int = -1` parameter — when `≥ 0` that match column
+    uses `SEARCH_ACCENT_BG`; all others keep `SEARCH_HIGHLIGHT_BG`.
+    `search_scrollback()` resets `_search_match_index` to `-1` on each new
+    query.  `_on_search_canceled()` likewise resets it.
+    Navigate signals wired in `_ready()` and cleaned up in `_exit_tree()`.
+  - `.gdlintrc` — `max-file-lines` raised from 1400 → 1500 to accommodate
+    the larger `terminal_view.gd`.
+  - `tests/unit/search_navigation_test.gd` — 7 tests: forward wrap, backward
+    wrap, no-match safety, match-display label, Escape reset, accent color,
+    new-search reset; ALL GREEN.
+
 - **Scrollback search logic (task 2.2.2).**
   - `project/scripts/terminal_view.gd` — added `search_scrollback(query, use_regex=false)`
     returning `Array[Vector2i]` (line, col) for every match; case-insensitive plain search
