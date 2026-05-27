@@ -10,11 +10,22 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **GdUnit4 test harness (spec 0002).**
+  - GdUnit4 v6.1.3 (Godot 4.6–compatible fork: `godot-gdunit-labs/gdUnit4`)
+    is now installed by `scripts/install_gdunit4.sh` into
+    `project/addons/gdUnit4/` (gitignored).
+  - `tests/unit/terminal_manager_pwd_test.gd` — pins the mock-mode
+    `pwd` / `cd` contract (`/home/user`, absolute paths, `..`, `~`).
+  - `tests/unit/signal_bus_connectivity_test.gd` — pins the SignalBus
+    signal set, signal arity, and argument names.
+  - CI now runs the suite headless on **both Linux and macOS** and
+    fails the build on red. Test reports uploaded as artifacts.
+- `*.uid` is now gitignored (Godot 4.6 generates one per script).
 - `AGENTS.md` — agent constitution defining process, principles, and hard stops.
 - `.ralph/` directory — Ralph Loop state (PROMPT, specs, progress, learnings).
 - `.github/skills/` — on-demand skill packs (gdscript, godot, testing, git, review, release, ralph).
 - `scripts/ralph_loop.sh` — driver for the autonomous development loop.
-- `scripts/run_tests.sh` — headless GdUnit4 runner (soft-success until spec 0002 lands GdUnit4).
+- `scripts/run_tests.sh` — headless GdUnit4 runner.
 - `scripts/lint.sh` — gdformat + gdlint + shellcheck wrapper.
 - `scripts/release.sh` — semver release cutter (CHANGELOG promotion, tag, GitHub release).
 - `scripts/install_gdunit4.sh` — pinned-version GdUnit4 installer (used by spec 0002).
@@ -28,6 +39,10 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 
 ### Changed
 - README rewritten to point at `AGENTS.md`, the Ralph Loop, and the dual-review process.
+- `scripts/run_tests.sh` no longer soft-succeeds when Godot or GdUnit4
+  is missing — it now exits 2 (misconfiguration). Failing tests exit 1.
+- CI “Install GdUnit4” step is no longer optional and CI runs on both
+  Linux and macOS.
 
 ### Fixed
 - (none)

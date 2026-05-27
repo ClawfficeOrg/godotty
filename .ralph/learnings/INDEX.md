@@ -13,6 +13,59 @@ Format:
 
 ---
 
+## 2026-03-23 — GdUnit4 repo moved orgs; v5.x is Godot 4.3/4.4 only
+
+**Context:** First Ralph iteration, installing GdUnit4 from the URL in
+`scripts/install_gdunit4.sh` (pinned to `MikeSchulze/gdUnit4 v5.0.5`).
+**Learning:** v5.0.5 fails to compile on Godot 4.6 (`get_as_text()` arity
+change, `CallableDoubler.call(StringName, ...)` mismatch). The project also
+moved to **`godot-gdunit-labs/gdUnit4`**. Use **v6.1.3** (or newer in the
+v6.1.x line) for Godot 4.6.
+**Evidence:** `scripts/install_gdunit4.sh`, spec 0002.
+**Tag:** godot · gdunit · ci
+
+## 2026-03-23 — GdUnit4 CmdTool refuses headless without `--ignoreHeadlessMode`
+
+**Context:** Running `scripts/run_tests.sh` against Godot 4.6 headless.
+**Learning:** `addons/gdUnit4/bin/GdUnitCmdTool.gd` aborts with exit 103 in
+headless mode unless `--ignoreHeadlessMode` is passed. Our suites don't
+rely on `InputEvent` plumbing, so it's safe.
+**Evidence:** `scripts/run_tests.sh`.
+**Tag:** godot · gdunit · ci
+
+## 2026-03-23 — `monitor_signals` corrupts autoload singletons in GdUnit4 v6.1.x
+
+**Context:** Writing `tests/unit/signal_bus_connectivity_test.gd`.
+**Learning:** Calling `monitor_signals(SignalBus)` on an autoload causes
+*"Object-derived class of argument 1 (previously freed)"* errors on the
+*next* test in the same suite — the monitor wraps the watched object and
+frees the wrapper between cases. Workaround: assert signal contracts via
+`get_signal_list()` (signal name + arg names) and round-trip with a local
+`Callable` you connect & disconnect yourself.
+**Evidence:** `tests/unit/signal_bus_connectivity_test.gd`.
+**Tag:** godot · gdunit · autoload
+
+## 2026-03-23 — Godot 4.6 emits `*.uid` files alongside every script
+
+**Context:** `git status` was noisy after running tests / opening project.
+**Learning:** Godot 4.6 generates a `script.gd.uid` file next to every
+`.gd` script for the new UID-based resource system. These regenerate on
+import — ignore them via `*.uid` in `.gitignore`.
+**Evidence:** `.gitignore`.
+**Tag:** godot · git
+
+## 2026-03-23 — GDExtension `dlopen` errors are non-fatal in CI
+
+**Context:** Running tests in CI without `godotty-node` built.
+**Learning:** Godot logs scary `Can't open dynamic library` errors when a
+GDExtension dylib is missing, but the engine continues; `TerminalManager`
+detects this via `ClassDB.class_get_method_list("TerminalNode2D")` and
+falls back to mock mode. Don't `grep ERROR` to gate CI — use the GdUnit4
+exit code.
+**Evidence:** `project/autoload/terminal_manager.gd`, `.github/workflows/ci.yml`.
+**Tag:** godot · gdextension · ci
+
+
 ## 2025-01-XX — Windows: portable_pty DLL init can fail; force mock mode
 
 **Context:** Real terminal backend crashed on Windows during plugin init.

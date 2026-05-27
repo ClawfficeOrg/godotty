@@ -1,5 +1,6 @@
 # Godot
 *.import
+*.uid
 .godot/
 
 # Build artifacts
@@ -27,7 +28,10 @@ Thumbs.db
 
 # Test artifacts
 build/
-project/tests        # symlink created by scripts/run_tests.sh
+# symlink created by scripts/run_tests.sh
+project/tests
+# installed by scripts/install_gdunit4.sh
+project/addons/gdUnit4/
 
 # Python
 __pycache__/

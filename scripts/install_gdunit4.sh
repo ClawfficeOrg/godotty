@@ -6,9 +6,11 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
-VERSION="${GDUNIT4_VERSION:-v5.0.5}"
+# v6.1.x targets Godot 4.5+ (we're on 4.6). Repo moved to godot-gdunit-labs/gdUnit4.
+# See: https://github.com/godot-gdunit-labs/gdUnit4/releases
+VERSION="${GDUNIT4_VERSION:-v6.1.3}"
 DEST="project/addons/gdUnit4"
-URL="https://github.com/MikeSchulze/gdUnit4/archive/refs/tags/${VERSION}.tar.gz"
+URL="https://github.com/godot-gdunit-labs/gdUnit4/archive/refs/tags/${VERSION}.tar.gz"
 
 if [[ -d "$DEST" ]] && [[ "${1:-}" != "--force" ]]; then
 	echo "install_gdunit4: $DEST already exists. Pass --force to reinstall."
