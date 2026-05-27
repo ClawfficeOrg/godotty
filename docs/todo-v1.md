@@ -49,7 +49,7 @@ and exit without corrupting the scrollback history.
     that `TerminalView` switches buffers; emit exit sequence; assert primary
     content restored.
 
-- [ ] `1.0.3` Cursor positioning in alternate screen.
+- [x] `1.0.3` Cursor positioning in alternate screen.
   - Complexity: Low-Medium. Suggested model: standard coding model.
   - Owned paths: `project/scripts/terminal_view.gd`,
     `project/scripts/terminal_grid.gd`.

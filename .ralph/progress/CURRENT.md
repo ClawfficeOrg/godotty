@@ -7,6 +7,20 @@
 
 ## Now doing
 
+Task `1.0.3` — DONE. Cursor positioning in alternate screen implemented.
+- `project/scripts/terminal_grid.gd` — added `cursor_row`/`cursor_col` public
+  vars; `set_cursor(row, col)`, `move_cursor(delta_row, delta_col)`,
+  `write_at_cursor(cell)` methods; `resize` clamps cursor to new bounds.
+- `project/scripts/terminal_view.gd` — `CSI H`/`f`/`A`/`B`/`C`/`D` dispatch
+  into `_alt_grid: TerminalGrid`; chars mirrored to grid at cursor position;
+  `_make_cell_from_state(ch)` helper; `_terminal_cols`/`_terminal_rows` tracked.
+  `.gdlintrc` `max-file-lines` bumped to 700.
+- `tests/unit/terminal_grid_cursor_test.gd` — 25 tests, ALL GREEN.
+- `tests/unit/terminal_view_ansi_cursor_test.gd` — 25 tests, ALL GREEN.
+- `docs/todo-v1.md` — task 1.0.3 marked `[x]`.
+- `CHANGELOG.md` — entry added under `[Unreleased] / Added`.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
 Task `1.0.2` — DONE. Alternate screen buffer enter/exit implemented in `TerminalView`.
 - `project/scripts/terminal_view.gd` — CSI `?1049h/l` (save/restore), `?47h/l`,
   `?1047h/l` handled. Primary accumulator saved on enter, restored on exit.

@@ -10,6 +10,27 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Cursor positioning in alternate screen (task 1.0.3).**
+  - `project/scripts/terminal_grid.gd` — added cursor state (`cursor_row`,
+    `cursor_col`) and three new methods: `set_cursor(row, col)` (absolute,
+    0-based, clamped), `move_cursor(delta_row, delta_col)` (relative, clamped),
+    and `write_at_cursor(cell)` (writes at cursor then advances column). `resize`
+    now clamps the cursor to new bounds.
+  - `project/scripts/terminal_view.gd` — honours `CSI H` / `CSI f` (cursor
+    home / position) and `CSI A/B/C/D` (up/down/right/left) in the alternate
+    screen buffer. Regular characters written in alternate-screen mode are
+    mirrored into an `_alt_grid: TerminalGrid` at the tracked cursor position.
+    Added `_make_cell_from_state(ch)` helper to build a grid cell from current
+    SGR state. Alternate-screen dimensions tracked via `_terminal_cols` /
+    `_terminal_rows` (default 80×24); grid is resized on viewport change.
+    `.gdlintrc` `max-file-lines` bumped to 700.
+  - `tests/unit/terminal_grid_cursor_test.gd` — 25 unit tests covering cursor
+    initial state, `set_cursor`, `move_cursor`, `write_at_cursor`, bounds-
+    clamping, and resize-clamping. All GREEN.
+  - `tests/unit/terminal_view_ansi_cursor_test.gd` — 25 mock-mode integration
+    tests covering `CSI H`/`f`/`A`/`B`/`C`/`D` dispatch, character placement
+    at cursor cell, partial-escape splitting, out-of-bounds clamping, and
+    no-crash guarantee outside alternate screen. All GREEN.
 - **`TerminalGrid` 2-D cell backing store (task 1.0.1).**
   - `project/scripts/terminal_grid.gd` — `RefCounted`-based class with full
     cell API: `resize(cols, rows)`, `set_cell`, `get_cell`, `clear_region`,

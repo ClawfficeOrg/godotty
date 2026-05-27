@@ -23,6 +23,12 @@ const DEFAULT_CELL: Dictionary = {
 	"url": "",
 }
 
+## Current cursor row (0-based). Updated by set_cursor, move_cursor, and resize.
+var cursor_row: int = 0
+
+## Current cursor column (0-based). Updated by set_cursor, move_cursor, and resize.
+var cursor_col: int = 0
+
 var _cols: int = 0
 var _rows: int = 0
 
@@ -51,6 +57,9 @@ func resize(cols: int, rows: int) -> void:
 	_cols = cols
 	_rows = rows
 	_cells = new_cells
+	# Clamp cursor to new bounds after resize.
+	cursor_row = clampi(cursor_row, 0, max(0, _rows - 1))
+	cursor_col = clampi(cursor_col, 0, max(0, _cols - 1))
 
 
 ## Write a cell at (row, col). Out-of-bounds writes are silently ignored.
@@ -92,6 +101,27 @@ func scroll_up(n: int) -> void:
 		for _c in range(_cols):
 			row.append(_blank_cell())
 		_cells.append(row)
+
+
+## Move cursor to an absolute 0-based (row, col).
+## Coordinates are clamped to grid bounds.
+func set_cursor(row: int, col: int) -> void:
+	cursor_row = clampi(row, 0, max(0, _rows - 1))
+	cursor_col = clampi(col, 0, max(0, _cols - 1))
+
+
+## Move cursor relative to current position.
+## Result is clamped to grid bounds.
+func move_cursor(delta_row: int, delta_col: int) -> void:
+	set_cursor(cursor_row + delta_row, cursor_col + delta_col)
+
+
+## Write a cell at the current cursor position and advance the column by one.
+## Column does not advance past the last column.
+func write_at_cursor(cell: Dictionary) -> void:
+	set_cell(cursor_row, cursor_col, cell)
+	if _cols > 0 and cursor_col < _cols - 1:
+		cursor_col += 1
 
 
 ## Return a BBCode-formatted string for the given row (for RichTextLabel).

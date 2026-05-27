@@ -13,6 +13,20 @@ Format:
 
 ---
 
+## 2026-05-27 — gdlint `class-definitions-order` rejects computed properties after private vars
+
+**Context:** Adding `cursor_row`/`cursor_col` as GDScript 4 computed properties (var with getter block) after the existing private vars `_cols`, `_rows`, `_cells` in `terminal_grid.gd`.
+**Learning:** gdlint flags any `var name: Type:` (property with getter/setter block) as "Definition out of order in global scope (class-definitions-order)" when it appears *after* underscore-prefixed private vars. Fix: move the computed properties to come before the private vars, or (simpler) use plain public vars instead of getter blocks — they avoid the ordering issue entirely.
+**Evidence:** `project/scripts/terminal_grid.gd` — task 1.0.3.
+**Tag:** gdscript · gdlint
+
+## 2026-05-27 — gdlint rejects uppercase letters anywhere in test function names
+
+**Context:** Naming test functions after CSI sequences (e.g., `test_csi_H_...`, `test_csi_A_...`).
+**Learning:** The `function-name` pattern `'(_on_)?_?[a-z][a-z0-9]*(_[a-z0-9]+)*'` requires entirely lowercase identifiers. Uppercase letters anywhere in the name cause a "Function name … is not valid" lint error. Use lowercase equivalents: `test_csi_h_...`, `test_csi_a_...`.
+**Evidence:** `tests/unit/terminal_view_ansi_cursor_test.gd` — task 1.0.3.
+**Tag:** gdscript · gdlint · testing
+
 ## 2026-05-27 — `\x` hex escapes in GDScript cause runtime parse error in Godot 4.6.2
 
 **Context:** Writing the first test that loads `terminal_view.gd` (via `preload` of terminal.tscn). The file contained `"\x04"`, `"\x1b"`, `"\x07"`, `"\x08"`, `"\x03"` string literals.
