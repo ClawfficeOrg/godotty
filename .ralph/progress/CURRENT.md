@@ -7,14 +7,15 @@
 
 ## Now doing
 
-Task `1.0.1` — DONE. `TerminalGrid` 2-D cell backing store implemented.
-- `project/scripts/terminal_grid.gd` — `RefCounted` class with `resize`,
-  `set_cell`, `get_cell`, `clear_region`, `scroll_up`, `to_bbcode_line`.
-- `tests/unit/terminal_grid_test.gd` — 42 tests, ALL GREEN.
-- `.gdlintrc` — `max-public-methods: 100` added for test-suite compatibility.
-- `docs/todo-v1.md` — task 1.0.1 marked `[x]`.
+Task `1.0.2` — DONE. Alternate screen buffer enter/exit implemented in `TerminalView`.
+- `project/scripts/terminal_view.gd` — CSI `?1049h/l` (save/restore), `?47h/l`,
+  `?1047h/l` handled. Primary accumulator saved on enter, restored on exit.
+  Also fixed pre-existing `\x` hex escapes → `\u00XX`, and Godot 3-style
+  `disconnect`/`is_connected` 3-arg calls in `_exit_tree` → Godot 4 signal API.
+- `tests/unit/terminal_view_alternate_screen_test.gd` — 13 mock-mode tests, ALL GREEN.
+- `docs/todo-v1.md` — task 1.0.2 marked `[x]`.
 - `CHANGELOG.md` — entry added under `[Unreleased] / Added`.
-- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → 88/88 GREEN.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
 
 ## Done this session (continued)
 
