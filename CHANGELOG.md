@@ -10,6 +10,15 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Grid reflow on resize (task 1.2.3).**
+  - `project/scripts/terminal_grid.gd` — `resize(cols, rows)` now reflows
+    existing logical lines: lines wider than `cols` wrap onto multiple physical
+    rows, short lines gain blank cells, blank rows stay single-row.  A new
+    `_wrapped: Array` tracks soft-wrap continuations.  A new
+    `scrollback_offset: int` is reset to 0 on every resize so the most recent
+    line stays visible.  `scroll_up()` updated to maintain `_wrapped`.
+  - `tests/unit/terminal_grid_resize_test.gd` — 14 mock-mode tests covering
+    80→40 reflow, multi-wrap, blank-cell padding, and scrollback reset, ALL GREEN.
 - **Resize propagation to TerminalManager and godotty-node (task 1.2.2).**
   - `project/autoload/terminal_manager.gd` — new `_mock_cols`/`_mock_rows` state
     vars (default 80×24); `_ready()` connects `SignalBus.terminal_resized` to

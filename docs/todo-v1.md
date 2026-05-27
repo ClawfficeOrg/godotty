@@ -141,7 +141,7 @@ the shell process receives SIGWINCH so it can reflow its output.
     mode: update `_mock_cols` / `_mock_rows` state variables.
   - Tests (mock): emit resize signal; assert TerminalManager state updated.
 
-- [ ] `1.2.3` Grid reflow on resize.
+- [x] `1.2.3` Grid reflow on resize.
   - Complexity: Medium. Suggested model: flagship model.
   - Owned paths: `project/scripts/terminal_grid.gd`.
   - Work: when `resize(cols, rows)` is called, reflow existing lines that
