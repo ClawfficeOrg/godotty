@@ -26,6 +26,16 @@ const CHAR_H: float = 16.0
 const BRACKETED_PASTE_START: String = "\u001b[200~"
 const BRACKETED_PASTE_END: String = "\u001b[201~"
 
+## Context menu item IDs for the right-click PopupMenu.
+const MENU_ID_COPY: int = 0
+const MENU_ID_PASTE: int = 1
+const MENU_ID_CLEAR: int = 2
+
+## Labels for the context menu items (avoid hard-coded strings in UI code).
+const MENU_LABEL_COPY: String = "Copy"
+const MENU_LABEL_PASTE: String = "Paste"
+const MENU_LABEL_CLEAR: String = "Clear"
+
 ## Current cursor shape set by DECSCUSR (CSI Ps SP q).
 var cursor_style: CursorStyle = CursorStyle.BLINKING_BLOCK
 
@@ -97,6 +107,12 @@ var _clipboard_override: String = ""
 ## Timer that drives cursor blinking (created in _setup_cursor_blink).
 var _blink_timer: Timer = null
 
+## Right-click context PopupMenu (created in _setup_context_menu).
+var _context_menu: PopupMenu = null
+
+## Set to true each time the context menu popup is requested (readable by tests).
+var _context_menu_popup_requested: bool = false
+
 ## Whether a left-button drag selection is currently in progress.
 var _selecting: bool = false
 
@@ -149,6 +165,9 @@ func _ready() -> void:
 	# Set up text-selection overlay
 	_setup_selection_overlay()
 
+	# Set up right-click context menu
+	_setup_context_menu()
+
 
 func _input(event: InputEvent) -> void:
 	if not _is_ready:
@@ -186,7 +205,7 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 
 
-## Handle GUI mouse events for click-drag text selection.
+## Handle GUI mouse events for click-drag text selection and right-click context menu.
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
@@ -198,6 +217,8 @@ func _gui_input(event: InputEvent) -> void:
 			else:
 				_selecting = false
 			_update_selection_overlay()
+		elif mb.button_index == MOUSE_BUTTON_RIGHT and mb.pressed:
+			_show_context_menu(mb.global_position)
 	elif event is InputEventMouseMotion and _selecting:
 		var mm := event as InputEventMouseMotion
 		selection_end = _pixel_to_cell(mm.position)
@@ -222,6 +243,35 @@ func _setup_selection_overlay() -> void:
 	_selection_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if scroll_container:
 		scroll_container.add_child(_selection_overlay)
+
+
+## Create the right-click context PopupMenu with Copy, Paste, Clear items.
+func _setup_context_menu() -> void:
+	_context_menu = PopupMenu.new()
+	_context_menu.add_item(MENU_LABEL_COPY, MENU_ID_COPY)
+	_context_menu.add_item(MENU_LABEL_PASTE, MENU_ID_PASTE)
+	_context_menu.add_item(MENU_LABEL_CLEAR, MENU_ID_CLEAR)
+	add_child(_context_menu)
+	_context_menu.id_pressed.connect(_on_context_menu_id_pressed)
+
+
+## Enable/disable Copy based on current selection, then show the PopupMenu.
+func _show_context_menu(at_pos: Vector2) -> void:
+	var has_text: bool = not get_selected_text().is_empty()
+	_context_menu.set_item_disabled(_context_menu.get_item_index(MENU_ID_COPY), not has_text)
+	_context_menu_popup_requested = true
+	_context_menu.popup(Rect2i(int(at_pos.x), int(at_pos.y), 0, 0))
+
+
+## Dispatch the action for the selected context menu item.
+func _on_context_menu_id_pressed(id: int) -> void:
+	match id:
+		MENU_ID_COPY:
+			copy_selected_to_clipboard()
+		MENU_ID_PASTE:
+			paste_text(_get_clipboard_text())
+		MENU_ID_CLEAR:
+			TerminalManager.clear()
 
 
 ## Reposition and resize the selection overlay to cover the selected cells.
@@ -995,3 +1045,5 @@ func _exit_tree() -> void:
 		and get_tree().get_root().size_changed.is_connected(_on_viewport_resize)
 	):
 		get_tree().get_root().size_changed.disconnect(_on_viewport_resize)
+	if _context_menu and _context_menu.id_pressed.is_connected(_on_context_menu_id_pressed):
+		_context_menu.id_pressed.disconnect(_on_context_menu_id_pressed)

@@ -7,6 +7,19 @@
 
 ## Now doing
 
+Task `1.4.4` — DONE. Right-click context menu.
+- `project/scripts/terminal_view.gd` — added `MENU_ID_COPY/PASTE/CLEAR` constants;
+  `_context_menu: PopupMenu` and `_context_menu_popup_requested: bool` vars;
+  `_setup_context_menu()` creates PopupMenu with three items and connects `id_pressed`;
+  `_gui_input` extended to handle `MOUSE_BUTTON_RIGHT` → `_show_context_menu()`;
+  `_show_context_menu()` disables Copy when no selection, sets popup requested flag, calls popup;
+  `_on_context_menu_id_pressed()` dispatches Copy/Paste/Clear actions;
+  `_exit_tree()` disconnects `id_pressed` signal.
+- `tests/unit/terminal_view_context_menu_test.gd` — 8 mock-mode tests, ALL GREEN.
+- CHANGELOG.md updated under [Unreleased].
+- `.gdlintrc` `max-file-lines` bumped to 1100 (file grew past 1000).
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
 Task `1.4.3` — DONE. Paste from clipboard.
 - `project/scripts/terminal_view.gd` — added `_clipboard_override` var and
   `_get_clipboard_text()` helper (bypasses headless clipboard limits in tests);
