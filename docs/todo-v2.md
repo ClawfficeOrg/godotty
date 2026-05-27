@@ -133,7 +133,7 @@ the scrollback; Enter / Shift+Enter navigates between them.
     it and clears highlights.
   - Tests: Ctrl+Shift+F shows overlay; Escape hides it.
 
-- [ ] `2.2.2` Scrollback search logic.
+- [x] `2.2.2` Scrollback search logic.
   - Complexity: Medium. Suggested model: flagship model.
   - Owned paths: `project/scripts/terminal_view.gd`,
     `project/scripts/search_bar.gd`.

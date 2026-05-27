@@ -34,6 +34,9 @@ const MENU_LABEL_COPY: String = "Copy"
 const MENU_LABEL_PASTE: String = "Paste"
 const MENU_LABEL_CLEAR: String = "Clear"
 
+## BBCode background colour used to highlight search matches.
+const SEARCH_HIGHLIGHT_BG: String = "#3a3a00"
+
 ## Computed character cell width in pixels (TerminalSettings.font_size × 0.5).
 ## Updated by apply_font_settings(). Used for cursor and selection positioning.
 var char_width: float = CHAR_W
@@ -139,6 +142,15 @@ var _selection_overlay: ColorRect = null
 ## Set to 0 when the search bar is dismissed. Readable by tests.
 var _search_highlight_count: int = 0
 
+## Positions (line, col) of all current search matches in the scrollback.
+var _search_matches: Array[Vector2i] = []
+
+## Query string from the last search_scrollback() call (used when re-rendering).
+var _last_search_query: String = ""
+
+## Whether the last search_scrollback() call used regex mode.
+var _last_search_use_regex: bool = false
+
 ## Reference to the output display
 @onready var output_display: RichTextLabel = $VBoxContainer/ScrollContainer/OutputDisplay
 
@@ -202,6 +214,7 @@ func _ready() -> void:
 	# Connect search bar dismissed signal
 	if search_bar:
 		search_bar.search_canceled.connect(_on_search_canceled)
+		search_bar.search_submitted.connect(_on_search_submitted)
 
 
 func _input(event: InputEvent) -> void:
@@ -1192,9 +1205,140 @@ func _exit_tree() -> void:
 		_font_spinbox.value_changed.disconnect(_on_font_size_changed)
 	if search_bar and search_bar.search_canceled.is_connected(_on_search_canceled):
 		search_bar.search_canceled.disconnect(_on_search_canceled)
+	if search_bar and search_bar.search_submitted.is_connected(_on_search_submitted):
+		search_bar.search_submitted.disconnect(_on_search_submitted)
 
 
 ## Called when the search bar emits search_canceled (Escape or hide_search()).
-## Clears the search highlight count.
+## Clears the search highlight count and restores the un-highlighted rendering.
 func _on_search_canceled() -> void:
 	_search_highlight_count = 0
+	_search_matches.clear()
+	_last_search_query = ""
+	if output_display and not _in_alternate_screen:
+		output_display.clear()
+		output_display.append_text(_output_accumulator)
+
+
+## Called when the search bar emits search_submitted (query text changed or Enter pressed).
+## Runs search_scrollback and updates the match-count display on the SearchBar.
+func _on_search_submitted(query: String) -> void:
+	var use_regex: bool = false
+	if search_bar:
+		use_regex = search_bar.regex_enabled
+	var matches: Array[Vector2i] = search_scrollback(query, use_regex)
+	if search_bar:
+		search_bar.set_match_display(0, matches.size())
+
+
+## Search the scrollback buffer for all occurrences of query.
+## Plain search is case-insensitive by default. Set use_regex=true for regex mode.
+## Returns an Array[Vector2i] where each entry is (line_index, col_index).
+## Also re-renders the output with match highlights and updates _search_highlight_count.
+func search_scrollback(query: String, use_regex: bool = false) -> Array[Vector2i]:
+	_search_matches.clear()
+	_last_search_query = query
+	_last_search_use_regex = use_regex
+	if query.is_empty():
+		_search_highlight_count = 0
+		return _search_matches
+	var re: RegEx = null
+	if use_regex:
+		re = RegEx.new()
+		if re.compile(query) != OK:
+			_search_highlight_count = 0
+			return _search_matches
+	var lines := _raw_accumulator.split("\n")
+	for line_idx: int in range(lines.size()):
+		var plain: String = _strip_ansi(lines[line_idx])
+		if use_regex and re != null:
+			for m: RegExMatch in re.search_all(plain):
+				_search_matches.append(Vector2i(line_idx, m.get_start()))
+		else:
+			var lower_plain: String = plain.to_lower()
+			var lower_query: String = query.to_lower()
+			var q_len: int = lower_query.length()
+			var pos: int = 0
+			while true:
+				var idx: int = lower_plain.find(lower_query, pos)
+				if idx == -1:
+					break
+				_search_matches.append(Vector2i(line_idx, idx))
+				pos = idx + q_len
+	_search_highlight_count = _search_matches.size()
+	_render_highlighted_scrollback()
+	return _search_matches
+
+
+## Return a BBCode string for line_text with [bgcolor=][/bgcolor] tags wrapped
+## around every occurrence of query. Uses case-insensitive plain search by
+## default; set use_regex=true for regex mode. Non-matching text is xml_escaped.
+func get_highlighted_line(line_text: String, query: String, use_regex: bool = false) -> String:
+	if query.is_empty() or line_text.is_empty():
+		return line_text.xml_escape()
+	if use_regex:
+		var re := RegEx.new()
+		if re.compile(query) != OK:
+			return line_text.xml_escape()
+		var result := ""
+		var pos: int = 0
+		for m: RegExMatch in re.search_all(line_text):
+			result += line_text.substr(pos, m.get_start() - pos).xml_escape()
+			result += "[bgcolor=%s]" % SEARCH_HIGHLIGHT_BG
+			result += m.get_string().xml_escape()
+			result += "[/bgcolor]"
+			pos = m.get_start() + m.get_string().length()
+		result += line_text.substr(pos).xml_escape()
+		return result
+	# Plain case-insensitive search
+	var lower_line: String = line_text.to_lower()
+	var lower_query: String = query.to_lower()
+	var q_len: int = lower_query.length()
+	var result := ""
+	var pos: int = 0
+	while true:
+		var idx: int = lower_line.find(lower_query, pos)
+		if idx == -1:
+			result += line_text.substr(pos).xml_escape()
+			break
+		result += line_text.substr(pos, idx - pos).xml_escape()
+		result += "[bgcolor=%s]" % SEARCH_HIGHLIGHT_BG
+		result += line_text.substr(idx, q_len).xml_escape()
+		result += "[/bgcolor]"
+		pos = idx + q_len
+	return result
+
+
+## Strip ANSI / VT100 escape sequences from text, returning plain Unicode.
+func _strip_ansi(text: String) -> String:
+	var re := RegEx.new()
+	if re.compile("\u001b(\\[[0-9;?]*[A-Za-z]|\\][^\u0007]*\u0007|.)") != OK:
+		return text
+	return re.sub(text, "", true)
+
+
+## Re-render the primary scrollback with search highlights injected.
+## Matching lines are shown as plain text with [bgcolor=] tags; non-matching
+## lines are also shown as plain text (ANSI colour is dropped while a search
+## is active, which keeps the renderer simple and allocation-free).
+func _render_highlighted_scrollback() -> void:
+	if not output_display or _in_alternate_screen:
+		return
+	output_display.clear()
+	if _search_matches.is_empty():
+		output_display.append_text(_output_accumulator)
+		return
+	var matched_lines: Dictionary = {}
+	for m: Vector2i in _search_matches:
+		matched_lines[m.x] = true
+	var lines := _raw_accumulator.split("\n")
+	for line_idx: int in range(lines.size()):
+		var plain: String = _strip_ansi(lines[line_idx])
+		if matched_lines.has(line_idx):
+			output_display.append_text(
+				get_highlighted_line(plain, _last_search_query, _last_search_use_regex)
+			)
+		else:
+			output_display.append_text(plain.xml_escape())
+		if line_idx < lines.size() - 1:
+			output_display.append_text("\n")

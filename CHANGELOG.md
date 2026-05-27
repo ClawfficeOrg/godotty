@@ -10,6 +10,20 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Scrollback search logic (task 2.2.2).**
+  - `project/scripts/terminal_view.gd` — added `search_scrollback(query, use_regex=false)`
+    returning `Array[Vector2i]` (line, col) for every match; case-insensitive plain search
+    by default, optional regex mode; stores matches in `_search_matches` and re-renders the
+    output with `[bgcolor=][/bgcolor]` highlights via `_render_highlighted_scrollback()`.
+    Added `get_highlighted_line(line_text, query, use_regex=false)` pure helper for
+    testable BBCode injection; `_strip_ansi()` regex helper; `_on_search_submitted()`
+    wired to `SearchBar.search_submitted`; `_on_search_canceled()` now also restores
+    unhighlighted rendering; `SEARCH_HIGHLIGHT_BG` constant.
+  - `project/scripts/search_bar.gd` — added `regex_enabled: bool` property so
+    `TerminalView` can honour a regex toggle without a UI scene change.
+  - `tests/unit/terminal_view_search_test.gd` — 3 tests: 3 plain matches, regex +
+    invalid-pattern safety, BBCode injection; ALL GREEN.
+
 - **Search bar overlay with show/hide logic (task 2.2.1).**
   - `project/scenes/search_bar.tscn` — `PanelContainer` overlay anchored to
     the top-right of `TerminalView`, containing a `LineEdit` (query),
