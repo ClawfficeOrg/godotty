@@ -9,6 +9,17 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 
 ## [Unreleased]
 
+### Added
+- **Expanded unit test coverage to ≥80% of autoload methods (task 0.4.3).**
+  - `tests/unit/terminal_manager_methods_test.gd` — 15 happy-path tests covering
+    `spawn_shell`, `write_input`, `has_output`, `read_output`, and `clear` in mock mode.
+  - `tests/unit/terminal_manager_grid_test.gd` — 10 happy-path tests covering
+    `get_cell`, `get_dimensions`, and `resize` in mock mode.
+  - `tests/unit/signal_bus_methods_test.gd` — 10 tests covering round-trip
+    connections for all 5 SignalBus signals, disconnect behavior, and multiple-
+    listener ordering.
+  - Total unit suite: 46 test cases / 0 failures (`ALL GREEN`).
+
 ### Changed
 - **Tightened gdlint rules — removed all `disable` exceptions (spec 0004, task 0.4.2).**
   - Removed all 10 `disable` exceptions from `.gdlintrc` by fixing the
