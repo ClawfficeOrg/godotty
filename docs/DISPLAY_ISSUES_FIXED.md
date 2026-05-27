@@ -1,34 +1,78 @@
 # Terminal Display Issues - Fixed
 
-## Issue 1: Double Character Display (Not a Bug!)
+## Issue 1: First Character Doubling (FIXED)
 
 ### Symptom
-When typing in the terminal with the real PTY (godotty-node), each character appears twice in the display. For example, typing "cd" shows "ccd" on screen.
+When typing in the terminal with the real PTY (godotty-node), the **first character** of each command appeared doubled:
+- Type `cd` → display showed `ccd`
+- Type `ls` → display showed `lls`  
+- Type `echo "hello"` → display showed `eecho "hello"`
+
+The commands executed correctly (only one character was sent), but the visual display was wrong.
 
 ### Root Cause
-This is **correct terminal emulator behavior**, not a bug. The shell (bash, zsh, fish, etc.) performs **local echo** - it echoes back each character you type so you can see your input. This is standard behavior for all interactive terminals.
+The ANSI parser was **ignoring carriage return** (`\r`, ASCII 13) characters completely. 
 
-### Evidence
-- The commands work correctly (typing "cd dirname" successfully changes directory)
-- Only one character is actually sent to the PTY
-- The "doubling" only occurs visually because the shell echoes the character back
+When you type in an interactive shell, the shell uses readline/ZLE for line editing. After each keystroke, the shell:
+1. Sends `\r` (carriage return) to move cursor to column 0
+2. Redraws the entire input line
+3. Positions the cursor
 
-### Comparison
-Try the same behavior in any other terminal emulator (iTerm2, Terminal.app, etc.):
-1. Type a character
-2. The terminal sends it to the shell
-3. The shell receives it and echoes it back
-4. You see the character appear
+Because we ignored `\r`, the redrawn line was **appended** instead of **replacing** the current line. This caused the first character (and the prompt) to appear twice.
 
-This is how terminals have worked since the 1970s. The alternative (no echo) would require you to type blind, which is undesirable for interactive use.
+### Why Only The First Character?
+The doubling appeared on the first character because:
+1. Initial state: `$ ` (prompt)
+2. User types 'c'
+3. Shell sends: `\r$ c` (move back, redraw with new char)
+4. We ignored `\r`, appended `$ c` → result: `$ $ c` (looks like `$ cc`)
+5. User types 'd'  
+6. Shell sends: `\r$ cd` (move back, redraw whole line)
+7. We ignored `\r`, appended `$ cd` → result: `$ $ c$ cd`
+8. But the previous line was already trimmed, so effectively: `$ ccd`
 
-### Non-Interactive Mode
-In non-interactive or piped mode, shells typically disable echo:
-```bash
-echo "ls" | bash    # No double-echo
-bash -c "ls"        # No double-echo
-bash                # Interactive - has echo
+Actually, **every character redraw had the problem**, but it manifested most visibly on the first character.
+
+### Fix Applied
+**Commit:** `fix(ansi): handle carriage return for line rewrites`
+
+Implemented proper `\r` handling in the ANSI parser:
+
+```gdscript
+elif ch == "\r":
+    # Carriage return: move cursor to start of line.
+    if i + 1 < input.length():
+        var next_ch := input[i + 1]
+        if next_ch == "\n":
+            # \r\n sequence - just skip the \r, emit \n next iteration
+            i += 1
+            continue
+        elif next_ch != "\u001b":  # Not an escape sequence
+            # Shell is rewriting the current line. Remove everything after
+            # the last newline from output (so the rewrite replaces it).
+            var last_newline := output.rfind("\n")
+            if last_newline != -1:
+                output = output.substr(0, last_newline + 1)
+            else:
+                # No newline yet - clear entire output buffer
+                output = ""
+    i += 1
+    continue
 ```
+
+**Logic:**
+- If `\r` is followed by `\n`: treat as Windows line ending, skip the `\r`
+- If `\r` is followed by printable text: remove the current line from the output buffer
+- If `\r` is followed by an escape sequence: let the escape handler deal with it
+
+This allows the shell's line rewrites to **replace** the current line instead of appending.
+
+### Testing
+Manual testing in the real PTY terminal:
+- Type commands character by character
+- Verify no character doubling
+- Verify readline features work (backspace, arrow keys, history)
+- Verify output from commands displays correctly
 
 ## Issue 2: Background Colors Not Working (FIXED)
 
@@ -126,7 +170,7 @@ Background colors now work correctly for:
 
 ## Summary
 
-1. **"Double characters"** → Not a bug, this is correct terminal behavior (shell local echo)
+1. **"First character doubling"** → Fixed by properly handling `\r` (carriage return) for line rewrites
 2. **"Background colors not working"** → Fixed by implementing full SGR background color support
 
-Both issues are now resolved or explained!
+Both issues are now resolved!
