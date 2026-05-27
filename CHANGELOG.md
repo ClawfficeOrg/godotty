@@ -9,8 +9,20 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 
 ## [Unreleased]
 
-### Added
-- **Scrollback buffer size setting (task 2.4.4).**
+- **Multi-instance `TerminalManager` (task 3.0.1) — BREAKING CHANGE (public API; requires human sign-off).**
+  - Added `TerminalManagerNode` (`project/scripts/terminal_manager_node.gd`) — a new `Node`-derived
+    class with full terminal logic (mock + real backend) that can be instantiated per-tab independently.
+  - `project/autoload/terminal_manager.gd` gains `get_default() -> Node` and `set_default(node: Node)`
+    registry methods; `get_default()` returns the autoload itself when no custom default is registered,
+    preserving full backward compatibility.
+  - `project/scripts/terminal_view.gd` gains `@export var manager: Node = null`; all internal calls
+    route through `_get_manager()` which returns the injected instance or falls back to the autoload.
+  - `project/scenes/terminal_manager.tscn` — minimal scene for editor/test instantiation.
+  - `tests/unit/terminal_manager_multi_instance_test.gd` — 11 tests covering instanceability,
+    independent state, registry API, and backward-compatibility shim.
+  - `tests/unit/terminal_view_injection_test.gd` — 9 tests proving `TerminalView` accepts an
+    injected manager and falls back to the autoload registry.
+
   - `TerminalSettings.scrollback_lines: int` (default `1000`, max `100_000`) — configures
     how many lines the primary-screen scrollback buffer retains.
   - `TerminalView._enforce_scrollback_limit()` — trims oldest lines from `_raw_accumulator`

@@ -45,6 +45,10 @@ const BELL_DURATION: float = 0.15
 ## Tween flashes the terminal to this colour then restores the original modulate.
 @export var bell_color: Color = Color.WHITE
 
+## Injected terminal manager instance. When null, falls back to the TerminalManager autoload.
+## Set before adding to the scene tree to use a per-tab manager instead of the global one.
+@export var manager: Node = null
+
 ## Computed character cell width in pixels (TerminalSettings.font_size × 0.5).
 ## Updated by apply_font_settings(). Used for cursor and selection positioning.
 var char_width: float = CHAR_W
@@ -196,7 +200,7 @@ func _ready() -> void:
 	SignalBus.output_ready.connect(_on_output_ready)
 	SignalBus.terminal_cleared.connect(_on_terminal_cleared)
 	SignalBus.shell_status_changed.connect(_on_shell_status_changed)
-	TerminalManager.theme_changed.connect(_on_theme_changed)
+	_get_manager().theme_changed.connect(_on_theme_changed)
 
 	# Setup input field
 	if input_field:
@@ -263,7 +267,7 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 				return
 
-		var action: String = TerminalManager.keymap.find_action(event)
+		var action: String = _get_manager().keymap.find_action(event)
 		if action != "":
 			_execute_action(action)
 			get_viewport().set_input_as_handled()
@@ -277,13 +281,13 @@ func _execute_action(action: String) -> void:
 		TerminalKeymap.ACTION_PASTE:
 			paste_text(_get_clipboard_text())
 		TerminalKeymap.ACTION_CLEAR:
-			TerminalManager.clear()
+			_get_manager().clear()
 		TerminalKeymap.ACTION_SEARCH:
 			show_search_bar()
 		TerminalKeymap.ACTION_INTERRUPT:
 			_handle_interrupt()
 		TerminalKeymap.ACTION_EOF:
-			TerminalManager.write_input("\u0004")
+			_get_manager().write_input("\u0004")
 		TerminalKeymap.ACTION_SCROLL_PAGE_UP:
 			if scroll_container:
 				scroll_container.scroll_vertical -= int(scroll_container.size.y)
@@ -358,7 +362,7 @@ func _on_context_menu_id_pressed(id: int) -> void:
 		MENU_ID_PASTE:
 			paste_text(_get_clipboard_text())
 		MENU_ID_CLEAR:
-			TerminalManager.clear()
+			_get_manager().clear()
 
 
 ## Reposition and resize the selection overlay to cover the selected cells.
@@ -455,7 +459,12 @@ func _initialize_terminal() -> void:
 	cursor_col = 0
 	_clear_output()
 	_load_and_apply_theme(TerminalSettings.selected_theme_name)
-	TerminalManager.spawn_shell()
+	_get_manager().spawn_shell()
+
+
+## Returns the active manager: the injected one if set, otherwise the TerminalManager autoload.
+func _get_manager() -> Node:
+	return manager if manager != null else TerminalManager
 
 
 ## Parse ANSI SGR codes and return BBCode.
@@ -742,7 +751,7 @@ func _make_cell_from_state(ch: String) -> Dictionary:
 ## Returns the 16-entry ANSI color palette from the active TerminalTheme.
 ## Used by _indexed_color() to map ANSI color indices to hex strings.
 func get_effective_palette() -> Array[Color]:
-	return TerminalManager.current_theme.palette
+	return _get_manager().current_theme.palette
 
 
 ## Map an ANSI color index (0-15) to a hex color string using the active theme palette.
@@ -934,7 +943,7 @@ func _navigate_history(direction: int) -> void:
 
 ## Handle Ctrl+C interrupt
 func _handle_interrupt() -> void:
-	TerminalManager.write_input("\u0003")  # Send real SIGINT via PTY
+	_get_manager().write_input("\u0003")  # Send real SIGINT via PTY
 	input_field.text = ""
 	_history_index = -1
 
@@ -955,7 +964,7 @@ func _on_text_submitted(text: String) -> void:
 	input_field.call_deferred("grab_focus")
 
 	# FIX: append \n so the command actually executes in the PTY
-	TerminalManager.write_input(trimmed + "\n")
+	_get_manager().write_input(trimmed + "\n")
 	SignalBus.command_submitted.emit(trimmed)
 
 
@@ -1056,7 +1065,7 @@ func _on_viewport_resize() -> void:
 		_terminal_rows = rows
 		if _alt_grid != null:
 			_alt_grid.resize(cols, rows)
-		TerminalManager.resize(cols, rows)
+		_get_manager().resize(cols, rows)
 
 
 ## Handle DECSCUSR — set cursor style (CSI Ps SP q).
@@ -1191,7 +1200,7 @@ func paste_text(text: String) -> void:
 		payload = BRACKETED_PASTE_START + text + BRACKETED_PASTE_END
 	else:
 		payload = text
-	TerminalManager.write_input(payload)
+	_get_manager().write_input(payload)
 
 
 func _setup_theme_picker() -> void:
@@ -1259,7 +1268,7 @@ func _load_and_apply_theme(tname: String) -> void:
 	var path: String = "res://resources/themes/%s.tres" % slug
 	var t := ResourceLoader.load(path) as TerminalTheme
 	if t != null:
-		TerminalManager.current_theme = t
+		_get_manager().current_theme = t
 
 
 func _exit_tree() -> void:
@@ -1277,8 +1286,9 @@ func _exit_tree() -> void:
 		SignalBus.terminal_cleared.disconnect(_on_terminal_cleared)
 	if SignalBus.shell_status_changed.is_connected(_on_shell_status_changed):
 		SignalBus.shell_status_changed.disconnect(_on_shell_status_changed)
-	if TerminalManager.theme_changed.is_connected(_on_theme_changed):
-		TerminalManager.theme_changed.disconnect(_on_theme_changed)
+	var mgr := _get_manager()
+	if mgr.theme_changed.is_connected(_on_theme_changed):
+		mgr.theme_changed.disconnect(_on_theme_changed)
 	if input_field and input_field.text_submitted.is_connected(_on_text_submitted):
 		input_field.text_submitted.disconnect(_on_text_submitted)
 	var root = null

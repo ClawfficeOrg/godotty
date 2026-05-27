@@ -33,7 +33,7 @@ can open, close, and cycle tabs. Each tab is an independent shell session.
 
 Planned scope:
 
-- [ ] `3.0.1` Multi-instance `TerminalManager` (remove singleton dependency).
+- [x] `3.0.1` Multi-instance `TerminalManager` (remove singleton dependency).
   - Refactor `TerminalManager` from a pure autoload singleton into a node
     that can be instanced per-tab. Autoload becomes a "default" instance
     registry. **Hard-stop: requires human sign-off** (public API change).

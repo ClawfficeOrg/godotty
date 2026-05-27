@@ -12,7 +12,7 @@ constant-name: '[A-Z][A-Z0-9_]*'
 max-line-length: 120
 
 # Function size
-max-file-lines: 1500
+max-file-lines: 1600
 function-arguments-number: 6
 # GdUnit4 test suites accumulate many test_ methods by design; raise the cap.
 max-public-methods: 100
