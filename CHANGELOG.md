@@ -10,6 +10,17 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Visual bell (task 2.4.3).**
+  - `TerminalView.bell_color: Color` (exported, default `Color.WHITE`) — the flash
+    colour applied to `self_modulate` when a BEL (`\u0007`) character is received.
+  - `TerminalView.BELL_DURATION: float = 0.15` — flash duration constant (seconds).
+  - `TerminalView._trigger_visual_bell()` — sets `self_modulate` to `bell_color`
+    instantly, then tweens back to the original modulate over `BELL_DURATION`.
+  - `TerminalSettings.audio_bell: bool` (default `false`) — when `true`, also calls
+    `DisplayServer.beep()` for an audio bell alongside the visual flash.
+  - `tests/unit/terminal_view_bell_test.gd` — 4 tests: default export color,
+    modulate changes to bell_color on BEL, modulate restores after tween, and
+    audio bell enabled does not crash.
 - **Configurable terminal padding (task 2.4.2).**
   - `TerminalSettings.padding: Vector2i` (default `(4, 4)` px).
   - `terminal.tscn` wraps `VBoxContainer` in a `MarginContainer` named

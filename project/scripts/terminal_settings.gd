@@ -63,3 +63,7 @@ static var background_opacity: float = 1.0
 ## x = horizontal (left and right), y = vertical (top and bottom).
 ## Default: (4, 4) px.
 static var padding: Vector2i = Vector2i(4, 4)
+
+## Whether to emit an audio beep (via DisplayServer.beep()) on BEL (\u0007).
+## Disabled by default; the visual flash is always shown.
+static var audio_bell: bool = false

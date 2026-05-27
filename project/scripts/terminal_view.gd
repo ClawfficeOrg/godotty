@@ -40,6 +40,13 @@ const SEARCH_HIGHLIGHT_BG: String = "#3a3a00"
 ## BBCode background colour for the currently-selected (navigated) search match.
 const SEARCH_ACCENT_BG: String = "#b58900"
 
+## Duration of the visual bell flash in seconds.
+const BELL_DURATION: float = 0.15
+
+## The colour applied to self_modulate when a BEL (\u0007) character is received.
+## Tween flashes the terminal to this colour then restores the original modulate.
+@export var bell_color: Color = Color.WHITE
+
 ## Computed character cell width in pixels (TerminalSettings.font_size × 0.5).
 ## Updated by apply_font_settings(). Used for cursor and selection positioning.
 var char_width: float = CHAR_W
@@ -611,7 +618,7 @@ func _ansi_to_bbcode(text: String) -> String:
 			i += 1
 			continue
 		elif ch == "\u0007":
-			# Bell — ignore
+			_trigger_visual_bell()
 			i += 1
 			continue
 		else:
@@ -984,6 +991,18 @@ func apply_background_opacity() -> void:
 	var c := self_modulate
 	c.a = clampf(TerminalSettings.background_opacity, 0.0, 1.0)
 	self_modulate = c
+
+
+## Flash the terminal background to bell_color for BELL_DURATION seconds, then
+## restore the previous self_modulate. Optionally emits an audio beep when
+## TerminalSettings.audio_bell is true.
+func _trigger_visual_bell() -> void:
+	if TerminalSettings.audio_bell:
+		DisplayServer.beep()
+	var original := self_modulate
+	self_modulate = bell_color
+	var tween := create_tween()
+	tween.tween_property(self, "self_modulate", original, BELL_DURATION)
 
 
 ## Apply TerminalSettings.padding as margin insets on the PaddingContainer.
