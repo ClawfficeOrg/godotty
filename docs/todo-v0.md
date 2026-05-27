@@ -65,7 +65,7 @@ it into `project/addons/`, and runs real PTY-backed integration tests.
     propagates. Suite must skip gracefully when addon is absent (mock mode).
   - Tests: all 3 cases GREEN in the nightly workflow; skip gracefully on PR runs.
 
-- [ ] `0.3.3` Pin godotty-node ref in workflow env.
+- [x] `0.3.3` Pin godotty-node ref in workflow env.
   - Owned paths: `.github/workflows/nightly-real.yml`.
   - Work: expose `GODOTTY_NODE_REF` as a workflow-level env var so bumping
     the pin is a one-line change. Document the bump procedure in `scripts/`.
