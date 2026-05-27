@@ -3,6 +3,13 @@
 Append-only log of non-obvious things the agent has learned.
 **Newest at top.** Each entry: date, one-line summary, evidence/links.
 
+## 2026-05-27 — gdlint `class-definitions-order` requires `const` before `static var`
+
+**Context:** Adding `BUNDLED_THEME_NAMES: Array[String]` constant to `TerminalSettings` after existing `static var` declarations (task 2.0.4).
+**Learning:** gdlint's `class-definitions-order` rule requires `const` definitions to appear before `var`/`static var` definitions in class scope. Placing a `const` after any `var` triggers "Definition out of order in global scope". Fix: always declare all `const` blocks first, then `var`/`static var` blocks.
+**Evidence:** `project/scripts/terminal_settings.gd` — task 2.0.4.
+**Tag:** gdscript · gdlint
+
 ## 2026-05-27 — `DisplayServer.clipboard_get()` returns empty string in Godot headless mode
 
 **Context:** Writing clipboard paste tests (task 1.4.3) — calling `DisplayServer.clipboard_set("hello")` then `clipboard_get()` in headless Godot returned "".

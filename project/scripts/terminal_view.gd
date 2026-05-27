@@ -3,7 +3,6 @@
 ## Handles user input and command submission
 class_name TerminalView
 extends Control
-
 ## DECSCUSR cursor style values (CSI Ps SP q).
 ## Ps=0/1 → blinking block (default), Ps=2 → steady block,
 ## Ps=3 → blinking underline, Ps=4 → steady underline,
@@ -16,7 +15,6 @@ enum CursorStyle {
 	BLINKING_BAR = 5,
 	STEADY_BAR = 6,
 }
-
 ## Maximum lines to keep in scrollback buffer
 const MAX_LINES: int = 1000
 const PROMPT_SYMBOL: String = "❯"
@@ -143,6 +141,7 @@ var _selection_overlay: ColorRect = null
 
 ## Block cursor overlay — floats above the text layer.
 @onready var cursor_overlay: ColorRect = $VBoxContainer/ScrollContainer/CursorOverlay
+@onready var _theme_menu: MenuButton = $VBoxContainer/TitleBar/ThemeMenu
 
 
 func _ready() -> void:
@@ -162,6 +161,7 @@ func _ready() -> void:
 		prompt_label.text = PROMPT_SYMBOL
 
 	# Initialize terminal
+	_setup_theme_picker()
 	_initialize_terminal()
 
 	# Handle resize
@@ -371,6 +371,7 @@ func _initialize_terminal() -> void:
 	cursor_row = 0
 	cursor_col = 0
 	_clear_output()
+	_load_and_apply_theme(TerminalSettings.selected_theme_name)
 	TerminalManager.spawn_shell()
 
 
@@ -1040,6 +1041,33 @@ func paste_text(text: String) -> void:
 	TerminalManager.write_input(payload)
 
 
+func _setup_theme_picker() -> void:
+	if not _theme_menu:
+		return
+	var popup := _theme_menu.get_popup()
+	# Ensure a clean popup (avoid duplicate items on scene reloads)
+	popup.clear()
+	for tname: String in TerminalSettings.BUNDLED_THEME_NAMES:
+		popup.add_item(tname)
+	if not popup.index_pressed.is_connected(_on_theme_menu_index_pressed):
+		popup.index_pressed.connect(_on_theme_menu_index_pressed)
+
+
+func _on_theme_menu_index_pressed(index: int) -> void:
+	TerminalSettings.selected_theme_name = TerminalSettings.BUNDLED_THEME_NAMES[index]
+	_load_and_apply_theme(TerminalSettings.selected_theme_name)
+
+
+func _load_and_apply_theme(tname: String) -> void:
+	var slug: String = tname.to_lower().replace(" ", "_")
+	if tname == TerminalSettings.BUNDLED_THEME_NAMES[0]:
+		slug = "default_theme"
+	var path: String = "res://resources/themes/%s.tres" % slug
+	var t := ResourceLoader.load(path) as TerminalTheme
+	if t != null:
+		TerminalManager.current_theme = t
+
+
 func _exit_tree() -> void:
 	# Disconnect signals to avoid leaking callbacks if this node is freed
 	if _blink_timer and _blink_timer.timeout.is_connected(_on_blink_timeout):
@@ -1059,11 +1087,14 @@ func _exit_tree() -> void:
 		TerminalManager.theme_changed.disconnect(_on_theme_changed)
 	if input_field and input_field.text_submitted.is_connected(_on_text_submitted):
 		input_field.text_submitted.disconnect(_on_text_submitted)
-	if (
-		get_tree()
-		and get_tree().get_root()
-		and get_tree().get_root().size_changed.is_connected(_on_viewport_resize)
-	):
-		get_tree().get_root().size_changed.disconnect(_on_viewport_resize)
+	var root = null
+	if get_tree():
+		root = get_tree().get_root()
+	if root and root.size_changed.is_connected(_on_viewport_resize):
+		root.size_changed.disconnect(_on_viewport_resize)
 	if _context_menu and _context_menu.id_pressed.is_connected(_on_context_menu_id_pressed):
 		_context_menu.id_pressed.disconnect(_on_context_menu_id_pressed)
+	if _theme_menu:
+		var popup := _theme_menu.get_popup()
+		if popup.index_pressed.is_connected(_on_theme_menu_index_pressed):
+			popup.index_pressed.disconnect(_on_theme_menu_index_pressed)

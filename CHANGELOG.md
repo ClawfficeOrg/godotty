@@ -10,6 +10,21 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Theme picker UI (task 2.0.4).**
+  - `project/scenes/terminal.tscn` — added `TitleBar` (`HBoxContainer`) with a
+    `TitleLabel` and `ThemeMenu` (`MenuButton`) in the terminal title bar.
+  - `project/scripts/terminal_view.gd` — populated the `ThemeMenu` popup with all
+    9 bundled theme names at `_ready()`; selecting a theme calls `_load_and_apply_theme()`
+    which loads the `.tres` resource and sets `TerminalManager.current_theme`;
+    selected theme name is written to `TerminalSettings.selected_theme_name` for
+    persistence; the persisted theme is restored on every `_initialize_terminal()`.
+  - `project/scripts/terminal_settings.gd` — added `BUNDLED_THEME_NAMES` const
+    (all 9 theme names) and `selected_theme_name` static var for persistence.
+  - `tests/unit/theme_picker_test.gd` — 5 tests: menu lists ≥ 8 items, Dracula
+    is present, selecting Dracula applies a dark background, selection persists
+    in `TerminalSettings`, and a freshly instantiated view restores the persisted
+    theme.
+
 - **Bundle built-in color themes (task 2.0.3).**
   - `project/resources/themes/solarized_dark.tres` — Solarized Dark palette (16-color ANSI).
   - `project/resources/themes/solarized_light.tres` — Solarized Light palette.
