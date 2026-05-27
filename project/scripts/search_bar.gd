@@ -19,6 +19,9 @@ signal search_canceled
 const MATCH_LABEL_NONE: String = "No results"
 const MATCH_LABEL_FORMAT: String = "%d / %d"
 
+## When true, TerminalView will call search_scrollback in regex mode.
+var regex_enabled: bool = false
+
 @onready var query_edit: LineEdit = $HBoxContainer/QueryEdit
 @onready var match_label: Label = $HBoxContainer/MatchLabel
 @onready var prev_button: Button = $HBoxContainer/PrevButton

@@ -7,6 +7,17 @@
 
 ## Now doing
 
+Task `2.2.2` — DONE. Scrollback search logic.
+- `project/scripts/terminal_view.gd` — search_scrollback(query, use_regex=false) returning
+  Array[Vector2i]; _strip_ansi() helper; get_highlighted_line() BBCode injector;
+  _render_highlighted_scrollback(); _on_search_submitted() wired to SearchBar.search_submitted;
+  _on_search_canceled() restores unhighlighted output; SEARCH_HIGHLIGHT_BG const;
+  _search_matches/_last_search_query/_last_search_use_regex private vars.
+- `project/scripts/search_bar.gd` — added regex_enabled: bool property.
+- `tests/unit/terminal_view_search_test.gd` — 3 tests (3 plain matches, regex+safety, BBCode
+  injection); ALL GREEN.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
 Task `2.2.1` — DONE. Search bar overlay scene and show/hide logic.
 - `project/scenes/search_bar.tscn` — PanelContainer (hidden by default) with HBoxContainer
   containing QueryEdit (LineEdit), MatchLabel, PrevButton (◀), NextButton (▶).
