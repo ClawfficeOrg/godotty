@@ -2,12 +2,12 @@
 ##
 ## A Resource that holds a `bindings` dictionary from action name (String)
 ## to InputEventKey. Call `TerminalKeymap.default()` to get a keymap
-## pre-populated with the twelve built-in terminal actions.
+## pre-populated with the thirteen built-in terminal actions.
 ##
 ## Built-in actions:
 ##   copy, paste, clear, search,
 ##   scroll_page_up, scroll_page_down,
-##   new_tab, close_tab, split_right, split_down,
+##   new_tab, close_tab, next_tab, split_right, split_down,
 ##   interrupt (Ctrl+C), eof (Ctrl+D)
 ##
 ## To rebind an action, assign a new InputEventKey to `bindings[action_name]`.
@@ -31,6 +31,8 @@ const ACTION_SCROLL_PAGE_DOWN: String = "scroll_page_down"
 const ACTION_NEW_TAB: String = "new_tab"
 ## Action name: close the current tab.
 const ACTION_CLOSE_TAB: String = "close_tab"
+## Action name: cycle to the next tab.
+const ACTION_NEXT_TAB: String = "next_tab"
 ## Action name: split the current pane to the right.
 const ACTION_SPLIT_RIGHT: String = "split_right"
 ## Action name: split the current pane downward.
@@ -50,6 +52,7 @@ const BUILTIN_ACTIONS: Array[String] = [
 	ACTION_SCROLL_PAGE_DOWN,
 	ACTION_NEW_TAB,
 	ACTION_CLOSE_TAB,
+	ACTION_NEXT_TAB,
 	ACTION_SPLIT_RIGHT,
 	ACTION_SPLIT_DOWN,
 	ACTION_INTERRUPT,
@@ -69,8 +72,9 @@ const BUILTIN_ACTIONS: Array[String] = [
 ##   search        → Ctrl+Shift+F
 ##   scroll_page_up   → Shift+PageUp
 ##   scroll_page_down → Shift+PageDown
-##   new_tab       → Ctrl+Shift+T
-##   close_tab     → Ctrl+Shift+W
+##   new_tab       → Ctrl+T
+##   close_tab     → Ctrl+W
+##   next_tab      → Ctrl+Tab
 ##   split_right   → Ctrl+Shift+Right
 ##   split_down    → Ctrl+Shift+Down
 ##   interrupt     → Ctrl+C
@@ -84,8 +88,9 @@ static func default() -> TerminalKeymap:
 		ACTION_SEARCH: _make_key(KEY_F, true, true),
 		ACTION_SCROLL_PAGE_UP: _make_key(KEY_PAGEUP, false, true),
 		ACTION_SCROLL_PAGE_DOWN: _make_key(KEY_PAGEDOWN, false, true),
-		ACTION_NEW_TAB: _make_key(KEY_T, true, true),
-		ACTION_CLOSE_TAB: _make_key(KEY_W, true, true),
+		ACTION_NEW_TAB: _make_key(KEY_T, true),
+		ACTION_CLOSE_TAB: _make_key(KEY_W, true),
+		ACTION_NEXT_TAB: _make_key(KEY_TAB, true),
 		ACTION_SPLIT_RIGHT: _make_key(KEY_RIGHT, true, true),
 		ACTION_SPLIT_DOWN: _make_key(KEY_DOWN, true, true),
 		ACTION_INTERRUPT: _make_key(KEY_C, true),
