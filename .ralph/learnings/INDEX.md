@@ -3,6 +3,33 @@
 Append-only log of non-obvious things the agent has learned.
 **Newest at top.** Each entry: date, one-line summary, evidence/links.
 
+## 2026-05-27 — BBCode tags must follow LIFO nesting when changing FG color with active BG
+
+**Context:** Visible `[/bgcolor]`, `[/color]` tags in Starship prompts. Tags rendered as plaintext.
+
+**Root cause:**
+- Starship emits compound SGR like `[48;2;R;G;B;38;2;R;G;B;m` (set BG, then change FG in same seq).
+- Our SGR handler processed sequentially: open FG, open BG, close FG, open new FG.
+- Generated BBCode: `[color=A][bgcolor=B][/color][color=C]`
+- The `[/color]` closes a tag opened **before** the `[bgcolor]`, violating LIFO nesting.
+- RichTextLabel parsed the orphaned closing tags but rendered them as plaintext.
+
+**Fix:** `_close_fg()` now closes tags in LIFO order: close BG, close FG, reopen BG, open new FG.
+Result: `[color=A][bgcolor=B][/bgcolor][/color][bgcolor=B][color=C]` (properly nested).
+
+**Also fixed:** Check if color is changing before emitting close+open pairs (all SGR color codes).
+
+**Lesson:** When generating nested markup (BBCode, HTML, etc.) from stateful commands (ANSI SGR),
+always close tags in LIFO order. Maintain a stack or explicitly handle nesting when changing
+inner attributes while outer ones are active.
+
+**Evidence:** `project/scripts/terminal_view.gd::_close_fg()` lines 993-1011, SGR handlers lines
+904-972. Debug output from MCP `run_project` showed malformed BBCode before fix, proper nesting after.
+
+**Tag:** godot · gdscript · bbcode · ansi · sgr · terminal-rendering · starship · nesting
+
+---
+
 ## 2026-05-27 — `_close_all_tags()` must clear all state vars, not just bold/underline
 
 **Context:** User reported visible BBCode tags (`[/bgcolor]`, `[/color]`, `[/b]`) in Starship prompt.

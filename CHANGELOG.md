@@ -9,6 +9,22 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 
 ## [Unreleased]
 
+- **Fix: Maintain proper BBCode tag nesting (LIFO) when changing colors to prevent orphaned closing tags.**
+  - When changing FG color while a BG color is active, `_close_fg()` now closes tags in LIFO order:
+    close bgcolor, close color, reopen bgcolor with same value, then open new color.
+  - This prevents malformed BBCode like `[color=A][bgcolor=B][/color][color=C]` which creates
+    orphaned `[/color]` tags that don't match the nesting structure.
+  - Starship prompts frequently emit compound SGR sequences (e.g., `48;2;R;G;B;38;2;R;G;B`) that
+    set bgcolor and fg in the same escape, requiring proper LIFO nesting.
+  - Fixes visible `[/bgcolor]`, `[/color]` tags appearing as plaintext in Starship prompts.
+
+- **Fix: Only close/reopen color tags when the color is actually changing.**
+  - SGR color codes (30-37, 38, 40-47, 48, 90-97, 100-107) now check if the new color differs
+    from the current color before emitting close+open tag pairs.
+  - Prevents redundant `[/color][color=same]` sequences that create unnecessary tag churn.
+  - Reduces BBCode output size and eliminates edge cases where duplicate open/close pairs
+    could confuse the RichTextLabel parser.
+
 - **Fix: Reset `_current_fg` and `_current_bg` state in `_close_all_tags()` to prevent duplicate closing tags.**
   - `_close_all_tags()` was emitting `[/bgcolor]` and `[/color]` closing tags but not clearing
     `_current_bg` and `_current_fg`, causing the color state to persist incorrectly.

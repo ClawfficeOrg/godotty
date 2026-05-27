@@ -806,19 +806,14 @@ func _ansi_to_bbcode(text: String) -> String:
 					# \r\n sequence - just skip the \r, emit \n next iteration
 					i += 1
 					continue
-				elif next_ch != "\u001b":  # Not an escape sequence
+			elif next_ch != "\u001b":  # Not an escape sequence
 					# Shell is rewriting the current line. Remove everything after
 					# the last newline from output (so the rewrite replaces it).
 					var last_newline := output.rfind("\n")
-					print("[DEBUG CR] Detected CR + non-newline. next_ch=", next_ch.c_escape(), " last_newline=", last_newline)
 					if last_newline != -1:
-						var before := output.substr(0, last_newline + 1)
-						var removed := output.substr(last_newline + 1)
-						print("[DEBUG CR] Removed from current line: ", removed.c_escape())
-						output = before
+						output = output.substr(0, last_newline + 1)
 					else:
 						# No newline yet - clear entire output buffer
-						print("[DEBUG CR] No newline found, clearing entire output: ", output.c_escape())
 						output = ""
 			i += 1
 			continue
@@ -902,57 +897,73 @@ func _handle_sgr(params_str: String) -> String:
 					_current_underline = false
 					result += "[/u]"
 			30, 31, 32, 33, 34, 35, 36, 37:
-				result += _close_fg()
-				_current_fg = _indexed_color(code - 30, false)
-				result += "[color=%s]" % _current_fg
+				var new_color := _indexed_color(code - 30, false)
+				if _current_fg != new_color:
+					result += _close_fg()
+					_current_fg = new_color
+					result += "[color=%s]" % _current_fg
 			39:
 				result += _close_fg()
 				_current_fg = ""
 			40, 41, 42, 43, 44, 45, 46, 47:
-				result += _close_bg()
-				_current_bg = _indexed_color(code - 40, false)
-				result += "[bgcolor=%s]" % _current_bg
+				var new_color := _indexed_color(code - 40, false)
+				if _current_bg != new_color:
+					result += _close_bg()
+					_current_bg = new_color
+					result += "[bgcolor=%s]" % _current_bg
 			49:
 				result += _close_bg()
 				_current_bg = ""
 			90, 91, 92, 93, 94, 95, 96, 97:
-				result += _close_fg()
-				_current_fg = _indexed_color(code - 90 + 8, false)
-				result += "[color=%s]" % _current_fg
+				var new_color := _indexed_color(code - 90 + 8, false)
+				if _current_fg != new_color:
+					result += _close_fg()
+					_current_fg = new_color
+					result += "[color=%s]" % _current_fg
 			38:
 				if idx + 2 < codes.size() and int(codes[idx + 1]) == 5:
-					result += _close_fg()
 					var color_idx := int(codes[idx + 2])
-					_current_fg = _xterm256_hex(color_idx)
-					result += "[color=%s]" % _current_fg
+					var new_color := _xterm256_hex(color_idx)
+					if _current_fg != new_color:
+						result += _close_fg()
+						_current_fg = new_color
+						result += "[color=%s]" % _current_fg
 					idx += 2
 				elif idx + 4 < codes.size() and int(codes[idx + 1]) == 2:
 					var r := int(codes[idx + 2])
 					var g := int(codes[idx + 3])
 					var b := int(codes[idx + 4])
-					result += _close_fg()
-					_current_fg = "#%02x%02x%02x" % [r, g, b]
-					result += "[color=%s]" % _current_fg
+					var new_color := "#%02x%02x%02x" % [r, g, b]
+					if _current_fg != new_color:
+						result += _close_fg()
+						_current_fg = new_color
+						result += "[color=%s]" % _current_fg
 					idx += 4
 			48:
 				if idx + 2 < codes.size() and int(codes[idx + 1]) == 5:
-					result += _close_bg()
 					var color_idx := int(codes[idx + 2])
-					_current_bg = _xterm256_hex(color_idx)
-					result += "[bgcolor=%s]" % _current_bg
+					var new_color := _xterm256_hex(color_idx)
+					if _current_bg != new_color:
+						result += _close_bg()
+						_current_bg = new_color
+						result += "[bgcolor=%s]" % _current_bg
 					idx += 2
 				elif idx + 4 < codes.size() and int(codes[idx + 1]) == 2:
 					var r := int(codes[idx + 2])
 					var g := int(codes[idx + 3])
 					var b := int(codes[idx + 4])
-					result += _close_bg()
-					_current_bg = "#%02x%02x%02x" % [r, g, b]
-					result += "[bgcolor=%s]" % _current_bg
+					var new_color := "#%02x%02x%02x" % [r, g, b]
+					if _current_bg != new_color:
+						result += _close_bg()
+						_current_bg = new_color
+						result += "[bgcolor=%s]" % _current_bg
 					idx += 4
 			100, 101, 102, 103, 104, 105, 106, 107:
-				result += _close_bg()
-				_current_bg = _indexed_color(code - 100 + 8, false)
-				result += "[bgcolor=%s]" % _current_bg
+				var new_color := _indexed_color(code - 100 + 8, false)
+				if _current_bg != new_color:
+					result += _close_bg()
+					_current_bg = new_color
+					result += "[bgcolor=%s]" % _current_bg
 		idx += 1
 
 	return result
@@ -977,8 +988,21 @@ func _close_all_tags() -> String:
 
 func _close_fg() -> String:
 	if not _current_fg.is_empty():
+		# Maintain proper LIFO BBCode nesting: close BG first if open,
+		# then close FG, then reopen BG.
+		var r := ""
+		var had_bg := not _current_bg.is_empty()
+		var bg_value := _current_bg
+
+		if had_bg:
+			r += "[/bgcolor]"
+		r += "[/color]"
 		_current_fg = ""
-		return "[/color]"
+
+		if had_bg:
+			r += "[bgcolor=%s]" % bg_value
+			# Note: _current_bg is still set, we didn't clear it
+		return r
 	return ""
 
 
@@ -1044,12 +1068,6 @@ func _append_output(text: String) -> void:
 	var processed := _ansi_to_bbcode(text)
 	if processed.is_empty():
 		return
-
-	# DEBUG: Log BBCode output for first 300 chars to trace visible tag issues
-	if processed.length() <= 300:
-		print("[DEBUG _append_output] BBCode: ", processed.c_escape())
-	else:
-		print("[DEBUG _append_output] BBCode (first 300): ", processed.substr(0, 300).c_escape())
 
 	var new_lines := processed.count("\n")
 	_line_count += new_lines
@@ -1252,12 +1270,6 @@ func _on_text_submitted(text: String) -> void:
 
 ## Handle output from TerminalManager
 func _on_output_ready(text: String) -> void:
-	# DEBUG: Log raw input to trace character doubling
-	if text.length() <= 200:
-		print("[DEBUG _on_output_ready] Raw input: ", text.c_escape())
-	else:
-		print("[DEBUG _on_output_ready] Raw input (first 200): ", text.substr(0, 200).c_escape())
-
 	_append_output(text)
 	# In mock mode the LineEdit is the input surface and must keep focus;
 	# in real PTY mode the input bar is hidden so there's nothing to focus.

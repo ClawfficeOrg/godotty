@@ -7,6 +7,46 @@
 
 ## Now doing
 
+**BBCode orphaned tags — FIXED** ✅
+
+2026-05-27 — Found and fixed the root cause of visible BBCode tags in Starship prompts!
+
+**The Bug:**
+Starship sends compound SGR sequences like `[48;2;R;G;B;38;2;R;G;B;m` that set bgcolor THEN
+change fg color in the same escape. Our code was generating:
+```
+[color=old][bgcolor=new][/color][color=new]
+```
+This creates **orphaned `[/color]` tags** that don't match the nesting structure (the first color
+was opened before bgcolor, but closed after). RichTextLabel parses these but renders them as
+plaintext because they don't balance.
+
+**The Fix:**
+1. **LIFO tag nesting in `_close_fg()`**: When changing FG while BG is active, close tags in
+   reverse order (close bgcolor, close color, reopen bgcolor, open new color). This maintains
+   proper BBCode nesting.
+
+2. **Check before close+reopen**: Only emit close+open tag pairs when the color is actually
+   changing. Prevents redundant `[/color][color=same]` that creates unnecessary churn.
+
+**Files changed:**
+- `project/scripts/terminal_view.gd`:
+  - Modified `_close_fg()` to close/reopen bgcolor for LIFO nesting (lines 993-1011)
+  - Modified all SGR color handlers (30-37, 38, 40-47, 48, 90-97, 100-107) to check
+    `if new_color != _current_fg/bg` before closing (lines 904-972)
+
+**Testing:**
+- Used MCP Godot tool `run_project` with debug logging to capture actual Starship ANSI sequences
+- Verified BBCode output changed from malformed to properly nested:
+  - Before: `[color=#d65d0e][bgcolor=#d65d0e][/color][color=#fbf1c7]`
+  - After:  `[color=#d65d0e][bgcolor=#d65d0e][/bgcolor][/color][bgcolor=#d65d0e][color=#fbf1c7]`
+
+**Next:** User needs to test with their actual Starship config to confirm tags are no longer visible.
+
+Still need to investigate: doubled first character issue (saw `~/b]` in earlier screenshot).
+
+---
+
 **BBCode visible tags + doubled first character — DEBUG LOGGING ADDED** 🔍
 
 2026-05-27 — User reports both issues persist after the `_close_all_tags()` fix:
