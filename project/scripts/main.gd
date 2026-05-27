@@ -44,5 +44,5 @@ func _update_status() -> void:
 		)
 
 
-func _on_addon_status_changed(available: bool) -> void:
+func _on_addon_status_changed(_available: bool) -> void:
 	_update_status()
