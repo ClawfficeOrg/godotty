@@ -46,7 +46,7 @@ it into `project/addons/`, and runs real PTY-backed integration tests.
 
 **Prerequisite:** Phase 0.2.0 merged.
 
-- [ ] `0.3.1` Nightly workflow `.github/workflows/nightly-real.yml`.
+- [x] `0.3.1` Nightly workflow `.github/workflows/nightly-real.yml`.
   - Complexity: Medium. Suggested model: standard coding model.
   - Owned paths: `.github/workflows/nightly-real.yml`,
     `scripts/install_godotty_node.sh`.

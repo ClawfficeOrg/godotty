@@ -1,20 +1,14 @@
 # Current Working Memory
 
-**STATUS:** blocked-on-human-merge
-**SPEC:** `.ralph/specs/0003-real-terminal-ci.md` (next up)
-**BRANCH:** `feature/0002-gdunit4-harness` (current; PRs pending)
-**STARTED:** 2026-03-23
+**STATUS:** in-progress
+**SPEC:** `.ralph/specs/0003-real-terminal-ci.md`
+**BRANCH:** `feature/0003-real-terminal-ci` (target)
+**STARTED:** 2026-05-27
 
 ## Now doing
 
-Waiting for human sign-off on:
-- **PR #5** (`feature/superpowers-ralph-infra` → `master`) — Ralph Loop +
-  Superpowers bootstrap (spec 0001).
-- **PR #6** (`feature/0002-gdunit4-harness` → `feature/superpowers-ralph-infra`)
-  — GdUnit4 test harness (spec 0002).
-
-Once both PRs are merged, the next spec is **0003 (real-mode regression CI)**,
-tracked as Phase 0.3.0 in `docs/todo-v0.md`.
+Task `0.3.1` — nightly workflow + install script. Implementation complete,
+pending commit and PR.
 
 ## Done this session (2026-05-27)
 

@@ -1,0 +1,165 @@
+name: Nightly Real-mode CI
+
+# Runs nightly + on demand. Explicitly NOT triggered on pull_request to keep
+# PR builds fast. Builds godotty-node from source, installs the native library,
+# and runs the real-PTY integration test suite.
+on:
+  schedule:
+    # 02:17 UTC every night (non-round time avoids GH runner peak load).
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+    inputs:
+      godotty_node_ref:
+        description: "godotty-node git ref to build (SHA, tag, or branch)"
+        required: false
+        default: ""
+
+env:
+  GODOT_VERSION: "4.6-stable"
+  # Pinned SHA for reproducible builds. Bump this when you want to track a
+  # new godotty-node release. Override per-run via workflow_dispatch input.
+  GODOTTY_NODE_REF: "c9e3630600392dd9fb65497dc582b6a6bc2611c3"
+
+jobs:
+  build-and-test:
+    name: Real-mode CI (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Allow workflow_dispatch to override the pinned ref.
+      - name: Resolve godotty-node ref
+        id: resolve-ref
+        run: |
+          if [[ -n "${{ github.event.inputs.godotty_node_ref }}" ]]; then
+            echo "GODOTTY_NODE_REF=${{ github.event.inputs.godotty_node_ref }}" >> "$GITHUB_ENV"
+          fi
+          echo "Using godotty-node ref: ${GODOTTY_NODE_REF}"
+
+      # ── Rust ──────────────────────────────────────────────────────────────
+      - name: Cache Rust toolchain + registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.rustup
+          key: rust-${{ matrix.os }}-${{ env.GODOTTY_NODE_REF }}
+          restore-keys: |
+            rust-${{ matrix.os }}-
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      # ── Build & install godotty-node ──────────────────────────────────────
+      - name: Build and install godotty-node
+        run: bash scripts/install_godotty_node.sh
+
+      - name: Verify library installed
+        run: |
+          case "${{ matrix.os }}" in
+            ubuntu-latest) lib="project/addons/godotty-node/bin/linux/libgodotty_node.so" ;;
+            macos-latest)  lib="project/addons/godotty-node/bin/macos/libgodotty_node.dylib" ;;
+          esac
+          if [[ ! -f "$lib" ]]; then
+            echo "ERROR: expected library not found at $lib" >&2
+            exit 1
+          fi
+          echo "Library present: $lib"
+
+      # ── Godot ─────────────────────────────────────────────────────────────
+      - name: Cache Godot
+        id: cache-godot
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}-${{ matrix.os }}
+
+      - name: Install Godot (Linux)
+        if: >
+          matrix.os == 'ubuntu-latest' &&
+          steps.cache-godot.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/godot
+          cd ~/godot
+          curl -fsSL -o godot.zip \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          unzip -q godot.zip
+          mv Godot_v* godot4
+          chmod +x godot4
+
+      - name: Install Godot (macOS)
+        if: >
+          matrix.os == 'macos-latest' &&
+          steps.cache-godot.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/godot
+          cd ~/godot
+          curl -fsSL -o godot.zip \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_macos.universal.zip"
+          unzip -q godot.zip
+          cat > godot4 <<'EOF'
+          #!/usr/bin/env bash
+          exec "$(dirname "$0")/Godot.app/Contents/MacOS/Godot" "$@"
+          EOF
+          chmod +x godot4
+
+      - name: Make godot4 available on PATH
+        run: echo "$HOME/godot" >> "$GITHUB_PATH"
+
+      - name: Verify Godot
+        run: godot4 --version || true
+
+      # ── Tests ─────────────────────────────────────────────────────────────
+      - name: Install GdUnit4
+        run: scripts/install_gdunit4.sh
+
+      - name: Run unit tests (smoke-check mock mode still passes)
+        run: scripts/run_tests.sh tests/unit
+
+      - name: Run integration tests (real mode)
+        # Integration tests live under tests/integration/real/. The suite
+        # skips gracefully when the GDExtension is absent, but here it should
+        # be present. Soft-fail until 0.3.2 writes the actual test files.
+        run: |
+          if [[ -d tests/integration/real ]]; then
+            scripts/run_tests.sh tests/integration/real
+          else
+            echo "No integration tests yet — skipping (tracked in spec 0003 task 0.3.2)"
+          fi
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-test-results-${{ matrix.os }}
+          path: build/test-results/
+          if-no-files-found: ignore
+
+  # ── On-failure issue creation ──────────────────────────────────────────────
+  open-issue-on-failure:
+    name: Open bug issue on failure
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: failure()
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create bug issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          run_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          today="$(date -u +%Y-%m-%d)"
+          gh issue create \
+            --title "🐛 Nightly real-mode CI failed (${today})" \
+            --label "bug" \
+            --body "$(printf '## Nightly real-mode CI failure\n\n**Date:** %s\n**Run:** %s\n**Ref:** %s\n\nThe nightly job that builds \`godotty-node\` and runs real-PTY integration tests failed. Please investigate the linked run and either fix the issue or bump \`GODOTTY_NODE_REF\` in \`.github/workflows/nightly-real.yml\`.\n\n---\n*Auto-opened by the nightly-real workflow.*' \
+              "$today" "$run_url" "${GODOTTY_NODE_REF}")"

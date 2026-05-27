@@ -10,6 +10,16 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Nightly real-mode CI workflow (spec 0003, task 0.3.1).**
+  - `.github/workflows/nightly-real.yml` — scheduled (02:17 UTC nightly) +
+    `workflow_dispatch` trigger. Runs on `ubuntu-latest` and `macos-latest`
+    matrix. Skipped on PRs by design (no `pull_request` trigger).
+  - `scripts/install_godotty_node.sh` — clones `godotty-node` at a pinned SHA
+    (`GODOTTY_NODE_REF`), `cargo build --release`, installs
+    `libgodotty_node.so` (Linux) or `.dylib` (macOS) into
+    `project/addons/godotty-node/bin/<platform>/`.
+  - On workflow failure: auto-opens a GitHub issue labelled `bug` with a link
+    to the failing run.
 - **GdUnit4 test harness (spec 0002).**
   - GdUnit4 v6.1.3 (Godot 4.6–compatible fork: `godot-gdunit-labs/gdUnit4`)
     is now installed by `scripts/install_gdunit4.sh` into
