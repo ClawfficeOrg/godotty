@@ -101,7 +101,7 @@ fully gdformat-clean and gdlint-strict.
     naming and class-variable order rules.
   - Tests: `bash scripts/lint.sh` exits 0 with tighter rules.
 
-- [ ] `0.4.3` Expand unit test coverage to 80% of autoload methods.
+- [x] `0.4.3` Expand unit test coverage to 80% of autoload methods.
   - Complexity: Medium. Suggested model: standard coding model.
   - Owned paths: `tests/unit/`.
   - Work: audit `terminal_manager.gd` and `signal_bus.gd` method by method;

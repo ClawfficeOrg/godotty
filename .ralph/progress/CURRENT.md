@@ -7,7 +7,10 @@
 
 ## Now doing
 
-Task `0.4.2` — DONE. All gdlint `disable` exceptions removed; stricter rules restored.
+Task `0.4.3` — DONE. Unit test coverage expanded to ≥80% of autoload public methods.
+- Added 35 new test cases across 3 new test files (terminal_manager_methods_test.gd,
+  terminal_manager_grid_test.gd, signal_bus_methods_test.gd).
+- All 46 unit tests GREEN; lint clean.
 
 ## Done this session (continued)
 
