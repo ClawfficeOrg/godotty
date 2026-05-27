@@ -9,6 +9,13 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 
 ## [Unreleased]
 
+- **Fix: Reset `_current_bold` flag when closing bold tag to prevent duplicate `[/b]` tags.**
+  - `_close_all_tags()` was generating `[/b]` closing tags but not resetting the `_current_bold`
+    flag to `false`, causing bold state to persist incorrectly.
+  - This led to duplicate `[/b]` tags on subsequent SGR 0 (reset) sequences, which appeared
+    as literal text in the terminal output.
+  - Fix sets `_current_bold = false` after appending `[/b]`, matching the pattern for underline.
+
 - **Fix: Escape `]` to `[rb]` in user text to prevent malformed BBCode.**
   - ANSI parser now escapes both `[` (to `[lb]`) and `]` (to `[rb]`) in shell output.
   - Previously only `[` was escaped, allowing `]` from prompts (e.g., Starship segments) to
