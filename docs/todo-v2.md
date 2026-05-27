@@ -122,7 +122,7 @@ the scrollback; Enter / Shift+Enter navigates between them.
 
 **Prerequisite:** Phase 1.4.0 (selection / highlight infrastructure).
 
-- [ ] `2.2.1` Search bar overlay scene and show/hide logic.
+- [x] `2.2.1` Search bar overlay scene and show/hide logic.
   - Complexity: Low. Suggested model: standard coding model.
   - Owned paths: `project/scenes/search_bar.tscn`,
     `project/scripts/search_bar.gd`,
