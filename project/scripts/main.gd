@@ -15,6 +15,9 @@ extends Control
 
 
 func _ready() -> void:
+	# Wait one frame to ensure autoloads are fully initialized
+	await get_tree().process_frame
+
 	# Connect to addon status changes
 	SignalBus.addon_status_changed.connect(_on_addon_status_changed)
 
@@ -26,11 +29,17 @@ func _ready() -> void:
 
 	# Print startup info
 	print("=== Godotty Reference App ===")
-	print("Mode: %s" % ("Mock" if TerminalManager.is_mock_mode else "Real"))
-	print("Addon: %s" % ("Available" if TerminalManager.is_addon_available else "Not Found"))
+	if TerminalManager:
+		print("Mode: %s" % ("Mock" if TerminalManager.is_mock_mode else "Real"))
+		print("Addon: %s" % ("Available" if TerminalManager.is_addon_available else "Not Found"))
+	else:
+		push_error("TerminalManager autoload not found!")
 
 
 func _update_status() -> void:
+	if not TerminalManager:
+		return
+
 	if mode_label:
 		mode_label.text = "MODE: %s" % ("MOCK" if TerminalManager.is_mock_mode else "REAL")
 		mode_label.add_theme_color_override(
