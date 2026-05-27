@@ -10,6 +10,15 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Resize propagation to TerminalManager and godotty-node (task 1.2.2).**
+  - `project/autoload/terminal_manager.gd` — new `_mock_cols`/`_mock_rows` state
+    vars (default 80×24); `_ready()` connects `SignalBus.terminal_resized` to
+    `_on_terminal_resized`; `_exit_tree()` disconnects it; handler updates mock
+    state in mock mode or forwards `_real_terminal.resize(cols, rows)` in real
+    mode; `get_dimensions()` now reads from `_mock_cols`/`_mock_rows`.
+  - `tests/unit/terminal_manager_resize_test.gd` — 9 mock-mode and stub-real tests
+    covering state update, real-mode forwarding, null-terminal guard, and signal
+    connection roundtrip, ALL GREEN.
 - **Terminal resize cols/rows calculation (task 1.2.1).**
   - `project/autoload/signal_bus.gd` — new `terminal_resized(cols: int, rows: int)` signal.
   - `project/scripts/terminal_settings.gd` — new `static var font_size: int = 16`;

@@ -7,6 +7,17 @@
 
 ## Now doing
 
+Task `1.2.2` — DONE. Resize propagation to TerminalManager and godotty-node.
+- `project/autoload/terminal_manager.gd` — added `_mock_cols`/`_mock_rows` vars;
+  `_ready()` connects `SignalBus.terminal_resized` → `_on_terminal_resized`;
+  `_exit_tree()` disconnects; handler updates mock state or calls
+  `_real_terminal.resize(cols, rows)`; `get_dimensions()` reads `_mock_cols`/`_mock_rows`.
+- `tests/unit/terminal_manager_resize_test.gd` — 9 tests, ALL GREEN.
+- `tests/unit/terminal_manager_grid_test.gd` — `before_test()` updated to reset
+  `_mock_cols = 80` / `_mock_rows = 24` so existing dimension tests stay order-independent.
+- CHANGELOG.md updated under [Unreleased].
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
 Task `1.2.1` — DONE. Terminal resize cols/rows calculation from TerminalSettings.font_size.
 - `project/autoload/signal_bus.gd` — added `terminal_resized(cols: int, rows: int)` signal.
 - `project/scripts/terminal_settings.gd` — added `static var font_size: int = 16`.

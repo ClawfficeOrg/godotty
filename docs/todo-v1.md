@@ -133,7 +133,7 @@ the shell process receives SIGWINCH so it can reflow its output.
     Emit `SignalBus.terminal_resized(cols, rows)`.
   - Tests: resize viewport to known size; signal fires with correct cols/rows.
 
-- [ ] `1.2.2` Propagate resize to `TerminalManager` and godotty-node.
+- [x] `1.2.2` Propagate resize to `TerminalManager` and godotty-node.
   - Complexity: Low. Suggested model: standard coding model.
   - Owned paths: `project/autoload/terminal_manager.gd`.
   - Work: connect `SignalBus.terminal_resized` in `TerminalManager`; call

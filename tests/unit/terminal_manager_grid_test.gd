@@ -15,6 +15,8 @@ func before_test() -> void:
 	TerminalManager._mock_current_dir = "/home/user"
 	TerminalManager._mock_output_buffer.clear()
 	TerminalManager._mock_history.clear()
+	TerminalManager._mock_cols = 80
+	TerminalManager._mock_rows = 24
 
 
 # ---------------------------------------------------------------------------
