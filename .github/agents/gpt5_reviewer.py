@@ -1,20 +1,15 @@
 #!/usr/bin/env python3
-"""GPT-5 PR reviewer — posts a structured review as a PR comment.
+"""Copilot PR reviewer — posts a structured review as a PR comment.
 
-Loaded by .github/workflows/dual-review.yml. Uses the dual-review skill
-file as the system prompt to keep behavior in lockstep with the Claude
-reviewer's checklist.
+Loaded by .github/workflows/dual-review.yml. Uses gpt-5-mini (cheap)
+for the review pass via the GitHub Copilot API.
 
 Env:
-    OPENAI_API_KEY  required
-    GH_TOKEN        required (workflow's GITHUB_TOKEN is fine)
-    PR_NUMBER       required
-    PR_REPO         required (e.g. "ClawfficeOrg/godotty")
-    OPENAI_MODEL    optional, default "gpt-5"
-
-Failures here are non-fatal to CI (continue-on-error in the workflow);
-the script logs and returns 0 unless argv parsing fails.
+    GH_TOKEN    required (workflow's GITHUB_TOKEN is fine)
+    PR_NUMBER   required
+    PR_REPO     required (e.g. "ClawfficeOrg/godotty")
 """
+
 from __future__ import annotations
 
 import json
@@ -23,29 +18,25 @@ import pathlib
 import subprocess
 import sys
 import textwrap
-
-try:
-    from openai import OpenAI  # type: ignore
-except ImportError:  # pragma: no cover
-    print("gpt5_reviewer: openai package missing; aborting softly")
-    sys.exit(0)
-
+import urllib.request
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 SKILL_PATH = REPO_ROOT / ".github" / "skills" / "review" / "dual-review" / "SKILL.md"
 AGENTS_PATH = REPO_ROOT / "AGENTS.md"
 
+COPILOT_API = "https://api.githubcopilot.com/chat/completions"
+REVIEW_MODEL = "gpt-5-mini"
+
 
 def _required_env(name: str) -> str:
     val = os.environ.get(name)
     if not val:
-        print(f"gpt5_reviewer: missing required env var {name}; skipping")
+        print(f"reviewer: missing required env var {name}; skipping")
         sys.exit(0)
     return val
 
 
 def _git_diff_against_base() -> str:
-    """Return the unified diff of the PR head against its merge base with master."""
     try:
         base = subprocess.check_output(
             ["git", "merge-base", "origin/master", "HEAD"], cwd=REPO_ROOT, text=True
@@ -54,11 +45,10 @@ def _git_diff_against_base() -> str:
             ["git", "diff", base, "HEAD"], cwd=REPO_ROOT, text=True
         )
     except subprocess.CalledProcessError as exc:
-        print(f"gpt5_reviewer: git diff failed: {exc}")
+        print(f"reviewer: git diff failed: {exc}")
         return ""
-    # GPT-5 has plenty of context but be polite.
     if len(diff) > 200_000:
-        diff = diff[:200_000] + "\n\n... (diff truncated for review) ..."
+        diff = diff[:200_000] + "\n\n... (diff truncated) ..."
     return diff
 
 
@@ -66,75 +56,84 @@ def _load(path: pathlib.Path) -> str:
     return path.read_text(encoding="utf-8") if path.exists() else ""
 
 
+def _copilot_chat(token: str, system: str, user: str) -> str:
+    payload = json.dumps(
+        {
+            "model": REVIEW_MODEL,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+        }
+    ).encode()
+
+    req = urllib.request.Request(
+        COPILOT_API,
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "Copilot-Integration-Id": "vscode-chat",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            body = json.loads(resp.read())
+            return body["choices"][0]["message"]["content"]
+    except Exception as exc:
+        return f"## Review error\n\nCopilot API call failed: `{exc}`"
+
+
 def _post_comment(repo: str, pr: str, body: str) -> None:
     token = _required_env("GH_TOKEN")
-    cmd = [
-        "gh", "pr", "comment", pr,
-        "--repo", repo,
-        "--body-file", "-",
-    ]
-    env = {**os.environ, "GH_TOKEN": token}
-    proc = subprocess.run(cmd, input=body, text=True, env=env, capture_output=True)
+    cmd = ["gh", "pr", "comment", pr, "--repo", repo, "--body-file", "-"]
+    proc = subprocess.run(
+        cmd,
+        input=body,
+        text=True,
+        env={**os.environ, "GH_TOKEN": token},
+        capture_output=True,
+    )
     if proc.returncode != 0:
-        print(f"gpt5_reviewer: gh pr comment failed: {proc.stderr}")
+        print(f"reviewer: gh pr comment failed: {proc.stderr}")
     else:
-        print("gpt5_reviewer: comment posted")
+        print("reviewer: comment posted")
 
 
 def main() -> int:
-    api_key = _required_env("OPENAI_API_KEY")
+    token = _required_env("GH_TOKEN")
     pr = _required_env("PR_NUMBER")
     repo = _required_env("PR_REPO")
-    model = os.environ.get("OPENAI_MODEL", "gpt-5")
 
     skill = _load(SKILL_PATH)
     agents = _load(AGENTS_PATH)
     diff = _git_diff_against_base()
 
     if not diff.strip():
-        print("gpt5_reviewer: empty diff, nothing to review")
+        print("reviewer: empty diff, nothing to review")
         return 0
 
     system = textwrap.dedent(f"""
-        You are GPT-5 acting as the *second* reviewer on a godotty PR.
-        Your lens is **architectural drift, idiom quality, and subtle bugs**
-        — not process compliance (Claude handles that).
-
-        You MUST follow the format defined in the dual-review skill, below.
+        You are {REVIEW_MODEL} acting as the second reviewer on a godotty PR.
+        Your lens is architectural drift, idiom quality, and subtle bugs.
+        Follow the format defined in the dual-review skill below.
         Be terse but specific. Cite filenames and line numbers when possible.
         End with a single line: `### Verdict: LGTM` | `LGTM with nits` | `REQUEST_CHANGES`.
 
-        --- AGENTS.md (the project constitution) ---
+        --- AGENTS.md ---
         {agents}
 
         --- dual-review skill ---
         {skill}
     """).strip()
 
-    user = textwrap.dedent(f"""
-        Below is the unified diff of the PR. Review it.
+    user = f"Review this diff:\n\n```diff\n{diff}\n```"
 
-        ```diff
-        {diff}
-        ```
-    """).strip()
-
-    client = OpenAI(api_key=api_key)
-    try:
-        resp = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user},
-            ],
-        )
-        review_text = resp.choices[0].message.content or ""
-    except Exception as exc:  # broad on purpose: this is non-fatal
-        review_text = f"## GPT-5 review — error\n\nFailed to obtain review: `{exc}`"
-        print(f"gpt5_reviewer: API call failed: {exc}")
+    review_text = _copilot_chat(token, system, user)
 
     body = (
-        f"## GPT-5 review — {model}\n\n"
+        f"## Copilot review — {REVIEW_MODEL}\n\n"
         f"_Lens: architectural drift, idiom quality, subtle bugs._\n\n"
         f"{review_text}\n"
     )
