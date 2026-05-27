@@ -106,7 +106,7 @@ theme.
     terminal does not have focus.
   - Tests: cursor visible → hidden → visible cycle at configured rate.
 
-- [ ] `1.1.4` Cursor hide/show (`CSI ?25l` / `CSI ?25h`).
+- [x] `1.1.4` Cursor hide/show (`CSI ?25l` / `CSI ?25h`).
   - Complexity: Very Low. Suggested model: standard coding model.
   - Owned paths: `project/scripts/terminal_view.gd`.
   - Work: track DEC private mode 25 state; hide/show cursor overlay.
