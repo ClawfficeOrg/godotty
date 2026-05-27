@@ -1075,6 +1075,8 @@ func apply_font_settings() -> void:
 	if output_display:
 		if TerminalSettings.font != null:
 			output_display.add_theme_font_override("normal_font", TerminalSettings.font)
+		else:
+			output_display.remove_theme_font_override("normal_font")
 		output_display.add_theme_font_size_override("normal_font_size", TerminalSettings.font_size)
 	_update_cursor_overlay()
 

@@ -42,8 +42,8 @@ static var font: Font = null
 ## Point size of the terminal monospace font.
 ## Drives char_width (= font_size ? 0.5) and line_height (= font_size)
 ## used to compute cols/rows from the viewport pixel dimensions.
-## Default: 16 pt -> char_width = 8.0 px, line_height = 16.0 px.
-static var font_size: int = 16
+## Default: 20 pt -> char_width = 10.0 px, line_height = 20.0 px.
+static var font_size: int = 20
 
 ## Name of the last theme the user picked. Empty string means "use default".
 ## Persists across scene reloads because static vars survive within a process.
