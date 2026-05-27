@@ -1,6 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://terminal_scene_001"]
+[gd_scene load_steps=6 format=3 uid="uid://terminal_scene_001"]
 
 [ext_resource type="Script" path="res://scripts/terminal_view.gd" id="1_terminal_view"]
+[ext_resource type="PackedScene" path="res://scenes/search_bar.tscn" id="2_search_bar"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_terminal_bg"]
 bg_color = Color(0.02, 0.16, 0.21, 1)
@@ -120,3 +121,15 @@ placeholder_text = ""
 caret_blink = true
 caret_blink_interval = 0.5
 clear_button_enabled = false
+
+[node name="SearchBar" parent="." instance=ExtResource("2_search_bar")]
+layout_mode = 1
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -314.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = 36.0
+z_index = 10
