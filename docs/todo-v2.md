@@ -166,7 +166,7 @@ rebind via a `TerminalKeymap` Resource, persisted to `user://`.
 
 **Prerequisite:** Phase 2.1.0 (`TerminalSettings` pattern).
 
-- [ ] `2.3.1` `TerminalKeymap` Resource.
+- [x] `2.3.1` `TerminalKeymap` Resource.
   - Complexity: Low. Suggested model: standard coding model.
   - Owned paths: `project/resources/terminal_keymap.gd`,
     `tests/unit/terminal_keymap_test.gd`.

@@ -10,6 +10,15 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **TerminalKeymap resource (task 2.3.1).**
+  - `project/resources/terminal_keymap.gd` — `Resource` with `bindings: Dictionary`
+    mapping action name → `InputEventKey`. Twelve built-in actions: `copy`,
+    `paste`, `clear`, `search`, `scroll_page_up`, `scroll_page_down`, `new_tab`,
+    `close_tab`, `split_right`, `split_down`, `interrupt` (Ctrl+C), `eof`
+    (Ctrl+D). Static factory `TerminalKeymap.default()` pre-populates all
+    bindings. `find_action(event)` resolves a key event to its action name.
+  - `tests/unit/terminal_keymap_test.gd` — 7 tests covering default bindings,
+    Ctrl+C / Ctrl+D mappings, rebinding, and `find_action` resolution.
 - **Search match navigation (task 2.2.3).**
   - `project/scripts/search_bar.gd` — `_input()` now intercepts `KEY_ENTER`/
     `KEY_KP_ENTER`: plain Enter emits `navigate_next`, Shift+Enter emits
