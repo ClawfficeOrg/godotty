@@ -1,11 +1,81 @@
 # Current Working Memory
 
 **STATUS:** in-progress
-**SPEC:** BBCode rendering hotfix
+**SPEC:** BBCode rendering hotfix + CR line-rewrite fix
 **BRANCH:** `hotfix/bbcode-bracket-escaping`
 **STARTED:** 2026-05-27
 
 ## Now doing
+
+**Cross-chunk CR line-rewrite — FIXED** ✅  (commit 0e6739d)
+
+2026-05-27 — Root-caused and fixed the cross-PTY-chunk text-doubling bug.
+
+**The Bug:**
+When a bare CR (line-rewrite intent) arrived as the first byte of chunk N+1,
+`_ansi_to_bbcode` cleared only the *local* `output` variable. Content appended to
+`_output_accumulator` and `output_display` by earlier chunks was never removed,
+so the replacement text was appended AFTER the stale partial line, producing
+duplication (e.g. `lls` instead of `ls`).
+
+**The Fix:**
+- `_ansi_to_bbcode` sets `_pending_line_clear = true` on a standalone CR (guarded
+  by `_in_rerender` flag to prevent recursive re-triggering).
+- `_append_output` checks `_pending_line_clear` after each chunk: when set, trims
+  the current partial line from `_raw_accumulator`, appends the raw chunk, then
+  performs a full display rebuild from the updated raw accumulator.
+- `_enforce_scrollback_limit` now sets `_in_rerender = true` around its
+  `_ansi_to_bbcode` call to prevent stale `_pending_line_clear` flags during trims.
+- `_clear_output`, `_enter_alternate_screen`, `_exit_alternate_screen` reset
+  `_pending_line_clear` to prevent cross-mode carry-over.
+
+**Files changed:**
+- `project/scripts/terminal_view.gd`: `_pending_line_clear` + `_in_rerender` vars,
+  CR handler patch, `_append_output` line-clear path, `_enforce_scrollback_limit` guard
+- `tests/unit/terminal_view_cr_line_rewrite_test.gd`: 4 cross-chunk regression tests added
+- `CHANGELOG.md`: documented under `[Unreleased]`
+- `.gdlintrc`: bumped `max-file-lines` from 1600 → 1850
+
+**Test results:**
+- `terminal_view_cr_line_rewrite_test.gd`: 14/14 ✅ (10 existing + 4 new cross-chunk)
+- Overall suite: 505 tests | 7 failures (all pre-existing, down from 8 before)
+
+---
+
+**CR line-rewrite bug (double leading character) — FIXED** ✅
+
+2026-05-27 — Root-caused and fixed the doubled first-character artifact seen with Starship
+prompts in real PTY mode.
+
+**The Bug:**
+In `_ansi_to_bbcode`, the `\r` handler had a guard:
+```
+elif next_ch != "\u001b":  # Not an escape sequence
+    # clear current line
+```
+Shells like ZSH/Starship redraw the prompt with `\r\033[K<new-prompt>` — CR immediately
+followed by an escape sequence.  Because `next_ch == '\033'` the guard fired, the old
+line was **not** cleared, and the new prompt was appended after the old one.  Since both
+prompts start with the same character (e.g. `~`) this looked like a doubled first char.
+
+Additionally, when CR arrived as the **last byte of a read chunk** (no next char to look
+ahead at), the line was also not cleared, causing the same doubling in two-chunk splits.
+
+**The Fix:**
+Removed the `elif next_ch != "\u001b"` guard.  A bare CR (not followed by `\n`) now
+unconditionally clears the current output line.  `\r\n` pairs are unchanged.
+
+**Files changed:**
+- `project/scripts/terminal_view.gd`: simplified `\r` handler in `_ansi_to_bbcode`
+- `tests/unit/terminal_view_cr_line_rewrite_test.gd`: 10 new regression tests (all GREEN)
+- `CHANGELOG.md`: documented under `[Unreleased]`
+
+**Test results:**
+- `terminal_view_cr_line_rewrite_test.gd`: 10/10 ✅
+- `terminal_view_bracket_escaping_test.gd`: 13/13 ✅ (no regression)
+
+---
+
 
 **BBCode orphaned tags — FIXED** ✅
 
