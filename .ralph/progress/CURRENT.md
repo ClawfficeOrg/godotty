@@ -7,6 +7,14 @@
 
 ## Now doing
 
+Task `1.3.2` — DONE. Wrap clipboard paste in markers when mode is active.
+- `project/scripts/terminal_view.gd` — added `BRACKETED_PASTE_START`/`BRACKETED_PASTE_END`
+  constants; `paste_text(text)` public method wraps with ESC[200~…ESC[201~ when
+  `_bracketed_paste_mode` is true, sends bare text otherwise; Ctrl+Shift+V handler.
+- `tests/unit/terminal_view_paste_wrap_test.gd` — 9 mock-mode tests, ALL GREEN.
+- CHANGELOG.md and docs/todo-v1.md updated.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
 Task `1.3.1` — DONE. Track bracketed paste mode state.
 - `project/scripts/terminal_view.gd` — added `_bracketed_paste_mode: bool = false`;
   `_handle_private_mode_set("?2004")` sets it true on `CSI ?2004h`;
