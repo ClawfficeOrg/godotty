@@ -1,0 +1,35 @@
+name: New spec
+description: Propose a new .ralph/specs/ entry for autonomous work.
+title: "spec: <one-line summary>"
+labels: ["spec", "needs-triage"]
+body:
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Problem / motivation
+    validations:
+      required: true
+  - type: textarea
+    id: goals
+    attributes:
+      label: Goals (in scope)
+      placeholder: "- ...\n- ..."
+    validations:
+      required: true
+  - type: textarea
+    id: nongoals
+    attributes:
+      label: Non-goals
+      placeholder: "- ..."
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria (checklist)
+      placeholder: "- [ ] ...\n- [ ] ..."
+    validations:
+      required: true
+  - type: input
+    id: depends-on
+    attributes:
+      label: Depends on
+      placeholder: "spec NNNN, PR #N, none"
