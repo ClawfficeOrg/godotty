@@ -224,7 +224,18 @@ func _ready() -> void:
 	if prompt_label:
 		prompt_label.text = PROMPT_SYMBOL
 
-	# Initialize terminal
+	# Load the selected bundled font before spawning the shell. Doing this
+	# here (rather than lazily inside apply_font_settings) ensures the main
+	# thread is not blocked on ResourceLoader.load() AFTER the PTY reader
+	# thread has started -- that would create a reliable race window where
+	# godot-rust 'safeguards balanced' fires SIGTRAP on the cross-thread
+	# output_received emit.
+	if TerminalSettings.font == null and TerminalSettings.selected_font_name != "Default":
+		var _fpath: String = TerminalSettings.BUNDLED_FONT_PATHS.get(TerminalSettings.selected_font_name, "")
+		if _fpath != "":
+			TerminalSettings.font = load(_fpath)
+
+	# Initialize terminal (spawns the shell / PTY reader thread).
 	_setup_theme_picker()
 	_initialize_terminal()
 	# Apply font settings after terminal is initialized so output_display is ready
@@ -1055,11 +1066,10 @@ func _on_shell_status_changed(running: bool) -> void:
 ## char_width / line_height for cursor and selection positioning.
 ## Call this whenever TerminalSettings.font_size or font changes.
 func apply_font_settings() -> void:
-	# Lazy-load the selected font the first time (font starts null even when a name is selected).
-	if TerminalSettings.font == null and TerminalSettings.selected_font_name != "Default":
-		var path: String = TerminalSettings.BUNDLED_FONT_PATHS.get(TerminalSettings.selected_font_name, "")
-		if path != "":
-			TerminalSettings.font = load(path)
+	# Font must already be loaded before this is called (see _ready).
+	# Do NOT call ResourceLoader.load() here -- this function runs after
+	# spawn_shell() and blocking the main thread post-spawn races the PTY
+	# reader thread in the Rust extension.
 	char_width = float(TerminalSettings.font_size) * 0.5
 	line_height = float(TerminalSettings.font_size)
 	if output_display:

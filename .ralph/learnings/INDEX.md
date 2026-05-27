@@ -3,6 +3,25 @@
 Append-only log of non-obvious things the agent has learned.
 **Newest at top.** Each entry: date, one-line summary, evidence/links.
 
+## 2026-05-27 — ResourceLoader.load() after spawn_shell() reliably triggers godot-rust cross-thread SIGTRAP
+
+**Context:** Real PTY mode crashing with signal 5 after rebuilding godotty-node against Godot 4.6
+(godot-rust `safeguards balanced`). The crash happened at startup right after "shell spawned".
+**Learning:** godot-rust `safeguards balanced` asserts that all Godot API calls happen on the main
+thread. The godotty-node Rust extension emits `output_received` from its PTY reader background
+thread -- a threading bug in the extension. This races the main thread whenever the main thread
+is busy doing anything after `spawn_shell()`. The race is usually very tight (Starship's prompt
+arrives in < 1 ms), so it often doesn't trigger. But adding `ResourceLoader.load()` for the
+JetBrains Mono Nerd Font (2.8 MB TTF) AFTER `spawn_shell()` in `apply_font_settings()` blocked
+the main thread for ~10-50 ms -- turning an occasional race into a reliable SIGTRAP.
+Fix (GDScript side): load the font in `_ready()` BEFORE `_initialize_terminal()` / `spawn_shell()`.
+Do NOT call `ResourceLoader.load()` or any other blocking call between `spawn_shell()` and the
+first output_received emission (approximately the first frame tick).
+Real fix (Rust side): emit `output_received` from the main thread only, using `call_deferred` or
+a thread-safe queue polled in `_process()`. File against godotty-node.
+**Evidence:** `project/scripts/terminal_view.gd:_ready` and `apply_font_settings` -- fixed 2026-05-27.
+**Tag:** godot · godot-rust · gdextension · threading · pty · macos
+
 ## 2026-05-27 — ZLE/readline `\x1b[J` (ED mode 0) in primary mode wipes output one frame after it appears
 
 **Context:** Real PTY mode — typing `ls`, hitting Enter, watching the file list appear for ~1 frame then vanish.
