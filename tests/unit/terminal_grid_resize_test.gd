@@ -5,7 +5,7 @@
 # Tests: 80-col to 40-col reflow, long lines wrap across rows, short rows
 #        gain blank cells on expand, scrollback offset reset on resize.
 #
-# TerminalGrid is a RefCounted — no scene tree needed.
+# TerminalGrid is a RefCounted -- no scene tree needed.
 extends GdUnitTestSuite
 
 
@@ -39,7 +39,7 @@ func _fill_row(grid: TerminalGrid, row: int, count: int) -> void:
 
 
 func test_resize_80_to_40_first_half_in_penultimate_row() -> void:
-	# Row 3 (bottom) of 80×4 grid has 80 distinct chars.
+	# Row 3 (bottom) of 80?4 grid has 80 distinct chars.
 	# After reflow to 40 cols: [blank, blank, first40, last40].
 	var g := _make_grid(80, 4)
 	_fill_row(g, 3, 80)
@@ -83,8 +83,8 @@ func test_resize_80_to_40_second_half_chars_correct() -> void:
 
 
 func test_long_line_first_half_visible_after_reflow() -> void:
-	# 80×3 grid: rows 0,1 blank, row 2 = 80 chars.
-	# Reflow to 40×3: [blank, first40, last40].
+	# 80?3 grid: rows 0,1 blank, row 2 = 80 chars.
+	# Reflow to 40?3: [blank, first40, last40].
 	var g := _make_grid(80, 3)
 	_fill_row(g, 2, 80)
 	g.resize(40, 3)
@@ -121,11 +121,11 @@ func test_long_line_no_char_loss_second_half() -> void:
 
 
 func test_very_long_line_wraps_three_times() -> void:
-	# 120-char line in a 120×4 grid; reflow to 40 → 3 physical rows.
+	# 120-char line in a 120?4 grid; reflow to 40 -> 3 physical rows.
 	var g := _make_grid(120, 4)
 	_fill_row(g, 3, 120)
 	g.resize(40, 4)
-	# Reflow of 3 blank + 1×120-char line → [blank, row0, row1, row2].
+	# Reflow of 3 blank + 1?120-char line -> [blank, row0, row1, row2].
 	assert_str(g.get_cell(1, 0)["char"]).is_equal("A")
 	assert_str(g.get_cell(2, 0)["char"]).is_equal(char(65 + 40))
 	assert_str(g.get_cell(3, 0)["char"]).is_equal(char(65 + 80))
@@ -137,7 +137,7 @@ func test_very_long_line_wraps_three_times() -> void:
 
 
 func test_short_row_trailing_cells_are_blank_after_expand() -> void:
-	# 5-char row in 10×3 grid; expand to 20.
+	# 5-char row in 10?3 grid; expand to 20.
 	var g := _make_grid(10, 3)
 	_fill_row(g, 2, 5)
 	g.resize(20, 3)

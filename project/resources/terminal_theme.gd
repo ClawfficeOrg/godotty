@@ -1,7 +1,7 @@
-## TerminalTheme — color scheme Resource for terminal rendering.
+## TerminalTheme -- color scheme Resource for terminal rendering.
 ##
 ## Defines five semantic color roles and a 16-entry ANSI color palette
-## (indices 0–7 normal, 8–15 bright).
+## (indices 0-7 normal, 8-15 bright).
 ##
 ## Usage:
 ##   var theme := TerminalTheme.new()
@@ -51,7 +51,7 @@ func _init() -> void:
 func _default_palette() -> Array[Color]:
 	var p: Array[Color] = []
 	p.resize(16)
-	# Normal colors (0–7)
+	# Normal colors (0-7)
 	p[0] = Color(0.0, 0.0, 0.0, 1.0)
 	p[1] = Color(0.67, 0.02, 0.02, 1.0)
 	p[2] = Color(0.02, 0.67, 0.02, 1.0)
@@ -60,7 +60,7 @@ func _default_palette() -> Array[Color]:
 	p[5] = Color(0.67, 0.02, 0.67, 1.0)
 	p[6] = Color(0.02, 0.67, 0.67, 1.0)
 	p[7] = Color(0.67, 0.67, 0.67, 1.0)
-	# Bright colors (8–15)
+	# Bright colors (8-15)
 	p[8] = Color(0.33, 0.33, 0.33, 1.0)
 	p[9] = Color(1.0, 0.33, 0.33, 1.0)
 	p[10] = Color(0.33, 1.0, 0.33, 1.0)

@@ -8,7 +8,7 @@
 ##   - hide_search() resets _search_highlight_count to 0 on TerminalView.
 ##   - SearchBar _input() handles Escape to call hide_search().
 ##
-## All tests run in mock mode — no GDExtension required.
+## All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TERMINAL_SCENE := preload("res://scenes/terminal.tscn")

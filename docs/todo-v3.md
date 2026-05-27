@@ -49,7 +49,7 @@ Planned scope:
 - [x] `3.0.4` Tab title updates from OSC 0/2 (window title sequences).
   - Shell sets tab title via `echo -e '\033]0;My Tab\007'`.
 
-- [ ] `3.0.5` RC cut and multi-model review.
+- [x] `3.0.5` RC cut and multi-model review.
 
 **Release gate for 3.0.0:** open 3 tabs, run different commands in each,
 close the middle tab; tabs are fully independent; Ctrl+Tab cycles.

@@ -1,13 +1,13 @@
 # GdUnit4 test: TerminalManagerNode can be instanced per-tab with independent state.
 #
-# Spec: task 3.0.1 — multi-instance TerminalManager
+# Spec: task 3.0.1 -- multi-instance TerminalManager
 #
 # Covers:
 #   - Two TerminalManagerNode instances maintain independent state.
 #   - Autoload registry get_default() / set_default() contract.
 #   - Backward-compat shim: existing autoload API still works.
 #
-# All tests run in mock mode — no GDExtension required.
+# All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 var _inst1: TerminalManagerNode

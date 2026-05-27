@@ -6,7 +6,7 @@
 #        clear_region, scroll_up, to_bbcode_line formatting, two independent
 #        instances (primary vs alternate buffer pattern).
 #
-# TerminalGrid is a RefCounted — no scene tree needed.
+# TerminalGrid is a RefCounted -- no scene tree needed.
 extends GdUnitTestSuite
 
 # ---------------------------------------------------------------------------
@@ -105,14 +105,14 @@ func test_default_cell_bold_is_false() -> void:
 
 
 # ---------------------------------------------------------------------------
-# Resize — truncate and pad
+# Resize -- truncate and pad
 # ---------------------------------------------------------------------------
 
 
 func test_resize_preserves_content_in_overlap() -> void:
 	var g := _make_grid(10, 5)
 	g.set_cell(1, 2, _red_cell())
-	g.resize(10, 5)  # same size — content survives
+	g.resize(10, 5)  # same size -- content survives
 	assert_str(g.get_cell(1, 2)["char"]).is_equal("X")
 
 
@@ -166,7 +166,7 @@ func test_get_cell_out_of_bounds_col_returns_default() -> void:
 func test_set_cell_out_of_bounds_is_ignored() -> void:
 	var g := _make_grid(5, 3)
 	g.set_cell(99, 99, _red_cell())
-	# grid unchanged — no crash and in-bounds cells still default
+	# grid unchanged -- no crash and in-bounds cells still default
 	assert_str(g.get_cell(0, 0)["char"]).is_equal(" ")
 
 
@@ -202,7 +202,7 @@ func test_clear_region_clamps_to_bounds() -> void:
 	for r in range(3):
 		for c in range(5):
 			g.set_cell(r, c, _red_cell())
-	# Region extends beyond grid — must not crash
+	# Region extends beyond grid -- must not crash
 	g.clear_region(1, 3, 10, 10)
 	assert_str(g.get_cell(2, 4)["char"]).is_equal(" ")
 
@@ -294,7 +294,7 @@ func test_to_bbcode_line_plain_text_no_tags() -> void:
 			"url": ""
 		}
 		g.set_cell(0, c, cell)
-	# All cells have default style → no tags, just chars
+	# All cells have default style -> no tags, just chars
 	assert_str(g.to_bbcode_line(0)).is_equal("aaa")
 
 

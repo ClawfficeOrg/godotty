@@ -7,7 +7,7 @@
 ##   - show_search_bar() makes the SearchBar visible.
 ##   - Ctrl+Shift+F keyboard shortcut calls show_search_bar() (via _input).
 ##
-## All tests run in mock mode — no GDExtension required.
+## All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TERMINAL_SCENE := preload("res://scenes/terminal.tscn")

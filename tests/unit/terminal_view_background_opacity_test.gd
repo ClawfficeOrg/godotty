@@ -4,11 +4,11 @@
 #
 # Covers:
 #   - apply_background_opacity() sets self_modulate.a to the given value.
-#   - opacity 0.5 → self_modulate.a == 0.5.
-#   - opacity 1.0 → self_modulate.a == 1.0 (fully opaque).
-#   - out-of-range values are clamped: -0.2 → 0.0, 1.5 → 1.0.
+#   - opacity 0.5 -> self_modulate.a == 0.5.
+#   - opacity 1.0 -> self_modulate.a == 1.0 (fully opaque).
+#   - out-of-range values are clamped: -0.2 -> 0.0, 1.5 -> 1.0.
 #
-# All tests run in mock mode — no GDExtension required.
+# All tests run in mock mode -- no GDExtension required.
 # Note: OS-level window transparency is not tested here (requires a non-headless
 # DisplayServer). Only the panel's self_modulate.a is asserted.
 extends GdUnitTestSuite

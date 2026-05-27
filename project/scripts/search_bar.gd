@@ -1,4 +1,4 @@
-## SearchBar — overlay search UI for TerminalView.
+## SearchBar -- overlay search UI for TerminalView.
 ## Handles show/hide logic, query input, match-count display, and prev/next navigation.
 ## Escape hides the bar and emits search_canceled.
 class_name SearchBar

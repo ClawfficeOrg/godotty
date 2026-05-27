@@ -9,7 +9,7 @@
 #   - Non-0/2 OSC sequences do not emit tab_title_changed.
 #   - Empty title string is emitted as-is (valid OSC).
 #
-# All tests run in mock mode — no GDExtension required.
+# All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TERMINAL_SCENE := preload("res://scenes/terminal.tscn")
@@ -69,7 +69,7 @@ func test_osc_2_sets_tab_title() -> void:
 
 
 func test_osc_title_split_across_chunks() -> void:
-	# First chunk ends partway through the OSC sequence — no title yet.
+	# First chunk ends partway through the OSC sequence -- no title yet.
 	_view._on_output_ready("\u001b]")
 	assert_int(_captured_titles.size()).is_equal(0)
 	# Second chunk completes the sequence.

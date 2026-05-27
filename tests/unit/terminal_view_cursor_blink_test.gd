@@ -12,7 +12,7 @@
 #   - Steady cursor styles are not toggled by the blink timer.
 #   - Timer wait_time matches TerminalSettings.cursor_blink_rate.
 #
-# All tests run in mock mode — no GDExtension required.
+# All tests run in mock mode -- no GDExtension required.
 # Tests drive the blink callback directly (no real-time waiting) for
 # determinism in headless CI.
 extends GdUnitTestSuite
@@ -62,7 +62,7 @@ func test_blink_timer_wait_time_matches_settings() -> void:
 
 
 # ---------------------------------------------------------------------------
-# Blink cycle — driven synchronously via _on_blink_timeout
+# Blink cycle -- driven synchronously via _on_blink_timeout
 # ---------------------------------------------------------------------------
 
 
@@ -97,7 +97,7 @@ func test_blink_stops_when_input_focus_lost() -> void:
 
 
 func test_cursor_visible_after_focus_lost() -> void:
-	# Blink once so cursor is hidden, then lose focus — should restore visibility.
+	# Blink once so cursor is hidden, then lose focus -- should restore visibility.
 	_view._on_blink_timeout()
 	assert_bool(_view.cursor_overlay.visible).is_false()
 	_view.input_field.focus_exited.emit()

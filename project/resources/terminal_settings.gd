@@ -1,4 +1,4 @@
-## TerminalSettings — serializable per-session terminal configuration Resource.
+## TerminalSettings -- serializable per-session terminal configuration Resource.
 ##
 ## Stores font, sizing, color theme, and cursor preferences. Instances can be
 ## persisted to a .tres file via ResourceSaver/ResourceLoader.

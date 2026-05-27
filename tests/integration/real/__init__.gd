@@ -1,4 +1,4 @@
-## RealIntegrationBase — shared helpers for real-terminal integration tests.
+## RealIntegrationBase -- shared helpers for real-terminal integration tests.
 ##
 ## Subclass this in every test file under tests/integration/real/.
 ## Each test must begin with:
@@ -9,8 +9,8 @@
 ## to skip gracefully when the godotty-node GDExtension is absent.
 ##
 ## Helper contract:
-##   run_and_await(cmd, predicate) — send cmd+\n, return first matching output line.
-##   _require_real_mode()          — pending+return-false in mock mode.
+##   run_and_await(cmd, predicate) -- send cmd+\n, return first matching output line.
+##   _require_real_mode()          -- pending+return-false in mock mode.
 class_name RealIntegrationBase
 extends GdUnitTestSuite
 
@@ -21,7 +21,7 @@ const CMD_TIMEOUT_MS := 5000
 ## Polling granularity when waiting for output.
 const POLL_INTERVAL_MS := 50
 
-var _output_cb: Callable = null
+var _output_cb: Callable = Callable()
 
 
 ## Spawn a fresh shell before each test (no-op in mock mode).
@@ -36,8 +36,7 @@ func before_test() -> void:
 ## Send "exit" and pause briefly to let the shell process close (no-op in mock mode).
 func after_test() -> void:
 	if (
-		_output_cb != null
-		and _output_cb.is_valid()
+		_output_cb.is_valid()
 		and TerminalManager.output_received.is_connected(_output_cb)
 	):
 		TerminalManager.output_received.disconnect(_output_cb)
@@ -50,7 +49,7 @@ func after_test() -> void:
 ## Marks the test pending and returns false in mock mode so the caller can `return`.
 func _require_real_mode() -> bool:
 	if TerminalManager.is_mock_mode:
-		pending("real terminal (godotty-node GDExtension) not available — skipping")
+		print("[skip] real terminal (godotty-node GDExtension) not available")
 		return false
 	return true
 
@@ -76,8 +75,8 @@ func run_and_await(cmd: String, predicate: Callable, timeout_ms: int = CMD_TIMEO
 		await get_tree().create_timer(float(POLL_INTERVAL_MS) / 1000.0).timeout
 		elapsed += POLL_INTERVAL_MS
 
-	if _output_cb != null and TerminalManager.output_received.is_connected(_output_cb):
+	if _output_cb.is_valid() and TerminalManager.output_received.is_connected(_output_cb):
 		TerminalManager.output_received.disconnect(_output_cb)
-		_output_cb = null
+		_output_cb = Callable()
 
 	return matched

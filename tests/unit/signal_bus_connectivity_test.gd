@@ -72,7 +72,7 @@ func test_signal_set_is_complete() -> void:
 	assert_array(actual).is_equal(expected)
 
 
-# Round-trip via local connection — does not require monitor_signals.
+# Round-trip via local connection -- does not require monitor_signals.
 func test_command_submitted_round_trip() -> void:
 	var received: Array[String] = []
 	var cb := func(cmd: String) -> void: received.append(cmd)

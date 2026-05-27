@@ -305,7 +305,7 @@ func _mock_clear() -> void:
 
 func _real_spawn_shell() -> bool:
 	if not is_addon_available:
-		push_error("TerminalManager: cannot spawn real shell — addon not available")
+		push_error("TerminalManager: cannot spawn real shell -- addon not available")
 		return false
 
 	# Instantiate TerminalNode2D from GDExtension and add as child

@@ -47,6 +47,9 @@ when_to_use: <one-line, "when X, load this">
 ### Domain: `review`
 - **dual-review** — Claude + GPT-5 review protocol (what each looks for).
   *When to use:* preparing or responding to a PR review.
+- **multi-model-checklist** — RC-cut checklist and dual-model review workflow for release gates.
+  *When to use:* cutting an RC, running the v3.0.0 release gate, or opening a PR that
+  touches autoloads / the GDExtension boundary.
 
 ### Domain: `release`
 - **cutting-a-release** — semver + tagging + CHANGELOG promotion.

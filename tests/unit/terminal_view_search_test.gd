@@ -9,7 +9,7 @@
 ##   - Malformed regex returns empty result without crashing.
 ##   - get_highlighted_line() injects [bgcolor=][/bgcolor] BBCode around matches.
 ##
-## All tests run in mock mode — no GDExtension required.
+## All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TERMINAL_SCENE := preload("res://scenes/terminal.tscn")
@@ -45,13 +45,13 @@ func test_search_plain_case_insensitive_matches() -> void:
 	SignalBus.output_ready.emit("line one with error here\nAnother ERROR line\nfinal error entry\n")
 	var matches: Array[Vector2i] = _view.search_scrollback("error")
 	assert_int(matches.size()).is_equal(3)
-	# Line 0: "line one with error here" → col 14
+	# Line 0: "line one with error here" -> col 14
 	assert_int(matches[0].x).is_equal(0)
 	assert_int(matches[0].y).is_equal(14)
-	# Line 1: "Another ERROR line" → col 8
+	# Line 1: "Another ERROR line" -> col 8
 	assert_int(matches[1].x).is_equal(1)
 	assert_int(matches[1].y).is_equal(8)
-	# Line 2: "final error entry" → col 6
+	# Line 2: "final error entry" -> col 6
 	assert_int(matches[2].x).is_equal(2)
 	assert_int(matches[2].y).is_equal(6)
 

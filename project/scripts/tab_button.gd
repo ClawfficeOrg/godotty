@@ -1,4 +1,4 @@
-## TerminalTabButton — a single tab entry in the TerminalTabBar.
+## TerminalTabButton -- a single tab entry in the TerminalTabBar.
 ## Displays a title label, an output-indicator dot, and a close button.
 ## Created programmatically by TerminalTabBar; no separate scene required.
 class_name TerminalTabButton
@@ -10,7 +10,7 @@ signal close_requested(shell_id: String)
 ## Emitted when the tab is clicked (focus requested).
 signal focused(shell_id: String)
 
-## Unicode × used as the close button label.
+## Unicode ? used as the close button label.
 const CLOSE_SYMBOL: String = "\u00d7"
 
 ## Colour of the "new output" indicator dot.

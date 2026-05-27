@@ -6,7 +6,7 @@
 # Grid methods (get_cell, get_dimensions, resize) live in
 # terminal_manager_grid_test.gd.
 #
-# All tests run in mock mode — no GDExtension required.
+# All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 

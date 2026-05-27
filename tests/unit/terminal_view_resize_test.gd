@@ -1,11 +1,11 @@
-# GdUnit4 test: TerminalView resize → cols/rows calculation (task 1.2.1).
+# GdUnit4 test: TerminalView resize -> cols/rows calculation (task 1.2.1).
 #
 # Spec: docs/todo-v1.md (task 1.2.1)
 #
 # Covers: _on_viewport_resize computes cols/rows from TerminalSettings.font_size
 #         and emits SignalBus.terminal_resized(cols, rows).
 #
-# All tests run in mock mode — no GDExtension required.
+# All tests run in mock mode -- no GDExtension required.
 extends GdUnitTestSuite
 
 const TERMINAL_SCENE := preload("res://scenes/terminal.tscn")
@@ -56,7 +56,7 @@ func test_terminal_resized_signal_fires_with_correct_cols_rows() -> void:
 
 
 func test_terminal_resized_larger_font_gives_fewer_cols() -> void:
-	# font_size=20 → char_w=10.0 → 200/10=20 cols, 100/20=5 rows
+	# font_size=20 -> char_w=10.0 -> 200/10=20 cols, 100/20=5 rows
 	TerminalSettings.font_size = 20
 	_view.size = Vector2(200, 100)
 	var received: Array = []
@@ -91,8 +91,8 @@ func test_terminal_resized_not_fired_when_size_is_zero() -> void:
 
 
 func test_terminal_resized_uses_floor_not_round() -> void:
-	# font_size=10 → char_w=5.0
-	# width=209 → floor(209/5)=41, not round(209/5)=42
+	# font_size=10 -> char_w=5.0
+	# width=209 -> floor(209/5)=41, not round(209/5)=42
 	TerminalSettings.font_size = 10
 	_view.size = Vector2(209, 109)
 	var received: Array = []
@@ -111,7 +111,7 @@ func test_terminal_resized_uses_floor_not_round() -> void:
 
 
 func test_terminal_resized_default_font_size_matches_char_constants() -> void:
-	# Default font_size=16 → char_w=8.0=CHAR_W, line_h=16.0=CHAR_H
+	# Default font_size=16 -> char_w=8.0=CHAR_W, line_h=16.0=CHAR_H
 	TerminalSettings.font_size = 16
 	_view.size = Vector2(160, 96)
 	# 160/8=20 cols, 96/16=6 rows
