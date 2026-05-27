@@ -10,6 +10,18 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Terminal resize cols/rows calculation (task 1.2.1).**
+  - `project/autoload/signal_bus.gd` — new `terminal_resized(cols: int, rows: int)` signal.
+  - `project/scripts/terminal_settings.gd` — new `static var font_size: int = 16`;
+    drives `char_width = font_size × 0.5` and `line_height = font_size`.
+  - `project/scripts/terminal_view.gd` — `_on_viewport_resize` updated to derive
+    char dimensions from `TerminalSettings.font_size`, compute
+    `cols = floor(width / char_width)` and `rows = floor(height / line_height)`,
+    and emit `SignalBus.terminal_resized(cols, rows)` before clamping for
+    `TerminalManager.resize`.
+  - `tests/unit/terminal_view_resize_test.gd` — 5 mock-mode tests (correct
+    cols/rows, larger font yields fewer cols, zero-size guard, floor semantics,
+    default font_size matches CHAR_W/CHAR_H constants), ALL GREEN.
 - **Cursor hide/show via DEC private mode 25 (task 1.1.4).**
   - `project/scripts/terminal_view.gd` — added `_cursor_dec_visible` bool tracking
     DEC private mode 25 state; `CSI ?25l` hides the cursor overlay unconditionally;

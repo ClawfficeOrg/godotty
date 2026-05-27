@@ -659,17 +659,18 @@ func _on_shell_status_changed(running: bool) -> void:
 		_append_output("\n[color=#b58900]Shell exited. Terminal waiting for restart.[/color]\n")
 
 
-## Handle viewport resize — update terminal dimensions
+## Handle viewport resize — compute cols/rows from pixel size and font_size,
+## emit SignalBus.terminal_resized, then update TerminalManager.
 func _on_viewport_resize() -> void:
 	if not _is_ready:
 		return
-	# Estimate cols/rows from current size and assumed monospace char dimensions
-	var char_w := CHAR_W
-	var char_h := CHAR_H
+	var char_w := float(TerminalSettings.font_size) * 0.5
+	var line_h := float(TerminalSettings.font_size)
 	var size := get_rect().size
 	if size.x > 0 and size.y > 0:
-		var cols := int(size.x / char_w)
-		var rows := int((size.y - 40.0) / char_h)  # subtract input bar height
+		var cols := int(floor(size.x / char_w))
+		var rows := int(floor(size.y / line_h))
+		SignalBus.terminal_resized.emit(cols, rows)
 		cols = clampi(cols, 20, 220)
 		rows = clampi(rows, 5, 100)
 		_terminal_cols = cols

@@ -17,3 +17,6 @@ signal addon_status_changed(available: bool)
 
 ## Emitted when shell status changes
 signal shell_status_changed(running: bool)
+
+## Emitted when the terminal viewport is resized (in character-cell units).
+signal terminal_resized(cols: int, rows: int)

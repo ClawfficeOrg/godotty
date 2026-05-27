@@ -124,7 +124,7 @@ the shell process receives SIGWINCH so it can reflow its output.
 
 **Prerequisite:** Phase 1.0.0 (grid exists for reflow).
 
-- [ ] `1.2.1` Calculate columns and rows from `TerminalView` pixel size.
+- [x] `1.2.1` Calculate columns and rows from `TerminalView` pixel size.
   - Complexity: Low. Suggested model: standard coding model.
   - Owned paths: `project/scripts/terminal_view.gd`.
   - Work: on `_on_viewport_resize` (already connected), compute
