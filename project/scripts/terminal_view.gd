@@ -33,6 +33,12 @@ var cursor_style: CursorStyle = CursorStyle.BLINKING_BLOCK
 var cursor_row: int = 0
 var cursor_col: int = 0
 
+## Active text selection start cell (col, row), inclusive. (-1,-1) = no selection.
+var selection_start: Vector2i = Vector2i(-1, -1)
+
+## Active text selection end cell (col, row), inclusive. (-1,-1) = no selection.
+var selection_end: Vector2i = Vector2i(-1, -1)
+
 ## Command history for up/down navigation
 var _command_history: Array[String] = []
 
@@ -84,6 +90,12 @@ var _bracketed_paste_mode: bool = false
 ## Timer that drives cursor blinking (created in _setup_cursor_blink).
 var _blink_timer: Timer = null
 
+## Whether a left-button drag selection is currently in progress.
+var _selecting: bool = false
+
+## Selection highlight overlay (created programmatically in _ready).
+var _selection_overlay: ColorRect = null
+
 ## Reference to the output display
 @onready var output_display: RichTextLabel = $VBoxContainer/ScrollContainer/OutputDisplay
 
@@ -127,6 +139,9 @@ func _ready() -> void:
 	# Set up cursor blinking timer
 	_setup_cursor_blink()
 
+	# Set up text-selection overlay
+	_setup_selection_overlay()
+
 
 func _input(event: InputEvent) -> void:
 	if not _is_ready:
@@ -153,6 +168,73 @@ func _input(event: InputEvent) -> void:
 			KEY_V when event.ctrl_pressed and event.shift_pressed:
 				paste_text(DisplayServer.clipboard_get())
 				get_viewport().set_input_as_handled()
+
+
+## Handle GUI mouse events for click-drag text selection.
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.button_index == MOUSE_BUTTON_LEFT:
+			if mb.pressed:
+				selection_start = _pixel_to_cell(mb.position)
+				selection_end = selection_start
+				_selecting = true
+			else:
+				_selecting = false
+			_update_selection_overlay()
+	elif event is InputEventMouseMotion and _selecting:
+		var mm := event as InputEventMouseMotion
+		selection_end = _pixel_to_cell(mm.position)
+		_update_selection_overlay()
+
+
+## Convert a local pixel position to a grid cell coordinate (col, row).
+## Clamped to [0, _terminal_cols-1] × [0, _terminal_rows-1].
+func _pixel_to_cell(pos: Vector2) -> Vector2i:
+	var col := int(floor(pos.x / CHAR_W))
+	var row := int(floor(pos.y / CHAR_H))
+	col = clampi(col, 0, max(0, _terminal_cols - 1))
+	row = clampi(row, 0, max(0, _terminal_rows - 1))
+	return Vector2i(col, row)
+
+
+## Create the semi-transparent ColorRect used to highlight selected text.
+func _setup_selection_overlay() -> void:
+	_selection_overlay = ColorRect.new()
+	_selection_overlay.color = Color(0.3, 0.6, 1.0, 0.4)
+	_selection_overlay.visible = false
+	_selection_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if scroll_container:
+		scroll_container.add_child(_selection_overlay)
+
+
+## Reposition and resize the selection overlay to cover the selected cells.
+## Hides the overlay when no selection is active.
+func _update_selection_overlay() -> void:
+	if not _selection_overlay:
+		return
+	if selection_start == Vector2i(-1, -1):
+		_selection_overlay.visible = false
+		return
+	var min_col := mini(selection_start.x, selection_end.x)
+	var max_col := maxi(selection_start.x, selection_end.x)
+	var min_row := mini(selection_start.y, selection_end.y)
+	var max_row := maxi(selection_start.y, selection_end.y)
+	_selection_overlay.position = Vector2(float(min_col) * CHAR_W, float(min_row) * CHAR_H)
+	_selection_overlay.size = Vector2(
+		float(max_col - min_col + 1) * CHAR_W, float(max_row - min_row + 1) * CHAR_H
+	)
+	_selection_overlay.visible = true
+
+
+## Return the number of cells covered by the current selection (inclusive rect).
+## Returns 0 when selection_start is (-1, -1).
+func selected_cell_count() -> int:
+	if selection_start == Vector2i(-1, -1):
+		return 0
+	var cols: int = abs(selection_end.x - selection_start.x) + 1
+	var rows: int = abs(selection_end.y - selection_start.y) + 1
+	return cols * rows
 
 
 ## Initialize the terminal

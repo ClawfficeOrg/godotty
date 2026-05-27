@@ -195,7 +195,7 @@ terminal emulators.
 
 **Prerequisite:** Phase 1.0.0 (grid for cell-accurate selection).
 
-- [ ] `1.4.1` Click-drag text selection in `TerminalView`.
+- [x] `1.4.1` Click-drag text selection in `TerminalView`.
   - Complexity: High. Suggested model: flagship model.
   - Owned paths: `project/scripts/terminal_view.gd`,
     `project/scripts/terminal_grid.gd`.

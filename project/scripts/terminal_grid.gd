@@ -33,6 +33,12 @@ var cursor_col: int = 0
 ## Reset to 0 on every resize so the newest line remains visible.
 var scrollback_offset: int = 0
 
+## Pixel width of one character cell — used by cell_from_pixel / get_cell_rect.
+var char_width: float = 8.0
+
+## Pixel height of one character line — used by cell_from_pixel / get_cell_rect.
+var line_height: float = 16.0
+
 var _cols: int = 0
 var _rows: int = 0
 
@@ -238,6 +244,32 @@ func write_at_cursor(cell: Dictionary) -> void:
 	set_cell(cursor_row, cursor_col, cell)
 	if _cols > 0 and cursor_col < _cols - 1:
 		cursor_col += 1
+
+
+## Clamp a cell coordinate to valid grid bounds.
+## Returns Vector2i(0, 0) if the grid has no cells.
+func clamp_cell(cell: Vector2i) -> Vector2i:
+	if _cols <= 0 or _rows <= 0:
+		return Vector2i(0, 0)
+	return Vector2i(clampi(cell.x, 0, _cols - 1), clampi(cell.y, 0, _rows - 1))
+
+
+## Convert a local pixel position to the grid cell it falls in.
+## Result is clamped to grid bounds.
+func cell_from_pixel(local_pos: Vector2) -> Vector2i:
+	var col := int(floor(local_pos.x / char_width))
+	var row := int(floor(local_pos.y / line_height))
+	return clamp_cell(Vector2i(col, row))
+
+
+## Return the pixel Rect2 for a grid cell in local coordinates.
+## Cell coordinates are clamped to bounds before computing.
+func get_cell_rect(cell: Vector2i) -> Rect2:
+	var clamped := clamp_cell(cell)
+	return Rect2(
+		Vector2(float(clamped.x) * char_width, float(clamped.y) * line_height),
+		Vector2(char_width, line_height)
+	)
 
 
 ## Return a BBCode-formatted string for the given row (for RichTextLabel).
