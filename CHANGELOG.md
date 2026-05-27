@@ -10,6 +10,15 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Background transparency for terminal panel (task 2.4.1).**
+  - `TerminalSettings.background_opacity: float` (0.0–1.0, default 1.0).
+  - `TerminalView.apply_background_opacity()` — applies the setting to
+    `self_modulate.a`, clamped to valid range. Called in `_ready()`.
+  - OS-level window transparency additionally requires
+    `display/window/transparent = true` in Project Settings.
+  - `tests/unit/terminal_view_background_opacity_test.gd` — 7 tests covering
+    half-opacity, full opacity, zero opacity, clamping, default at ready, and
+    RGB channel preservation.
 - **Keybinding editor panel (task 2.3.3).**
   - `project/scenes/settings_dialog.tscn` — scrollable keybinding list with
     (action name, current chord, [Edit] button) rows; Save and Reset to Defaults

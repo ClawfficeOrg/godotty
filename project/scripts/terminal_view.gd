@@ -202,6 +202,7 @@ func _ready() -> void:
 	# Apply font settings after terminal is initialized so output_display is ready
 	apply_font_settings()
 	_setup_font_panel()
+	apply_background_opacity()
 
 	# Handle resize
 	get_tree().get_root().size_changed.connect(_on_viewport_resize)
@@ -966,6 +967,16 @@ func apply_font_settings() -> void:
 			output_display.add_theme_font_override("normal_font", TerminalSettings.font)
 		output_display.add_theme_font_size_override("normal_font_size", TerminalSettings.font_size)
 	_update_cursor_overlay()
+
+
+## Apply TerminalSettings.background_opacity to self_modulate.a.
+## Values are clamped to [0.0, 1.0]. Call this whenever the opacity setting changes.
+## Note: OS-level window transparency also requires display/window/transparent = true
+## in Project Settings, which must be configured manually.
+func apply_background_opacity() -> void:
+	var c := self_modulate
+	c.a = clampf(TerminalSettings.background_opacity, 0.0, 1.0)
+	self_modulate = c
 
 
 ## Handle viewport resize — compute cols/rows from pixel size and font_size,

@@ -7,6 +7,14 @@
 
 ## Now doing
 
+Task `2.4.1` — DONE. Background transparency.
+- `project/scripts/terminal_settings.gd` — added `static var background_opacity: float = 1.0`.
+- `project/scripts/terminal_view.gd` — added `apply_background_opacity()` (clamps to [0,1],
+  assigns to `self_modulate.a`); called in `_ready()` after `apply_font_settings()`.
+- `tests/unit/terminal_view_background_opacity_test.gd` — 7 tests: half-opacity, full opacity,
+  zero opacity, clamped below zero, clamped above one, default at ready, RGB channels preserved.
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
 Task `2.3.3` — DONE. Keybinding editor panel.
 - `project/scenes/settings_dialog.tscn` — Control-based dialog with ScrollContainer
   listing keybinding rows and Save/Reset buttons.
