@@ -56,7 +56,7 @@ it into `project/addons/`, and runs real PTY-backed integration tests.
     On failure: auto-open a GitHub issue with the `bug` label.
   - Tests: the workflow itself is the test — green on first run.
 
-- [ ] `0.3.2` Real-mode integration test suite skeleton.
+- [x] `0.3.2` Real-mode integration test suite skeleton.
   - Complexity: Low-Medium. Suggested model: standard coding model.
   - Owned paths: `tests/integration/real/`, `tests/integration/real/pwd_test.gd`,
     `tests/integration/real/echo_test.gd`, `tests/integration/real/exit_code_test.gd`.
