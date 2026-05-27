@@ -830,6 +830,13 @@ func _handle_sgr(params_str: String) -> String:
 			39:
 				result += _close_fg()
 				_current_fg = ""
+			40, 41, 42, 43, 44, 45, 46, 47:
+				result += _close_bg()
+				_current_bg = _indexed_color(code - 40, false)
+				result += "[bgcolor=%s]" % _current_bg
+			49:
+				result += _close_bg()
+				_current_bg = ""
 			90, 91, 92, 93, 94, 95, 96, 97:
 				result += _close_fg()
 				_current_fg = _indexed_color(code - 90 + 8, false)
@@ -851,9 +858,23 @@ func _handle_sgr(params_str: String) -> String:
 					idx += 4
 			48:
 				if idx + 2 < codes.size() and int(codes[idx + 1]) == 5:
+					result += _close_bg()
+					var color_idx := int(codes[idx + 2])
+					_current_bg = _xterm256_hex(color_idx)
+					result += "[bgcolor=%s]" % _current_bg
 					idx += 2
 				elif idx + 4 < codes.size() and int(codes[idx + 1]) == 2:
+					var r := int(codes[idx + 2])
+					var g := int(codes[idx + 3])
+					var b := int(codes[idx + 4])
+					result += _close_bg()
+					_current_bg = "#%02x%02x%02x" % [r, g, b]
+					result += "[bgcolor=%s]" % _current_bg
 					idx += 4
+			100, 101, 102, 103, 104, 105, 106, 107:
+				result += _close_bg()
+				_current_bg = _indexed_color(code - 100 + 8, false)
+				result += "[bgcolor=%s]" % _current_bg
 		idx += 1
 
 	return result
@@ -866,6 +887,8 @@ func _close_all_tags() -> String:
 		_current_underline = false
 	if _current_bold:
 		r += "[/b]"
+	if not _current_bg.is_empty():
+		r += "[/bgcolor]"
 	if not _current_fg.is_empty():
 		r += "[/color]"
 	return r
@@ -875,6 +898,13 @@ func _close_fg() -> String:
 	if not _current_fg.is_empty():
 		_current_fg = ""
 		return "[/color]"
+	return ""
+
+
+func _close_bg() -> String:
+	if not _current_bg.is_empty():
+		_current_bg = ""
+		return "[/bgcolor]"
 	return ""
 
 
