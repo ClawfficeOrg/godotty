@@ -238,7 +238,7 @@ the terminal feel polished.
     .audio_bell: bool`, default false).
   - Tests: BEL character triggers modulate tween; returns to normal.
 
-- [ ] `2.4.4` Scrollback buffer size setting.
+- [x] `2.4.4` Scrollback buffer size setting.
   - Complexity: Very Low. Suggested model: standard coding model.
   - Owned paths: `project/scripts/terminal_view.gd`.
   - Work: expose `TerminalSettings.scrollback_lines: int` (default 1000,

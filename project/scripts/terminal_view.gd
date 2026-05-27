@@ -15,8 +15,6 @@ enum CursorStyle {
 	BLINKING_BAR = 5,
 	STEADY_BAR = 6,
 }
-## Maximum lines to keep in scrollback buffer
-const MAX_LINES: int = 1000
 const PROMPT_SYMBOL: String = "❯"
 const DEC_BRACKETED_PASTE: String = "?2004"
 const CHAR_W: float = 8.0
@@ -785,10 +783,34 @@ func _append_output(text: String) -> void:
 	if not _in_alternate_screen:
 		_output_accumulator += processed
 		_raw_accumulator += text
-	if _line_count > MAX_LINES:
-		_line_count = MAX_LINES
+	var limit: int = clampi(TerminalSettings.scrollback_lines, 1, 100000)
+	if _line_count > limit and not _in_alternate_screen:
+		_enforce_scrollback_limit(limit)
 
 	_scroll_to_bottom()
+
+
+## Trim the primary scrollback to `limit` lines, discarding the oldest content.
+## Rebuilds `_raw_accumulator` and re-renders `output_display` from the trimmed
+## raw ANSI text. Only call when not in alternate-screen mode.
+func _enforce_scrollback_limit(limit: int) -> void:
+	var excess := _line_count - limit
+	var pos := 0
+	var found := 0
+	while found < excess and pos < _raw_accumulator.length():
+		if _raw_accumulator[pos] == "\n":
+			found += 1
+		pos += 1
+	_raw_accumulator = _raw_accumulator.substr(pos)
+	_line_count = limit
+	output_display.clear()
+	_current_fg = ""
+	_current_bg = ""
+	_current_bold = false
+	_partial_escape = ""
+	var bbcode := _ansi_to_bbcode(_raw_accumulator)
+	output_display.append_text(bbcode)
+	_output_accumulator = bbcode
 
 
 ## Clear output display
