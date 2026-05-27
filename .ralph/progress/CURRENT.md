@@ -7,6 +7,16 @@
 
 ## Now doing
 
+Task `3.0.4` — DONE. OSC 0/2 tab-title sequences.
+- `TerminalView`: added `signal tab_title_changed(title: String)`.
+- Fixed `_ansi_to_bbcode` early-exit: OSC sequences (`ESC]`) were incorrectly caught by the
+  `bracket_pos == -1` guard and stored as partial escapes. Changed to only buffer bare ESC
+  or incomplete ESC[ prefix.
+- Added `_handle_osc(body)` to dispatch OSC 0/2 and emit `tab_title_changed`.
+- Created `tests/unit/terminal_view_title_test.gd` (5 tests).
+- `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
+
+
 Task `3.0.3` — DONE. Ctrl+T / Ctrl+W / Ctrl+Tab tab management keybindings.
 - `TerminalKeymap`: added `ACTION_NEXT_TAB = "next_tab"` (Ctrl+Tab default); changed `new_tab` default Ctrl+Shift+T → Ctrl+T; changed `close_tab` default Ctrl+Shift+W → Ctrl+W.
 - `TerminalTabBar`: added `_tab_order: Array[String]`, `next_tab()`, `get_tab_count()`, `get_active_shell_id()`.

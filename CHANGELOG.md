@@ -9,6 +9,15 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 
 ## [Unreleased]
 
+- **OSC 0/2 tab-title sequences (task 3.0.4).**
+  - `TerminalView` now emits `tab_title_changed(title: String)` when an OSC 0 or OSC 2
+    sequence (`ESC]0;TITLE BEL` / `ESC]2;TITLE BEL`) is received.
+  - Fixed pre-existing bug: OSC sequences were incorrectly buffered as partial escapes
+    instead of being parsed (the `bracket_pos == -1` early-exit was too broad).
+  - Added `_handle_osc(body)` private helper to `TerminalView` for OSC dispatch.
+  - Added `tests/unit/terminal_view_title_test.gd` (5 tests covering OSC 0, OSC 2,
+    split-chunk buffering, non-title OSC ignored, and empty title).
+
 - **Ctrl+T / Ctrl+W / Ctrl+Tab tab management keybindings (task 3.0.3).**
   - Added `TerminalKeymap.ACTION_NEXT_TAB` constant (`"next_tab"`) with default binding Ctrl+Tab.
   - Changed default `new_tab` binding from Ctrl+Shift+T to Ctrl+T; `close_tab` from Ctrl+Shift+W to Ctrl+W.
