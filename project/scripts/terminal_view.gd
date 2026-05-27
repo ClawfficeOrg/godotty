@@ -23,6 +23,8 @@ const PROMPT_SYMBOL: String = "❯"
 const DEC_BRACKETED_PASTE: String = "?2004"
 const CHAR_W: float = 8.0
 const CHAR_H: float = 16.0
+const BRACKETED_PASTE_START: String = "\u001b[200~"
+const BRACKETED_PASTE_END: String = "\u001b[201~"
 
 ## Current cursor shape set by DECSCUSR (CSI Ps SP q).
 var cursor_style: CursorStyle = CursorStyle.BLINKING_BLOCK
@@ -147,6 +149,9 @@ func _input(event: InputEvent) -> void:
 			KEY_D when event.ctrl_pressed:
 				# Send EOF
 				TerminalManager.write_input("\u0004")
+				get_viewport().set_input_as_handled()
+			KEY_V when event.ctrl_pressed and event.shift_pressed:
+				paste_text(DisplayServer.clipboard_get())
 				get_viewport().set_input_as_handled()
 
 
@@ -797,6 +802,22 @@ func _stop_blinking() -> void:
 	_cursor_blink_visible = true
 	if cursor_overlay:
 		cursor_overlay.visible = _cursor_dec_visible
+
+
+## Send text to the terminal as a paste operation.
+## When bracketed paste mode is active, wraps text with the DEC markers
+## ESC[200~ … ESC[201~ so the receiving shell can distinguish a paste from
+## manually typed input and suppress premature execution of embedded newlines.
+## The wrapped payload is sent as a single write_input call.
+func paste_text(text: String) -> void:
+	if not _is_ready or text.is_empty():
+		return
+	var payload: String
+	if _bracketed_paste_mode:
+		payload = BRACKETED_PASTE_START + text + BRACKETED_PASTE_END
+	else:
+		payload = text
+	TerminalManager.write_input(payload)
 
 
 func _exit_tree() -> void:

@@ -171,7 +171,7 @@ being interpreted as command submission.
     Store `_bracketed_paste_mode: bool` on `TerminalView`.
   - Tests: state toggles correctly with each sequence.
 
-- [ ] `1.3.2` Wrap clipboard paste in markers when mode is active.
+- [x] `1.3.2` Wrap clipboard paste in markers when mode is active.
   - Complexity: Low. Suggested model: standard coding model.
   - Owned paths: `project/scripts/terminal_view.gd`.
   - Work: in the paste handler (Ctrl+Shift+V from Phase 1.4.0, or call it

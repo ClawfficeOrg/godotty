@@ -10,6 +10,14 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Bracketed paste wrapping (task 1.3.2).**
+  - `project/scripts/terminal_view.gd` — added `paste_text(text)` public method;
+    wraps payload with `ESC[200~`…`ESC[201~` when `_bracketed_paste_mode` is true,
+    sends bare text otherwise; added `BRACKETED_PASTE_START`/`BRACKETED_PASTE_END`
+    constants; Ctrl+Shift+V handler calls `paste_text(DisplayServer.clipboard_get())`.
+  - `tests/unit/terminal_view_paste_wrap_test.gd` — 9 mock-mode tests covering
+    wrapping on/off, multiline, single-call semantics, and empty-string no-op.
+  - `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
 - **Bracketed paste mode state tracking (task 1.3.1).**
   - `project/scripts/terminal_view.gd` — added `_bracketed_paste_mode: bool`
     field; `_handle_private_mode_set("?2004")` sets it true on `CSI ?2004h`;

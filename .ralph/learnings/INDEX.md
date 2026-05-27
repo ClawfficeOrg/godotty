@@ -3,6 +3,13 @@
 Append-only log of non-obvious things the agent has learned.
 **Newest at top.** Each entry: date, one-line summary, evidence/links.
 
+## 2026-05-27 — GdUnit4 v6 `assert_str` has no `does_not_start_with`/`does_not_end_with`
+
+**Context:** Writing `test_paste_bare_has_no_start_marker_when_mode_off` in the bracketed paste test suite.
+**Learning:** `GdUnitStringAssertImpl` in GdUnit4 v6.1.x does not expose `does_not_start_with` or `does_not_end_with`. Calling them causes a runtime script error ("Nonexistent function"). Use `assert_str(...).is_equal(expected_value)` to prove absence of markers — an exact equality check is a stronger assertion anyway.
+**Evidence:** `tests/unit/terminal_view_paste_wrap_test.gd` — task 1.3.2.
+**Tag:** gdscript · gdunit · testing
+
 ## 2026-05-27 — Godot 4 signal Callable disconnect requires the exact same Callable reference
 
 **Context:** Connecting `SignalBus.terminal_resized` to `_on_terminal_resized` in TerminalManager's `_ready()`, then disconnecting in `_exit_tree()`.
