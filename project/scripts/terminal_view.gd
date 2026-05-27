@@ -207,6 +207,7 @@ var cursor_overlay: ColorRect = $PaddingContainer/VBoxContainer/ScrollContainer/
 @onready var _theme_menu: MenuButton = $PaddingContainer/VBoxContainer/TitleBar/ThemeMenu
 @onready var _font_option: OptionButton = $PaddingContainer/VBoxContainer/TitleBar/FontOptionButton
 @onready var _font_spinbox: SpinBox = $PaddingContainer/VBoxContainer/TitleBar/FontSizeSpinBox
+@onready var _input_bar: PanelContainer = $PaddingContainer/VBoxContainer/InputBar
 
 
 func _ready() -> void:
@@ -272,35 +273,48 @@ func _input(event: InputEvent) -> void:
 	if not _is_ready:
 		return
 
-	if event is InputEventKey and event.pressed and not event.echo:
-		# History navigation and legacy clipboard shortcuts are not in the rebindable keymap.
-		match event.keycode:
-			KEY_TAB:
-				# Send tab to the PTY for shell completion; do NOT let Godot use it
-				# for UI focus traversal.
-				_get_manager().write_input("\t")
-				get_viewport().set_input_as_handled()
-				return
-			KEY_UP:
-				_navigate_history(-1)
-				get_viewport().set_input_as_handled()
-				return
-			KEY_DOWN:
-				_navigate_history(1)
-				get_viewport().set_input_as_handled()
-				return
-			KEY_INSERT when event.ctrl_pressed:
-				copy_selected_to_clipboard()
-				get_viewport().set_input_as_handled()
-				return
-			KEY_INSERT when event.shift_pressed:
-				paste_text(_get_clipboard_text())
-				get_viewport().set_input_as_handled()
-				return
+	if not (event is InputEventKey and event.pressed and not event.echo):
+		return
 
-		var action: String = _get_manager().keymap.find_action(event)
-		if action != "":
-			_execute_action(action)
+	var ev := event as InputEventKey
+
+	# Terminal-level keymap actions (copy, paste, new tab, etc.) always fire
+	# regardless of mode so the user can manage the emulator window.
+	var action: String = _get_manager().keymap.find_action(ev)
+	if action != "":
+		_execute_action(action)
+		get_viewport().set_input_as_handled()
+		return
+
+	# Legacy clipboard shortcuts (Ctrl/Shift+Insert).
+	if ev.keycode == KEY_INSERT and ev.ctrl_pressed:
+		copy_selected_to_clipboard()
+		get_viewport().set_input_as_handled()
+		return
+	if ev.keycode == KEY_INSERT and ev.shift_pressed:
+		paste_text(_get_clipboard_text())
+		get_viewport().set_input_as_handled()
+		return
+
+	if not _get_manager().is_mock_mode:
+		# Real PTY: forward every keystroke as raw bytes. The shell (readline /
+		# ZLE) handles echo, line editing, history, and tab completion inline.
+		var seq := _key_to_pty_seq(ev)
+		if seq != "":
+			_get_manager().write_input(seq)
+			get_viewport().set_input_as_handled()
+		return
+
+	# Mock mode: history navigation + let LineEdit handle printable chars.
+	match ev.keycode:
+		KEY_TAB:
+			_get_manager().write_input("\t")
+			get_viewport().set_input_as_handled()
+		KEY_UP:
+			_navigate_history(-1)
+			get_viewport().set_input_as_handled()
+		KEY_DOWN:
+			_navigate_history(1)
 			get_viewport().set_input_as_handled()
 
 
@@ -331,6 +345,72 @@ func _execute_action(action: String) -> void:
 			tab_close_requested.emit()
 		TerminalKeymap.ACTION_NEXT_TAB:
 			tab_next_requested.emit()
+
+
+## Convert a key event to the byte sequence a real terminal sends to the PTY.
+## Returns "" for keys that should be silently ignored.
+func _key_to_pty_seq(ev: InputEventKey) -> String:
+	const ESC := "\u001b"
+
+	# Ctrl+letter -> control character (e.g. Ctrl+C = \x03)
+	if ev.ctrl_pressed and not ev.alt_pressed and not ev.meta_pressed:
+		match ev.keycode:
+			KEY_A: return "\u0001"
+			KEY_B: return "\u0002"
+			KEY_C: return "\u0003"
+			KEY_D: return "\u0004"
+			KEY_E: return "\u0005"
+			KEY_F: return "\u0006"
+			KEY_G: return "\u0007"
+			KEY_H: return "\u0008"
+			KEY_K: return "\u000b"
+			KEY_L: return "\u000c"
+			KEY_N: return "\u000e"
+			KEY_P: return "\u0010"
+			KEY_R: return "\u0012"
+			KEY_T: return "\u0014"
+			KEY_U: return "\u0015"
+			KEY_W: return "\u0017"
+			KEY_Y: return "\u0019"
+			KEY_Z: return "\u001a"
+			KEY_BRACKETLEFT:  return "\u001b"  # Ctrl+[ = ESC
+			KEY_BACKSLASH:    return "\u001c"
+			KEY_BRACKETRIGHT: return "\u001d"
+
+	# Special / navigation keys
+	match ev.keycode:
+		KEY_ENTER, KEY_KP_ENTER: return "\r"
+		KEY_BACKSPACE:           return "\u007f"
+		KEY_TAB:                 return "\t"
+		KEY_ESCAPE:              return ESC
+		KEY_DELETE:              return ESC + "[3~"
+		KEY_HOME:                return ESC + "[H"
+		KEY_END:                 return ESC + "[F"
+		KEY_INSERT:              return ESC + "[2~"
+		KEY_UP:                  return ESC + "[A"
+		KEY_DOWN:                return ESC + "[B"
+		KEY_RIGHT:               return ESC + "[C"
+		KEY_LEFT:                return ESC + "[D"
+		KEY_PAGEUP:              return ESC + "[5~"
+		KEY_PAGEDOWN:            return ESC + "[6~"
+		KEY_F1:  return ESC + "OP"
+		KEY_F2:  return ESC + "OQ"
+		KEY_F3:  return ESC + "OR"
+		KEY_F4:  return ESC + "OS"
+		KEY_F5:  return ESC + "[15~"
+		KEY_F6:  return ESC + "[17~"
+		KEY_F7:  return ESC + "[18~"
+		KEY_F8:  return ESC + "[19~"
+		KEY_F9:  return ESC + "[20~"
+		KEY_F10: return ESC + "[21~"
+		KEY_F11: return ESC + "[23~"
+		KEY_F12: return ESC + "[24~"
+
+	# Printable unicode character
+	if ev.unicode > 0 and not ev.ctrl_pressed and not ev.meta_pressed:
+		return char(ev.unicode)
+
+	return ""
 
 
 ## Handle GUI mouse events for click-drag text selection and right-click context menu.
@@ -495,6 +575,10 @@ func _initialize_terminal() -> void:
 	cursor_row = 0
 	cursor_col = 0
 	_clear_output()
+	# Hide the typed-input bar in real PTY mode -- the shell echoes keystrokes
+	# inline so a separate LineEdit would be redundant and confusing.
+	if _input_bar:
+		_input_bar.visible = _get_manager().is_mock_mode
 	_load_and_apply_theme(TerminalSettings.selected_theme_name)
 	_get_manager().spawn_shell()
 
@@ -1052,8 +1136,9 @@ func _on_text_submitted(text: String) -> void:
 ## Handle output from TerminalManager
 func _on_output_ready(text: String) -> void:
 	_append_output(text)
-	# Re-grab focus after output (RichTextLabel might steal it)
-	if input_field:
+	# In mock mode the LineEdit is the input surface and must keep focus;
+	# in real PTY mode the input bar is hidden so there's nothing to focus.
+	if input_field and _get_manager().is_mock_mode:
 		input_field.call_deferred("grab_focus")
 
 
