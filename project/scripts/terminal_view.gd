@@ -90,6 +90,10 @@ var _bracketed_paste_mode: bool = false
 ## Last text copied to clipboard. Readable by tests in headless mode.
 var _last_copied_text: String = ""
 
+## When non-empty, _get_clipboard_text() returns this value instead of the
+## system clipboard. Set this in tests to bypass headless clipboard limitations.
+var _clipboard_override: String = ""
+
 ## Timer that drives cursor blinking (created in _setup_cursor_blink).
 var _blink_timer: Timer = null
 
@@ -167,6 +171,9 @@ func _input(event: InputEvent) -> void:
 			KEY_INSERT when event.ctrl_pressed:
 				copy_selected_to_clipboard()
 				get_viewport().set_input_as_handled()
+			KEY_INSERT when event.shift_pressed:
+				paste_text(_get_clipboard_text())
+				get_viewport().set_input_as_handled()
 			KEY_L when event.ctrl_pressed:
 				TerminalManager.clear()
 				get_viewport().set_input_as_handled()
@@ -175,7 +182,7 @@ func _input(event: InputEvent) -> void:
 				TerminalManager.write_input("\u0004")
 				get_viewport().set_input_as_handled()
 			KEY_V when event.ctrl_pressed and event.shift_pressed:
-				paste_text(DisplayServer.clipboard_get())
+				paste_text(_get_clipboard_text())
 				get_viewport().set_input_as_handled()
 
 
@@ -938,6 +945,15 @@ func _stop_blinking() -> void:
 	_cursor_blink_visible = true
 	if cursor_overlay:
 		cursor_overlay.visible = _cursor_dec_visible
+
+
+## Returns the current clipboard text.
+## When _clipboard_override is set (non-empty), returns that value instead of
+## the system clipboard — allows unit tests to bypass headless clipboard limits.
+func _get_clipboard_text() -> String:
+	if not _clipboard_override.is_empty():
+		return _clipboard_override
+	return DisplayServer.clipboard_get()
 
 
 ## Send text to the terminal as a paste operation.

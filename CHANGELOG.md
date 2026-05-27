@@ -10,6 +10,17 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 ## [Unreleased]
 
 ### Added
+- **Paste from clipboard in TerminalView (task 1.4.3).**
+  - `project/scripts/terminal_view.gd` — added `_clipboard_override` var for
+    headless-test-safe clipboard stubbing; `_get_clipboard_text()` helper returns
+    `_clipboard_override` when set, otherwise `DisplayServer.clipboard_get()`;
+    Ctrl+Shift+V and Shift+Insert key bindings in `_input()` call
+    `paste_text(_get_clipboard_text())`; bracketed paste mode respected via
+    existing `paste_text()`.
+  - `tests/unit/terminal_view_paste_test.gd` — 8 mock-mode tests covering
+    Ctrl+Shift+V paste, Shift+Insert paste, empty-clipboard no-op, bracketed
+    wrapping on/off.
+  - `bash scripts/lint.sh` → clean. `bash scripts/run_tests.sh tests/unit` → ALL GREEN.
 - **Clipboard copy from selection in TerminalView (task 1.4.2).**
   - `project/scripts/terminal_view.gd` — added `_last_copied_text` (test-visible
     fallback); `get_selected_text()` extracts plain text from alt-grid cells or

@@ -3,6 +3,13 @@
 Append-only log of non-obvious things the agent has learned.
 **Newest at top.** Each entry: date, one-line summary, evidence/links.
 
+## 2026-05-27 — `DisplayServer.clipboard_get()` returns empty string in Godot headless mode
+
+**Context:** Writing clipboard paste tests (task 1.4.3) — calling `DisplayServer.clipboard_set("hello")` then `clipboard_get()` in headless Godot returned "".
+**Learning:** Godot's headless DisplayServer does not persist clipboard data between `clipboard_set` and `clipboard_get` calls in the same process. Tests that need to verify the clipboard read path must use a `_clipboard_override` var on TerminalView (set before the key event) rather than relying on the system clipboard. Production code reads from `DisplayServer.clipboard_get()` normally.
+**Evidence:** `project/scripts/terminal_view.gd:_get_clipboard_text`, `tests/unit/terminal_view_paste_test.gd` — task 1.4.3.
+**Tag:** godot · gdscript · testing · clipboard
+
 ## 2026-05-27 — Godot 4.6 treats `min()` return as Variant — always annotate the type
 
 **Context:** Adding `get_selected_text()` in `terminal_view.gd` with `var end_c := min(...)`.
