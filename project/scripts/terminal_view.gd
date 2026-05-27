@@ -810,10 +810,15 @@ func _ansi_to_bbcode(text: String) -> String:
 					# Shell is rewriting the current line. Remove everything after
 					# the last newline from output (so the rewrite replaces it).
 					var last_newline := output.rfind("\n")
+					print("[DEBUG CR] Detected CR + non-newline. next_ch=", next_ch.c_escape(), " last_newline=", last_newline)
 					if last_newline != -1:
-						output = output.substr(0, last_newline + 1)
+						var before := output.substr(0, last_newline + 1)
+						var removed := output.substr(last_newline + 1)
+						print("[DEBUG CR] Removed from current line: ", removed.c_escape())
+						output = before
 					else:
 						# No newline yet - clear entire output buffer
+						print("[DEBUG CR] No newline found, clearing entire output: ", output.c_escape())
 						output = ""
 			i += 1
 			continue
@@ -1040,6 +1045,12 @@ func _append_output(text: String) -> void:
 	if processed.is_empty():
 		return
 
+	# DEBUG: Log BBCode output for first 300 chars to trace visible tag issues
+	if processed.length() <= 300:
+		print("[DEBUG _append_output] BBCode: ", processed.c_escape())
+	else:
+		print("[DEBUG _append_output] BBCode (first 300): ", processed.substr(0, 300).c_escape())
+
 	var new_lines := processed.count("\n")
 	_line_count += new_lines
 
@@ -1241,6 +1252,12 @@ func _on_text_submitted(text: String) -> void:
 
 ## Handle output from TerminalManager
 func _on_output_ready(text: String) -> void:
+	# DEBUG: Log raw input to trace character doubling
+	if text.length() <= 200:
+		print("[DEBUG _on_output_ready] Raw input: ", text.c_escape())
+	else:
+		print("[DEBUG _on_output_ready] Raw input (first 200): ", text.substr(0, 200).c_escape())
+
 	_append_output(text)
 	# In mock mode the LineEdit is the input surface and must keep focus;
 	# in real PTY mode the input bar is hidden so there's nothing to focus.
