@@ -35,6 +35,10 @@ const CHAR_H: float = 16.0
 const BRACKETED_PASTE_START: String = "\u001b[200~"
 const BRACKETED_PASTE_END: String = "\u001b[201~"
 
+## Set to true to enable PTY-chunk debug logging (stdout, for triage only).
+## Commit with false.
+const DEBUG_PTY_CHUNKS: bool = false
+
 ## Context menu item IDs for the right-click PopupMenu.
 const MENU_ID_COPY: int = 0
 const MENU_ID_PASTE: int = 1
@@ -1036,7 +1040,15 @@ func _append_output(text: String) -> void:
 	if not output_display:
 		return
 
+	if DEBUG_PTY_CHUNKS:
+		var esc := text.replace("\u001b", "<ESC>").replace("\r", "<CR>").replace("\n", "<LF>")
+		print("[PTY] chunk(%d): %s" % [text.length(), esc])
+		print("[PTY]   raw_acc before: %s" % _raw_accumulator.replace("\u001b", "<ESC>").replace("\r", "<CR>").replace("\n", "<LF>"))
+
 	var processed := _ansi_to_bbcode(text)
+
+	if DEBUG_PTY_CHUNKS:
+		print("[PTY]   pending_clear=%s  processed_bbcode: %s" % [_pending_line_clear, processed.left(120)])
 
 	# A standalone CR in `text` may span a PTY-read-chunk boundary: the partial
 	# line that was already written to _output_accumulator / output_display in an
@@ -1064,6 +1076,8 @@ func _append_output(text: String) -> void:
 		var limit: int = clampi(TerminalSettings.scrollback_lines, 1, 100000)
 		if _line_count > limit:
 			_enforce_scrollback_limit(limit)
+		if DEBUG_PTY_CHUNKS:
+			print("[PTY]   LINE-CLEAR rebuilt. acc=%s" % _output_accumulator.left(120).replace("\u001b", "<ESC>"))
 		_scroll_to_bottom()
 		return
 
@@ -1077,6 +1091,8 @@ func _append_output(text: String) -> void:
 	if not _in_alternate_screen:
 		_output_accumulator += processed
 		_raw_accumulator += text
+	if DEBUG_PTY_CHUNKS:
+		print("[PTY]   normal append. acc_tail=%s" % _output_accumulator.right(80).replace("\u001b", "<ESC>"))
 	var limit: int = clampi(TerminalSettings.scrollback_lines, 1, 100000)
 	if _line_count > limit and not _in_alternate_screen:
 		_enforce_scrollback_limit(limit)
