@@ -12,7 +12,7 @@ Current release: **v0.1.0** — see [CHANGELOG.md](CHANGELOG.md).
 
 - 🖥️ **Terminal Emulation** — full ANSI color (256-color, truecolor, OSC sequences)
 - 📦 **Mock Mode** — works without the GDExtension for development
-- 🎨 **Solarized Dark** palette
+- 🎨 **Multiple color themes** — Solarized Dark, Dracula, Tokyo Night, Gruvbox, and more
 - ⌨️ **Command History** — navigate with arrow keys
 - 🧠 **Robust ANSI Parser** — handles partial-escape sequences across PTY chunks
 - 🔌 **Hot-Swap Backend** — seamlessly switch between mock and real terminal

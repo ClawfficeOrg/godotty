@@ -15,10 +15,7 @@ extends Control
 
 
 func _ready() -> void:
-	# Wait one frame to ensure autoloads are fully initialized
-	await get_tree().process_frame
-
-	# Connect to addon status changes
+	# Autoloads are initialized before scene _ready in Godot 4.
 	SignalBus.addon_status_changed.connect(_on_addon_status_changed)
 
 	# Update status bar

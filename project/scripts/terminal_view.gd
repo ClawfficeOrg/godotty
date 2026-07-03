@@ -95,12 +95,9 @@ var _is_ready: bool = false
 ## Line count for scrollback enforcement
 var _line_count: int = 0
 
-## ANSI parser state
-var _current_fg: String = ""
-var _current_bg: String = ""
-var _current_bold: bool = false
-var _current_underline: bool = false
-var _partial_escape: String = ""
+## Streaming ANSI -> BBCode converter. Owns SGR state, partial-escape
+## buffering, and the standalone-CR line-rewrite flag (see AnsiParser).
+var _parser: AnsiParser = AnsiParser.new()
 
 ## Whether the alternate screen is currently active
 var _in_alternate_screen: bool = false
@@ -158,12 +155,6 @@ var _primary_raw_saved: String = ""
 ## Readable by tests to confirm the re-render was requested.
 var _needs_full_rerender: bool = false
 
-## Set by _ansi_to_bbcode when a standalone CR (line-rewrite) is detected.
-## _append_output checks this flag after each chunk and, when true, clears the
-## current (partial) line from the persistent accumulators before committing
-## the new content -- fixing doubling across PTY-read-chunk boundaries.
-var _pending_line_clear: bool = false
-
 ## Whether a left-button drag selection is currently in progress.
 var _selecting: bool = false
 
@@ -186,9 +177,6 @@ var _last_search_query: String = ""
 
 ## Whether the last search_scrollback() call used regex mode.
 var _last_search_use_regex: bool = false
-
-## Lazily-compiled cached RegEx used by _strip_ansi.
-var _ansi_strip_re: RegEx = null
 
 ## Reference to the output display
 @onready
@@ -237,6 +225,16 @@ func _ready() -> void:
 	SignalBus.addon_status_changed.connect(_on_addon_status_changed)
 	_get_manager().theme_changed.connect(_on_theme_changed)
 
+	# Wire the ANSI parser: it converts text and signals everything that
+	# concerns the view (cursor, erase, private modes, titles, bell,
+	# alt-screen mirroring). Godot signals are synchronous, so dispatch
+	# order matches the old inline implementation.
+	_parser.palette_provider = get_effective_palette
+	_parser.csi_received.connect(_on_parser_csi)
+	_parser.osc_received.connect(_handle_osc)
+	_parser.bell_received.connect(_trigger_visual_bell)
+	_parser.alt_char_written.connect(_on_parser_alt_char)
+
 	# Setup input field
 	if input_field:
 		input_field.text_submitted.connect(_on_text_submitted)
@@ -268,7 +266,9 @@ func _ready() -> void:
 	apply_background_opacity()
 	apply_padding()
 
-	# Handle resize
+	# Handle resize: window size changes (root signal) and per-control
+	# layout changes (tab/split) both need to recalculate cols/rows.
+	resized.connect(_on_viewport_resize)
 	get_tree().get_root().size_changed.connect(_on_viewport_resize)
 
 	# Position cursor overlay at startup
@@ -671,420 +671,81 @@ func _get_manager() -> Node:
 	return manager if manager != null else TerminalManager
 
 
-## Parse ANSI SGR codes and return BBCode.
-## Handles combined codes like \x1b[1;32m and full 256/truecolor.
-func _ansi_to_bbcode(text: String) -> String:
-	# Combine with any partial escape from last chunk
-	var input := _partial_escape + text
-	_partial_escape = ""
-
-	# Reopen the tags that were textually closed at the previous chunk boundary.
-	# Generated BBCode keeps tags chunk-local and line-local (closed before every
-	# "\n" and at the end of every chunk, reopened after/at the start of the
-	# next), so trimming the accumulator or removing display paragraphs at
-	# newline boundaries can never dangle a tag.
-	var output := _open_active_tags()
-	var i := 0
-	while i < input.length():
-		var ch := input[i]
-
-		if ch == "\u001b":
-			# Check if we have a complete sequence
-			var rest := input.substr(i)
-			# Buffer bare ESC or ESC[ with nothing following (incomplete CSI prefix).
-			# Do NOT buffer OSC (ESC]) or other 2+ char sequences here -- let the
-			# specific elif branches handle them.
-			if rest.length() == 1 or (rest[1] == "[" and rest.length() == 2):
-				_partial_escape = rest
-				break
-
-			if rest.length() > 1 and rest[1] == "[":
-				# Find the end of the CSI sequence
-				var end_pos := -1
-				for j in range(2, rest.length()):
-					var c := rest[j]
-					if (c >= "A" and c <= "Z") or (c >= "a" and c <= "z"):
-						end_pos = j
-						break
-
-				if end_pos == -1:
-					# Incomplete sequence -- buffer it
-					_partial_escape = rest
-					break
-
-				var cmd := rest[end_pos]
-				var params_str := rest.substr(2, end_pos - 2)
-
-				match cmd:
-					"m":
-						output += _handle_sgr(params_str)
-					"J":
-						# Erase display.
-						# Alt screen: route to grid.
-						# Primary mode:
-						#   mode 2 (\ x1b[2J) = intentional full clear (Ctrl+L / clear command) -> wipe display.
-						#   mode 0 (\ x1b[J, no params) = erase from cursor to end of screen.
-						#     ZLE/readline emit this when redrawing the prompt after a command. In a
-						#     streaming terminal we have no fixed viewport, so acting on it would
-						#     wipe the just-rendered output. Ignore mode 0 in primary mode.
-						var mode_j := 0
-						if params_str != "":
-							mode_j = int(params_str)
-						if _in_alternate_screen and _alt_grid != null:
-							_alt_grid.erase_display(mode_j)
-						elif mode_j == 2:
-							output += _close_all_tags()  # close any open tags before clearing
-							call_deferred("_clear_output")
-						# mode 0 (erase to end) and mode 1 (erase to start) are no-ops in primary mode.
-					"H", "f":
-						# Cursor home / position (1-based params -> 0-based grid).
-						if _in_alternate_screen and _alt_grid != null:
-							var r := 1
-							var c := 1
-							if params_str != "":
-								var parts := params_str.split(";")
-								if parts.size() >= 1 and parts[0] != "":
-									r = max(1, int(parts[0]))
-								if parts.size() >= 2 and parts[1] != "":
-									c = max(1, int(parts[1]))
-							_alt_grid.set_cursor(r - 1, c - 1)
-						else:
-							# Primary screen -- track cursor_row/cursor_col.
-							var r := 1
-							var c := 1
-							if params_str != "":
-								var parts := params_str.split(";")
-								if parts.size() >= 1 and parts[0] != "":
-									r = max(1, int(parts[0]))
-								if parts.size() >= 2 and parts[1] != "":
-									c = max(1, int(parts[1]))
-							cursor_row = r - 1
-							cursor_col = c - 1
-						_update_cursor_overlay()
-					"A":
-						# Cursor up.
-						if _in_alternate_screen and _alt_grid != null:
-							var n := 1
-							if params_str != "":
-								n = max(1, int(params_str))
-							_alt_grid.move_cursor(-n, 0)
-					"B":
-						# Cursor down.
-						if _in_alternate_screen and _alt_grid != null:
-							var n := 1
-							if params_str != "":
-								n = max(1, int(params_str))
-							_alt_grid.move_cursor(n, 0)
-					"C":
-						# Cursor right.
-						if _in_alternate_screen and _alt_grid != null:
-							var n := 1
-							if params_str != "":
-								n = max(1, int(params_str))
-							_alt_grid.move_cursor(0, n)
-					"D":
-						# Cursor left.
-						if _in_alternate_screen and _alt_grid != null:
-							var n := 1
-							if params_str != "":
-								n = max(1, int(params_str))
-							_alt_grid.move_cursor(0, -n)
-					"K":
-						# Erase line. Alt screen: route to grid.
-						if _in_alternate_screen and _alt_grid != null:
-							var mode_k := 0
-							if params_str != "":
-								mode_k = int(params_str)
-							_alt_grid.erase_line(mode_k)
-					"h":
-						_handle_private_mode_set(params_str)
-					"l":
-						_handle_private_mode_reset(params_str)
-					"q":
-						_handle_decscusr(params_str)
-					_:
-						pass
-
-				i += end_pos + 1
-				continue
-
-			elif rest.length() > 1 and rest[1] == "]":
-				# OSC sequence -- find ST (BEL or ESC\) and extract content.
-				var osc_content_end := rest.find("\u0007")
-				var st_len := 1
-				if osc_content_end == -1:
-					var st_pos := rest.find("\u001b\\")
-					if st_pos != -1:
-						osc_content_end = st_pos
-						st_len = 2
-				if osc_content_end == -1:
-					_partial_escape = rest
-					break
-				var osc_body := rest.substr(2, osc_content_end - 2)
-				_handle_osc(osc_body)
-				i += osc_content_end + st_len
-				continue
-
-			else:
-				# Unknown escape type -- skip one char
-				i += 2
-				continue
-
-		elif ch == "\r":
-			# Carriage return: move cursor to column 0.
-			# \r\n is a standard line ending — skip the \r, let \n emit the newline.
-			# For any other \r (including \r followed by escape sequences) the shell
-			# is rewriting the current line (ZSH/zle, readline, Starship prompt
-			# redraws all use \r\033[...m<new text>).  Clear the current line from
-			# the output buffer so the replacement text overwrites it rather than
-			# being appended after it.
-			if i + 1 < input.length() and input[i + 1] == "\n":
-				# \r\n — skip the \r; the \n will be emitted on the next iteration.
-				i += 1
-				continue
-			# Standalone CR (or CR at end of chunk): clear the current output line.
-			var last_newline := output.rfind("\n")
-			if last_newline != -1:
-				output = output.substr(0, last_newline + 1)
-			else:
-				output = ""
-			# The truncation dropped any tag-opens sitting on the discarded
-			# text; re-emit the active tags so subsequent text stays styled.
-			output += _open_active_tags()
-			# Flag that the persistent accumulators also need their current line
-			# cleared (cross-chunk case, handled in _append_output).
-			if not _in_alternate_screen:
-				_pending_line_clear = true
-			i += 1
-			continue
-		elif ch == "\n":
-			# Close open tags before the newline and reopen after it so every
-			# line of generated BBCode is self-contained (safe to trim/remove).
-			output += _emit_closing_tags() + "\n" + _open_active_tags()
-			i += 1
-			continue
-		elif ch == "\u0008":
-			# Backspace
-			if output.length() > 0:
-				output = output.substr(0, output.length() - 1)
-			i += 1
-			continue
-		elif ch == "\u0007":
-			_trigger_visual_bell()
-			i += 1
-			continue
-		else:
-			# xml_escape handles &<>" but not [ or ] which Godot treats as BBCode
-			# tag delimiters. Escape [ -> [lb] and ] -> [rb] so literal brackets
-			# in terminal output (e.g., Starship prompt segments like [segment] or
-			# closing brackets after color codes) never leak as BBCode tags or create
-			# malformed BBCode like `[/color]]` that breaks the RichTextLabel parser.
-			if ch == "[":
-				output += "[lb]"
-			elif ch == "]":
-				output += "[rb]"
-			else:
-				output += ch.xml_escape()
-			if _in_alternate_screen and _alt_grid != null:
-				_alt_grid.write_at_cursor(_make_cell_from_state(ch))
-			i += 1
-
-	# Close any open tags at the chunk boundary; the next call reopens them.
-	return output + _emit_closing_tags()
-
-
-## Handle SGR (Select Graphic Rendition) codes.
-## Two-pass: first compute the fully-desired new state from all codes in the sequence,
-## then emit a single close-all / reopen diff. This prevents orphaned tags from
-## compound sequences like ESC[48;2;R;G;B;38;2;R;G;Bm that set bgcolor then
-## immediately change fgcolor in the same escape.
-func _handle_sgr(params_str: String) -> String:
-	# --- Pass 1: compute desired new state ---
-	var new_fg := _current_fg
-	var new_bg := _current_bg
-	var new_bold := _current_bold
-	var new_underline := _current_underline
-
-	if params_str == "" or params_str == "0":
-		new_fg = ""
-		new_bg = ""
-		new_bold = false
-		new_underline = false
-	else:
-		var codes := params_str.split(";")
-		var idx := 0
-		while idx < codes.size():
-			var code := int(codes[idx])
-			match code:
-				0:
-					new_fg = ""
-					new_bg = ""
-					new_bold = false
-					new_underline = false
-				1:
-					new_bold = true
-				4:
-					new_underline = true
-				22:
-					new_bold = false
-				24:
-					new_underline = false
-				30, 31, 32, 33, 34, 35, 36, 37:
-					new_fg = _indexed_color(code - 30)
-				39:
-					new_fg = ""
-				40, 41, 42, 43, 44, 45, 46, 47:
-					new_bg = _indexed_color(code - 40)
-				49:
-					new_bg = ""
-				90, 91, 92, 93, 94, 95, 96, 97:
-					new_fg = _indexed_color(code - 90 + 8)
-				38:
-					if idx + 2 < codes.size() and int(codes[idx + 1]) == 5:
-						new_fg = _xterm256_hex(int(codes[idx + 2]))
-						idx += 2
-					elif idx + 4 < codes.size() and int(codes[idx + 1]) == 2:
-						new_fg = (
-							"#%02x%02x%02x"
-							% [int(codes[idx + 2]), int(codes[idx + 3]), int(codes[idx + 4])]
-						)
-						idx += 4
-				48:
-					if idx + 2 < codes.size() and int(codes[idx + 1]) == 5:
-						new_bg = _xterm256_hex(int(codes[idx + 2]))
-						idx += 2
-					elif idx + 4 < codes.size() and int(codes[idx + 1]) == 2:
-						new_bg = (
-							"#%02x%02x%02x"
-							% [int(codes[idx + 2]), int(codes[idx + 3]), int(codes[idx + 4])]
-						)
-						idx += 4
-				100, 101, 102, 103, 104, 105, 106, 107:
-					new_bg = _indexed_color(code - 100 + 8)
-			idx += 1
-
-	# --- Pass 2: emit BBCode diff ---
-	# If nothing changed, emit nothing.
-	var changed: bool = (
-		new_fg != _current_fg
-		or new_bg != _current_bg
-		or new_bold != _current_bold
-		or new_underline != _current_underline
-	)
-	if not changed:
-		return ""
-
-	# Close all open tags in LIFO order, apply new state, reopen in FIFO order.
-	var result := _close_all_tags()
-	_current_fg = new_fg
-	_current_bg = new_bg
-	_current_bold = new_bold
-	_current_underline = new_underline
-	result += _open_active_tags()
-	return result
-
-
-## Close all open BBCode tags in LIFO order: bgcolor → color → underline → bold.
-## Clears all state variables as a side effect.
-func _close_all_tags() -> String:
-	var r := ""
-	if not _current_bg.is_empty():
-		r += "[/bgcolor]"
-		_current_bg = ""
-	if not _current_fg.is_empty():
-		r += "[/color]"
-		_current_fg = ""
-	if _current_underline:
-		r += "[/u]"
-		_current_underline = false
-	if _current_bold:
-		r += "[/b]"
-		_current_bold = false
-	return r
-
-
-## Emit closing tags for all currently-open tags in LIFO order WITHOUT
-## mutating the SGR state (unlike _close_all_tags). Used to keep the
-## generated BBCode chunk-local and line-local.
-func _emit_closing_tags() -> String:
-	var r := ""
-	if not _current_bg.is_empty():
-		r += "[/bgcolor]"
-	if not _current_fg.is_empty():
-		r += "[/color]"
-	if _current_underline:
-		r += "[/u]"
-	if _current_bold:
-		r += "[/b]"
-	return r
-
-
-## Open the currently-active BBCode tags in FIFO order: bold → underline → color → bgcolor.
-func _open_active_tags() -> String:
-	var r := ""
-	if _current_bold:
-		r += "[b]"
-	if _current_underline:
-		r += "[u]"
-	if not _current_fg.is_empty():
-		r += "[color=%s]" % _current_fg
-	if not _current_bg.is_empty():
-		r += "[bgcolor=%s]" % _current_bg
-	return r
-
-
-## Build a TerminalGrid cell dictionary from the current SGR rendering state.
-func _make_cell_from_state(ch: String) -> Dictionary:
-	var fg := Color.WHITE
-	if not _current_fg.is_empty():
-		fg = Color.html(_current_fg)
-	var bg := Color.BLACK
-	if not _current_bg.is_empty():
-		bg = Color.html(_current_bg)
-	return {
-		"char": ch,
-		"fg": fg,
-		"bg": bg,
-		"bold": _current_bold,
-		"italic": false,
-		"underline": false,
-		"url": "",
-	}
-
-
 ## Returns the 16-entry ANSI color palette from the active TerminalTheme.
 ## Used by _indexed_color() to map ANSI color indices to hex strings.
 func get_effective_palette() -> Array[Color]:
 	return _get_manager().current_theme.palette
 
+## Dispatch non-SGR CSI sequences signalled by the AnsiParser.
+func _on_parser_csi(cmd: String, params_str: String) -> void:
+	match cmd:
+		"J":
+			# Erase display. Alt screen: route to grid. Primary mode:
+			#   mode 2 = intentional full clear (Ctrl+L / clear) -> wipe display.
+			#   modes 0/1 are no-ops in a streaming primary buffer -- ZLE/
+			#   readline emit mode 0 on prompt redraws and acting on it would
+			#   wipe the just-rendered output.
+			var mode_j := 0
+			if params_str != "":
+				mode_j = int(params_str)
+			if _in_alternate_screen and _alt_grid != null:
+				_alt_grid.erase_display(mode_j)
+			elif mode_j == 2:
+				call_deferred("_clear_output")
+		"H", "f":
+			# Cursor home / position (1-based params -> 0-based grid).
+			var r := 1
+			var c := 1
+			if params_str != "":
+				var parts := params_str.split(";")
+				if parts.size() >= 1 and parts[0] != "":
+					r = maxi(1, int(parts[0]))
+				if parts.size() >= 2 and parts[1] != "":
+					c = maxi(1, int(parts[1]))
+			if _in_alternate_screen and _alt_grid != null:
+				_alt_grid.set_cursor(r - 1, c - 1)
+			else:
+				cursor_row = r - 1
+				cursor_col = c - 1
+			_update_cursor_overlay()
+		"A":
+			if _in_alternate_screen and _alt_grid != null:
+				_alt_grid.move_cursor(-_csi_count(params_str), 0)
+		"B":
+			if _in_alternate_screen and _alt_grid != null:
+				_alt_grid.move_cursor(_csi_count(params_str), 0)
+		"C":
+			if _in_alternate_screen and _alt_grid != null:
+				_alt_grid.move_cursor(0, _csi_count(params_str))
+		"D":
+			if _in_alternate_screen and _alt_grid != null:
+				_alt_grid.move_cursor(0, -_csi_count(params_str))
+		"K":
+			# Erase line -- only meaningful in the alt-screen grid.
+			if _in_alternate_screen and _alt_grid != null:
+				var mode_k := 0
+				if params_str != "":
+					mode_k = int(params_str)
+				_alt_grid.erase_line(mode_k)
+		"h":
+			_handle_private_mode_set(params_str)
+		"l":
+			_handle_private_mode_reset(params_str)
+		"q":
+			_handle_decscusr(params_str)
 
-## Map an ANSI color index (0-15) to a hex color string using the active theme palette.
-func _indexed_color(idx: int) -> String:
-	var palette: Array[Color] = get_effective_palette()
-	if idx >= 0 and idx < palette.size():
-		return "#" + palette[idx].to_html(false)
-	return "#aaaaaa"
+
+## Parse a CSI count parameter (default 1, minimum 1).
+func _csi_count(params_str: String) -> int:
+	if params_str == "":
+		return 1
+	return maxi(1, int(params_str))
 
 
-## Convert xterm-256 index to hex color
-func _xterm256_hex(idx: int) -> String:
-	if idx < 16:
-		return _indexed_color(idx)
-	if idx < 232:
-		var i := idx - 16
-		var r := _xterm_cube_channel((i / 36) % 6)
-		var g := _xterm_cube_channel((i / 6) % 6)
-		var b := _xterm_cube_channel(i % 6)
-		return "#%02x%02x%02x" % [r, g, b]
-	var v := 8 + (idx - 232) * 10
-	return "#%02x%02x%02x" % [v, v, v]
-
-
-## Map a 0-5 xterm color-cube step to its channel value.
-## The xterm ramp is 0, 95, 135, 175, 215, 255 (55 + 40n for n > 0), not
-## a linear multiple of 51.
-func _xterm_cube_channel(n: int) -> int:
-	return 0 if n == 0 else 55 + n * 40
+## Write a parser-built cell into the alternate-screen grid.
+func _on_parser_alt_char(cell: Dictionary) -> void:
+	if _alt_grid != null:
+		_alt_grid.write_at_cursor(cell)
 
 
 ## Append text to output with proper scrollback management
@@ -1092,7 +753,7 @@ func _append_output(text: String) -> void:
 	if not output_display:
 		return
 
-	var processed := _ansi_to_bbcode(text)
+	var processed := _parser.parse(text)
 
 	# A standalone CR in `text` may span a PTY-read-chunk boundary: the partial
 	# line that was already written to _output_accumulator / output_display in an
@@ -1100,8 +761,8 @@ func _append_output(text: String) -> void:
 	# Tags in the accumulator are line-local (see _ansi_to_bbcode), so cutting
 	# at the last newline never dangles BBCode -- no re-parse of the raw ANSI
 	# stream is needed (that re-parse used to make every prompt redraw O(N)).
-	if _pending_line_clear and not _in_alternate_screen:
-		_pending_line_clear = false
+	if _parser.pending_line_clear and not _in_alternate_screen:
+		_parser.pending_line_clear = false
 		var had_partial := (
 			not _output_accumulator.is_empty() and not _output_accumulator.ends_with("\n")
 		)
@@ -1162,6 +823,19 @@ func _enforce_scrollback_limit(limit: int) -> void:
 		output_display.clear()
 		output_display.append_text(_output_accumulator)
 
+	# Adjust selection coordinates: lines removed from the front shift all
+	# subsequent row indices downward. Reset selection when it falls off.
+	if selection_start != Vector2i(-1, -1):
+		var new_start_y := selection_start.y - excess
+		var new_end_y := selection_end.y - excess
+		if new_end_y < 0:
+			selection_start = Vector2i(-1, -1)
+			selection_end = Vector2i(-1, -1)
+		else:
+			selection_start.y = maxi(0, new_start_y)
+			selection_end.y = maxi(0, new_end_y)
+	_update_selection_overlay()
+
 
 ## Return `s` with its first `count` lines (including each trailing newline)
 ## removed.
@@ -1180,15 +854,10 @@ func _clear_output() -> void:
 	if output_display:
 		output_display.clear()
 		_line_count = 0
-		_current_fg = ""
-		_current_bg = ""
-		_current_bold = false
-		_current_underline = false
-		_partial_escape = ""
+		_parser.reset_state()
 		if not _in_alternate_screen:
 			_output_accumulator = ""
 			_raw_accumulator = ""
-		_pending_line_clear = false
 
 
 ## Scroll to bottom of output
@@ -1254,15 +923,11 @@ func _enter_alternate_screen(save: bool) -> void:
 		_primary_raw_saved = _raw_accumulator
 		_primary_line_count_saved = _line_count
 	_in_alternate_screen = true
-	_pending_line_clear = false
+	_parser.in_alternate_screen = true
+	_parser.reset_state()
 	if output_display:
 		output_display.clear()
 	_line_count = 0
-	_current_fg = ""
-	_current_bg = ""
-	_current_bold = false
-	_current_underline = false
-	_partial_escape = ""
 	_alt_grid = TerminalGrid.new()
 	_alt_grid.resize(_terminal_cols, _terminal_rows)
 
@@ -1274,16 +939,12 @@ func _exit_alternate_screen(restore: bool) -> void:
 	if not _in_alternate_screen:
 		return
 	_in_alternate_screen = false
+	_parser.in_alternate_screen = false
 	_alt_grid = null
-	_pending_line_clear = false
+	_parser.reset_state()
 	if output_display:
 		output_display.clear()
 	_line_count = 0
-	_current_fg = ""
-	_current_bg = ""
-	_current_bold = false
-	_current_underline = false
-	_partial_escape = ""
 	var saved: String = _primary_bbcode
 	_primary_bbcode = ""
 	if restore and not saved.is_empty():
@@ -1399,7 +1060,12 @@ func apply_font_settings() -> void:
 	# Do NOT call ResourceLoader.load() here -- this function runs after
 	# spawn_shell() and blocking the main thread post-spawn races the PTY
 	# reader thread in the Rust extension.
-	char_width = float(TerminalSettings.font_size) * 0.5
+	if TerminalSettings.font != null:
+		char_width = TerminalSettings.font.get_string_size(
+			"M", HORIZONTAL_ALIGNMENT_LEFT, -1, TerminalSettings.font_size
+		).x
+	else:
+		char_width = float(TerminalSettings.font_size) * 0.5
 	line_height = float(TerminalSettings.font_size)
 	if output_display:
 		# Override every RichTextLabel font slot so that bold ([b]), italic ([i]),
@@ -1468,17 +1134,15 @@ func apply_padding() -> void:
 func _on_viewport_resize() -> void:
 	if not _is_ready:
 		return
-	var char_w := float(TerminalSettings.font_size) * 0.5
-	var line_h := float(TerminalSettings.font_size)
 	var size := get_rect().size
 	if size.x > 0 and size.y > 0:
-		var cols := int(floor(size.x / char_w))
-		var rows := int(floor(size.y / line_h))
-		SignalBus.terminal_resized.emit(cols, rows)
+		var cols := int(floor(size.x / char_width))
+		var rows := int(floor(size.y / line_height))
 		cols = clampi(cols, 20, 220)
 		rows = clampi(rows, 5, 100)
 		_terminal_cols = cols
 		_terminal_rows = rows
+		SignalBus.terminal_resized.emit(cols, rows)
 		if _alt_grid != null:
 			_alt_grid.resize(cols, rows)
 		_get_manager().resize(cols, rows)
@@ -1581,6 +1245,7 @@ func _start_blinking() -> void:
 	if cursor_overlay:
 		cursor_overlay.visible = _cursor_dec_visible
 	if _blink_timer:
+		_blink_timer.wait_time = TerminalSettings.cursor_blink_rate
 		_blink_timer.start()
 
 
@@ -1726,6 +1391,8 @@ func _exit_tree() -> void:
 	var root = null
 	if get_tree():
 		root = get_tree().get_root()
+	if is_connected("resized", _on_viewport_resize):
+		resized.disconnect(_on_viewport_resize)
 	if root and root.size_changed.is_connected(_on_viewport_resize):
 		root.size_changed.disconnect(_on_viewport_resize)
 	if _context_menu and _context_menu.id_pressed.is_connected(_on_context_menu_id_pressed):
@@ -1825,7 +1492,7 @@ func search_scrollback(query: String, use_regex: bool = false) -> Array[Vector2i
 			return _search_matches
 	var lines := _raw_accumulator.split("\n")
 	for line_idx: int in range(lines.size()):
-		var plain: String = _strip_ansi(lines[line_idx])
+		var plain: String = AnsiParser.strip_ansi(lines[line_idx])
 		if use_regex and re != null:
 			for m: RegExMatch in re.search_all(plain):
 				_search_matches.append(Vector2i(line_idx, m.get_start()))
@@ -1854,23 +1521,23 @@ func get_highlighted_line(
 	line_text: String, query: String, use_regex: bool = false, accent_col: int = -1
 ) -> String:
 	if query.is_empty() or line_text.is_empty():
-		return _escape_bbcode_text(line_text)
+		return AnsiParser.escape_bbcode_text(line_text)
 	if use_regex:
 		var re := RegEx.new()
 		if re.compile(query) != OK:
-			return _escape_bbcode_text(line_text)
+			return AnsiParser.escape_bbcode_text(line_text)
 		var result := ""
 		var pos: int = 0
 		for m: RegExMatch in re.search_all(line_text):
-			result += _escape_bbcode_text(line_text.substr(pos, m.get_start() - pos))
+			result += AnsiParser.escape_bbcode_text(line_text.substr(pos, m.get_start() - pos))
 			var bg: String = (
 				SEARCH_ACCENT_BG if m.get_start() == accent_col else SEARCH_HIGHLIGHT_BG
 			)
 			result += "[bgcolor=%s]" % bg
-			result += _escape_bbcode_text(m.get_string())
+			result += AnsiParser.escape_bbcode_text(m.get_string())
 			result += "[/bgcolor]"
 			pos = m.get_start() + m.get_string().length()
-		result += _escape_bbcode_text(line_text.substr(pos))
+		result += AnsiParser.escape_bbcode_text(line_text.substr(pos))
 		return result
 	# Plain case-insensitive search
 	var lower_line: String = line_text.to_lower()
@@ -1881,33 +1548,15 @@ func get_highlighted_line(
 	while true:
 		var idx: int = lower_line.find(lower_query, pos)
 		if idx == -1:
-			result += _escape_bbcode_text(line_text.substr(pos))
+			result += AnsiParser.escape_bbcode_text(line_text.substr(pos))
 			break
-		result += _escape_bbcode_text(line_text.substr(pos, idx - pos))
+		result += AnsiParser.escape_bbcode_text(line_text.substr(pos, idx - pos))
 		var bg: String = SEARCH_ACCENT_BG if idx == accent_col else SEARCH_HIGHLIGHT_BG
 		result += "[bgcolor=%s]" % bg
-		result += _escape_bbcode_text(line_text.substr(idx, q_len))
+		result += AnsiParser.escape_bbcode_text(line_text.substr(idx, q_len))
 		result += "[/bgcolor]"
 		pos = idx + q_len
 	return result
-
-
-## Escape text for safe embedding in RichTextLabel BBCode: XML entities plus
-## literal square brackets (Godot treats bare [ and ] as tag delimiters, so
-## they must become [lb] / [rb] -- same rule as the main ANSI render path).
-func _escape_bbcode_text(text: String) -> String:
-	return text.xml_escape().replace("[", "[lb]").replace("]", "[rb]")
-
-
-## Strip ANSI / VT100 escape sequences from text, returning plain Unicode.
-## The RegEx is compiled once and cached -- this runs per line in search loops.
-func _strip_ansi(text: String) -> String:
-	if _ansi_strip_re == null:
-		var re := RegEx.new()
-		if re.compile("\u001b(\\[[0-9;?]*[A-Za-z]|\\][^\u0007]*\u0007|.)") != OK:
-			return text
-		_ansi_strip_re = re
-	return _ansi_strip_re.sub(text, "", true)
 
 
 ## Re-render the primary scrollback with search highlights injected.
@@ -1932,13 +1581,13 @@ func _render_highlighted_scrollback() -> void:
 		matched_lines[m.x] = true
 	var lines := _raw_accumulator.split("\n")
 	for line_idx: int in range(lines.size()):
-		var plain: String = _strip_ansi(lines[line_idx])
+		var plain: String = AnsiParser.strip_ansi(lines[line_idx])
 		if matched_lines.has(line_idx):
 			var accent: int = current_col if line_idx == current_line else -1
 			output_display.append_text(
 				get_highlighted_line(plain, _last_search_query, _last_search_use_regex, accent)
 			)
 		else:
-			output_display.append_text(_escape_bbcode_text(plain))
+			output_display.append_text(AnsiParser.escape_bbcode_text(plain))
 		if line_idx < lines.size() - 1:
 			output_display.append_text("\n")
