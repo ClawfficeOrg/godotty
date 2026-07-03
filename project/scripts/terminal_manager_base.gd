@@ -56,6 +56,9 @@ var _mock_rows: int = 24
 ## Reference to real terminal (if available)
 var _real_terminal: Node = null
 
+## Shell profile used by the most recent spawn_shell() call (null = default).
+var _current_profile: ShellProfile = null
+
 ## Label used in error / log messages (overridden by subclasses).
 var _manager_label: String = "TerminalManager"
 
@@ -95,11 +98,14 @@ func _check_addon_availability() -> void:
 	addon_availability_changed.emit(is_addon_available)
 
 
-## Spawn a shell (real or mock)
-func spawn_shell() -> bool:
+## Spawn a shell (real or mock).
+## `profile` of null keeps the platform-default behavior (pre-profile API).
+## Signature change signed off by hippo 2026-07-03 (AGENTS.md paragraph 9 Hard Stop).
+func spawn_shell(profile: ShellProfile = null) -> bool:
+	_current_profile = profile
 	if is_mock_mode:
 		return _mock_spawn_shell()
-	return _real_spawn_shell()
+	return _real_spawn_shell(profile)
 
 
 ## Write input to terminal
@@ -327,10 +333,15 @@ func _mock_clear() -> void:
 # === Real Terminal Implementation ===
 
 
-func _real_spawn_shell() -> bool:
+func _real_spawn_shell(profile: ShellProfile = null) -> bool:
 	if not is_addon_available:
 		push_error("%s: cannot spawn real shell -- addon not available" % _manager_label)
 		return false
+
+	# Respawn (e.g. shell-picker change): drop the previous PTY node first.
+	if _real_terminal != null and is_instance_valid(_real_terminal):
+		_real_terminal.queue_free()
+		_real_terminal = null
 
 	var term_class = ClassDB.instantiate("TerminalNode2D")
 	if term_class == null:
@@ -346,7 +357,15 @@ func _real_spawn_shell() -> bool:
 	if _real_terminal.has_signal("shell_exited"):
 		_real_terminal.shell_exited.connect(_on_real_shell_exited)
 
-	_real_terminal.spawn_shell()
+	if profile != null and _real_terminal.has_method("spawn_shell_with"):
+		_real_terminal.spawn_shell_with(profile.executable, profile.args, profile.cwd, profile.env)
+	else:
+		if profile != null:
+			push_warning(
+				"%s: addon lacks spawn_shell_with -- ignoring profile '%s'"
+				% [_manager_label, profile.display_name]
+			)
+		_real_terminal.spawn_shell()
 	shell_started.emit()
 	return true
 

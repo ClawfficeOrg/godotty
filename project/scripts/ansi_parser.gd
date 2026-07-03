@@ -35,6 +35,9 @@ const ESC: String = char(27)
 const BEL: String = char(7)
 const BS: String = char(8)
 
+## Cached compiled RegEx for strip_ansi (compiled on first use).
+static var _strip_re: RegEx = null
+
 ## Set true by the consumer while the alternate screen is active. Gates the
 ## line-rewrite flag and alt_char_written emission.
 var in_alternate_screen: bool = false
@@ -55,9 +58,6 @@ var _current_underline: bool = false
 var _current_strike: bool = false
 var _current_reverse: bool = false
 var _partial_escape: String = ""
-
-## Cached compiled RegEx for strip_ansi (compiled on first use).
-static var _strip_re: RegEx = null
 
 
 ## Reset all SGR state and drop any buffered partial escape and pending flags.

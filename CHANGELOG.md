@@ -9,6 +9,21 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 
 ## [Unreleased]
 
+- **Feat: shell profiles + picker — review Part 2, W2 complete (API sign-off 2026-07-03).**
+  - New `ShellProfile` resource and `ShellDetector` static helper: detects
+    PowerShell (pwsh → powershell), cmd (`%COMSPEC%`, spawned with
+    `/K chcp 65001>nul` for UTF-8), and Git Bash (`--login -i`); `$SHELL`
+    on non-Windows. Probes are injectable for tests and cached per process.
+  - `TerminalManager.spawn_shell(profile: ShellProfile = null)` — null keeps
+    the old default behavior; real path forwards to `spawn_shell_with`.
+    Respawn now frees the previous PTY node.
+  - Shell picker OptionButton in the TitleBar (hidden when only one shell
+    found); selection persists in `TerminalSettings.default_profile_name`.
+  - Rust: shell paths are normalized (forward slashes → backslashes) and
+    bare executable names resolved via PATH — ConPTY spawn does not search
+    PATH and a bad argv0 dies silently.
+  - `tests/unit/shell_detector_test.gd` — 12 platform-independent tests.
+
 - **Feat: real Windows terminal support (ConPTY) — review Part 2, W0/W1 complete.**
   - godotty-node rust submodule builds against Godot 4.6 (`api-4-6`); the old
     `0xc0000142` init crash is gone. Build: `cargo build --release` in

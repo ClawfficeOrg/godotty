@@ -53,6 +53,12 @@ static var selected_theme_name: String = ""
 ## Persists across scene reloads because static vars survive within a process.
 static var selected_font_name: String = "JetBrains Mono Nerd"
 
+## Display name of the shell profile new terminals spawn with.
+## Empty string means "platform default" (ShellDetector's first profile,
+## or the pre-profile spawn_shell() behavior when detection finds nothing).
+## Persists across scene reloads because static vars survive within a process.
+static var default_profile_name: String = ""
+
 ## Background transparency of the terminal panel (0.0 = fully transparent,
 ## 1.0 = fully opaque). Applied to TerminalView.self_modulate.a.
 ## Requires display/window/transparent = true in Project Settings for the OS

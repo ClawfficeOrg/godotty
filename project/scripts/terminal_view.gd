@@ -202,6 +202,9 @@ var cursor_overlay: ColorRect = $PaddingContainer/VBoxContainer/ScrollContainer/
 ## MarginContainer that applies TerminalSettings.padding as insets.
 @onready var padding_container: MarginContainer = $PaddingContainer
 @onready var _theme_menu: MenuButton = $PaddingContainer/VBoxContainer/TitleBar/ThemeMenu
+@onready var _shell_picker: OptionButton = get_node_or_null(
+	"PaddingContainer/VBoxContainer/TitleBar/ShellPicker"
+)
 @onready var _font_option: OptionButton = $PaddingContainer/VBoxContainer/TitleBar/FontOptionButton
 @onready var _font_spinbox: SpinBox = $PaddingContainer/VBoxContainer/TitleBar/FontSizeSpinBox
 @onready var _input_bar: PanelContainer = $PaddingContainer/VBoxContainer/InputBar
@@ -259,6 +262,7 @@ func _ready() -> void:
 
 	# Initialize terminal (spawns the shell / PTY reader thread).
 	_setup_theme_picker()
+	_setup_shell_picker()
 	_initialize_terminal()
 	# Apply font settings after terminal is initialized so output_display is ready
 	apply_font_settings()
@@ -663,7 +667,7 @@ func _initialize_terminal() -> void:
 	if _input_bar:
 		_input_bar.visible = _get_manager().is_mock_mode
 	_load_and_apply_theme(TerminalSettings.selected_theme_name)
-	_get_manager().spawn_shell()
+	_get_manager().spawn_shell(ShellDetector.profile_by_name(TerminalSettings.default_profile_name))
 
 
 ## Returns the active manager: the injected one if set, otherwise the TerminalManager autoload.
@@ -1294,6 +1298,37 @@ func _setup_theme_picker() -> void:
 		popup.add_item(tname)
 	if not popup.index_pressed.is_connected(_on_theme_menu_index_pressed):
 		popup.index_pressed.connect(_on_theme_menu_index_pressed)
+
+
+## Populate the shell picker from detected profiles and restore the persisted
+## selection. Hidden when only one shell is available (nothing to pick).
+func _setup_shell_picker() -> void:
+	if not _shell_picker:
+		return
+	var profiles := ShellDetector.available_profiles()
+	_shell_picker.clear()
+	for profile in profiles:
+		_shell_picker.add_item(profile.display_name)
+	_shell_picker.visible = profiles.size() > 1
+	var idx := 0
+	for i in profiles.size():
+		if profiles[i].display_name == TerminalSettings.default_profile_name:
+			idx = i
+			break
+	if profiles.size() > 0:
+		_shell_picker.select(idx)
+	if not _shell_picker.item_selected.is_connected(_on_shell_profile_selected):
+		_shell_picker.item_selected.connect(_on_shell_profile_selected)
+
+
+## Persist the chosen profile and respawn the shell with it.
+func _on_shell_profile_selected(index: int) -> void:
+	if not _shell_picker:
+		return
+	var name := _shell_picker.get_item_text(index)
+	TerminalSettings.default_profile_name = name
+	var profile := ShellDetector.profile_by_name(name)
+	_get_manager().spawn_shell(profile)
 
 
 func _setup_font_panel() -> void:

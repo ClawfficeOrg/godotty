@@ -41,6 +41,25 @@ timeout); diagnostic example at `lib/rust/examples/pty_smoke.rs`.
 
 **W2 shell profiles: hippo signed off 2026-07-03** — Hard Stop cleared.
 
+### W2 shell profiles — COMPLETE ✅ (same session, post sign-off)
+
+- `project/resources/shell_profile.gd` — ShellProfile resource per review spec.
+- `project/scripts/shell_detector.gd` — injectable probes (`file_exists`,
+  `find_executable` statics), process-lifetime cache (probes shell out to
+  where/which and blocked the main thread enough to flake the bell test).
+- `TerminalManager.spawn_shell(profile = null)` + `_real_spawn_shell(profile)`
+  forwards to `spawn_shell_with`; frees previous PTY node on respawn.
+- ShellPicker OptionButton in TitleBar; persisted in
+  `TerminalSettings.default_profile_name`; hidden when <2 shells detected.
+- Rust hardening: `resolve_shell_path` — forward slashes break cmd.exe argv0
+  parsing (`/W...` read as switches) and ConPTY does not PATH-search bare
+  names (silent no-output death). Verified: cmd + PowerShell 5.1 round-trip
+  via spawn_shell_with (PS cold start ~10s headless — size test windows
+  accordingly).
+- `tests/unit/shell_detector_test.gd` (12 tests). Full suite green; real
+  integration suite green.
+- Also fixed pre-existing gdlint failure in ansi_parser.gd (static var order).
+
 ## Done this session (previous)
 
 ### Old test failures triaged

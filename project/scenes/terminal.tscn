@@ -59,6 +59,9 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Terminal"
 
+[node name="ShellPicker" type="OptionButton" parent="PaddingContainer/VBoxContainer/TitleBar"]
+layout_mode = 2
+
 [node name="ThemeMenu" type="MenuButton" parent="PaddingContainer/VBoxContainer/TitleBar"]
 layout_mode = 2
 text = "Theme"
