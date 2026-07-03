@@ -17,14 +17,22 @@ cd "$GODOTTY_NODE_DIR/rust"
 cargo build --release
 
 # Detect platform and copy
-if [ "$(uname)" = "Darwin" ]; then
-  mkdir -p "$OUT_DIR/macos"
-  cp target/release/libgodotty_node.dylib "$OUT_DIR/macos/"
-  echo "Copied: macos/libgodotty_node.dylib"
-else
-  mkdir -p "$OUT_DIR/linux"
-  cp target/release/libgodotty_node.so "$OUT_DIR/linux/"
-  echo "Copied: linux/libgodotty_node.so"
-fi
+case "$(uname)" in
+  Darwin)
+    mkdir -p "$OUT_DIR/macos"
+    cp target/release/libgodotty_node.dylib "$OUT_DIR/macos/"
+    echo "Copied: macos/libgodotty_node.dylib"
+    ;;
+  MINGW*|MSYS*|CYGWIN*)
+    mkdir -p "$OUT_DIR/windows"
+    cp target/release/godotty_node.dll "$OUT_DIR/windows/"
+    echo "Copied: windows/godotty_node.dll"
+    ;;
+  *)
+    mkdir -p "$OUT_DIR/linux"
+    cp target/release/libgodotty_node.so "$OUT_DIR/linux/"
+    echo "Copied: linux/libgodotty_node.so"
+    ;;
+esac
 
 echo "Done! Enable the godotty-node plugin in Project Settings → Plugins."

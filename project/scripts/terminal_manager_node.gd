@@ -1,7 +1,10 @@
 ## TerminalManagerNode -- instanceable per-tab terminal manager.
 ## Contains real and mock terminal logic. Can be instantiated per-tab for
-## multi-terminal layouts. Does not auto-subscribe to SignalBus.terminal_resized.
-## The application-wide default is the TerminalManager autoload.
+## multi-terminal layouts. Does not auto-subscribe to SignalBus.terminal_resized
+## and does NOT broadcast on SignalBus -- consumers connect to this instance's
+## own signals (output_received, shell_started/stopped, terminal_cleared).
+## The application-wide default is the TerminalManager autoload, which is the
+## only SignalBus publisher.
 class_name TerminalManagerNode
 extends Node
 
@@ -13,6 +16,9 @@ signal shell_started
 
 ## Emitted when a shell process stops.
 signal shell_stopped
+
+## Emitted when the terminal is cleared.
+signal terminal_cleared
 
 ## Emitted when the active color theme changes.
 signal theme_changed(theme: TerminalTheme)
@@ -61,15 +67,15 @@ func _check_addon_availability() -> void:
 		is_addon_available = false
 		is_mock_mode = true
 		print("GODOTTY_FORCE_MOCK=1 set - using mock terminal")
-		SignalBus.addon_status_changed.emit(is_addon_available)
 		return
 
-	# Force mock mode on Windows - portable_pty has DLL initialization issues (0xc0000142)
-	if OS.has_feature("windows"):
+	# Windows defaults to mock mode until the ConPTY build of godotty-node is
+	# verified (portable_pty DLL init failure 0xc0000142 with stale builds).
+	# Set GODOTTY_WINDOWS_REAL=1 to opt in to the real terminal on Windows.
+	if OS.has_feature("windows") and OS.get_environment("GODOTTY_WINDOWS_REAL") != "1":
 		is_addon_available = false
 		is_mock_mode = true
 		print("Windows detected - using mock terminal (PTY issues)")
-		SignalBus.addon_status_changed.emit(is_addon_available)
 		return
 
 	var terminal_class = ClassDB.class_get_method_list("TerminalNode2D")
@@ -82,8 +88,6 @@ func _check_addon_availability() -> void:
 		is_addon_available = false
 		is_mock_mode = true
 		print("GodottyNode GDExtension not found - using mock terminal")
-
-	SignalBus.addon_status_changed.emit(is_addon_available)
 
 
 ## Spawn a shell (real or mock)
@@ -104,7 +108,7 @@ func write_input(text: String) -> void:
 ## Check if there's output available
 func has_output() -> bool:
 	if is_mock_mode:
-		return _mock_output_buffer.size() > 0
+		return _mock_has_output()
 	return _real_has_output()
 
 
@@ -122,7 +126,7 @@ func clear() -> void:
 	else:
 		_real_clear()
 
-	SignalBus.terminal_cleared.emit()
+	terminal_cleared.emit()
 
 
 ## Get a cell from the real terminal grid (used by grid-based renderers).
@@ -165,7 +169,6 @@ func _mock_spawn_shell() -> bool:
 	_mock_output_buffer.append(esc + "[90mType 'help' for available commands" + esc + "[0m")
 	_mock_output_buffer.append("")
 	shell_started.emit()
-	SignalBus.shell_status_changed.emit(true)
 	return true
 
 
@@ -194,7 +197,6 @@ func _mock_write_input(text: String) -> void:
 	while _mock_output_buffer.size() > 0:
 		var line = _mock_output_buffer.pop_front()
 		output_received.emit(line)
-		SignalBus.output_ready.emit(line)
 
 
 ## Dispatch mock command to the appropriate handler.
@@ -257,6 +259,8 @@ func _mock_cmd_cd(args: String) -> void:
 			_mock_current_dir = "/".join(parts.slice(0, -1))
 			if _mock_current_dir == "":
 				_mock_current_dir = "/"
+		elif _mock_current_dir != "/":
+			_mock_current_dir = "/"
 	else:
 		if args.begins_with("/"):
 			_mock_current_dir = args
@@ -313,7 +317,6 @@ func _mock_cmd_exit() -> void:
 	var esc := char(27)
 	_mock_output_buffer.append(esc + "[33mGoodbye!" + esc + "[0m")
 	shell_stopped.emit()
-	SignalBus.shell_status_changed.emit(false)
 
 
 func _mock_has_output() -> bool:
@@ -354,7 +357,6 @@ func _real_spawn_shell() -> bool:
 
 	_real_terminal.spawn_shell()
 	shell_started.emit()
-	SignalBus.shell_status_changed.emit(true)
 	return true
 
 
@@ -376,19 +378,17 @@ func _real_read_output() -> String:
 
 
 func _real_clear() -> void:
-	# PTY-backed terminals can't truly "clear" from the host side;
-	# send the standard clear escape sequence instead.
-	if _real_terminal:
-		_real_terminal.write_input("clear\n")
+	# Clearing is a view-side operation: clear() emits terminal_cleared and the
+	# view wipes its display. Writing "clear\n" into the PTY would type the word
+	# into whatever is running (vim, htop) and breaks on non-POSIX shells (cmd).
+	pass
 
 
 func _on_real_output_received(text: String) -> void:
 	output_received.emit(text)
-	SignalBus.output_ready.emit(text)
 
 
 func _on_real_shell_exited(code: int) -> void:
 	print("TerminalManagerNode: shell exited with code ", code)
 	_real_terminal = null
 	shell_stopped.emit()
-	SignalBus.shell_status_changed.emit(false)

@@ -72,9 +72,10 @@ func _check_addon_availability() -> void:
 		SignalBus.addon_status_changed.emit(is_addon_available)
 		return
 
-	# Force mock mode on Windows - portable_pty has DLL initialization issues (0xc0000142)
-	# TODO: Re-enable real terminal on Windows once PTY issue is resolved
-	if OS.has_feature("windows"):
+	# Windows defaults to mock mode until the ConPTY build of godotty-node is
+	# verified (portable_pty DLL init failure 0xc0000142 with stale builds).
+	# Set GODOTTY_WINDOWS_REAL=1 to opt in to the real terminal on Windows.
+	if OS.has_feature("windows") and OS.get_environment("GODOTTY_WINDOWS_REAL") != "1":
 		is_addon_available = false
 		is_mock_mode = true
 		print("Windows detected - using mock terminal (PTY issues)")
@@ -114,7 +115,7 @@ func write_input(text: String) -> void:
 ## Check if there's output available
 func has_output() -> bool:
 	if is_mock_mode:
-		return _mock_output_buffer.size() > 0
+		return _mock_has_output()
 	return _real_has_output()
 
 
@@ -237,6 +238,8 @@ func _mock_cmd_cd(args: String) -> void:
 			_mock_current_dir = "/".join(parts.slice(0, -1))
 			if _mock_current_dir == "":
 				_mock_current_dir = "/"
+		elif _mock_current_dir != "/":
+			_mock_current_dir = "/"
 	else:
 		if args.begins_with("/"):
 			_mock_current_dir = args
@@ -358,10 +361,10 @@ func _real_read_output() -> String:
 
 
 func _real_clear() -> void:
-	# PTY-backed terminals can't truly "clear" from the host side;
-	# send the standard clear escape sequence instead.
-	if _real_terminal:
-		_real_terminal.write_input("clear\n")
+	# Clearing is a view-side operation: clear() emits terminal_cleared and the
+	# view wipes its display. Writing "clear\n" into the PTY would type the word
+	# into whatever is running (vim, htop) and breaks on non-POSIX shells (cmd).
+	pass
 
 
 func _on_real_output_received(text: String) -> void:
