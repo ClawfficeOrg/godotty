@@ -9,7 +9,7 @@
 ## to skip gracefully when the godotty-node GDExtension is absent.
 ##
 ## Helper contract:
-##   run_and_await(cmd, predicate) -- send cmd+\n, return first matching output line.
+##   run_and_await(cmd, predicate) -- send cmd+\r, return first matching output line.
 ##   _require_real_mode()          -- pending+return-false in mock mode.
 class_name RealIntegrationBase
 extends GdUnitTestSuite
@@ -28,7 +28,13 @@ var _output_cb: Callable = Callable()
 func before_test() -> void:
 	if TerminalManager.is_mock_mode:
 		return
-	TerminalManager.spawn_shell()
+	if OS.get_environment("GODOTTY_TEST_DEBUG") == "1":
+		TerminalManager.output_received.connect(
+			func(text: String) -> void: print("[test-debug] recv: [%s]" % text.c_escape())
+		)
+	var ok := TerminalManager.spawn_shell()
+	if OS.get_environment("GODOTTY_TEST_DEBUG") == "1":
+		print("[test-debug] spawn ok=%s mock=%s" % [ok, TerminalManager.is_mock_mode])
 	# Wait for the PTY to emit its initial prompt before the test sends input.
 	await get_tree().create_timer(SETTLE_DELAY_SEC).timeout
 
@@ -38,7 +44,7 @@ func after_test() -> void:
 	if _output_cb.is_valid() and TerminalManager.output_received.is_connected(_output_cb):
 		TerminalManager.output_received.disconnect(_output_cb)
 	if not TerminalManager.is_mock_mode:
-		TerminalManager.write_input("exit\n")
+		TerminalManager.write_input("exit\r")
 		await get_tree().create_timer(0.5).timeout
 
 
@@ -51,24 +57,32 @@ func _require_real_mode() -> bool:
 	return true
 
 
-## Send `cmd` (newline appended) and wait for the first output line matching
-## `predicate`. Returns the matched line, or "" when the timeout expires.
+## Send `cmd` (carriage return appended) and wait for the first output line
+## matching `predicate`. Returns the matched line, or "" when the timeout
+## expires.
+##
+## \r is Enter on a PTY everywhere: unix line discipline maps CR to NL
+## (ICRNL), and Windows ConPTY only executes on CR -- a bare \n just types
+## the text into the shell's line buffer without running it.
 func run_and_await(cmd: String, predicate: Callable, timeout_ms: int = CMD_TIMEOUT_MS) -> String:
-	var matched := ""
-	var done := false
+	# GDScript lambdas capture locals BY VALUE: writing to a captured bool or
+	# String inside the callback would only mutate the lambda's private copy,
+	# and the polling loop below would never see it. A Dictionary is a
+	# reference type, so mutations made inside the callback are visible here.
+	var state := {"done": false, "matched": ""}
 
 	_output_cb = func(text: String) -> void:
-		if not done and predicate.call(text):
-			done = true
-			matched = text
+		if not state["done"] and predicate.call(text):
+			state["done"] = true
+			state["matched"] = text
 
 	if _output_cb != null and TerminalManager.output_received.is_connected(_output_cb):
 		TerminalManager.output_received.disconnect(_output_cb)
 	TerminalManager.output_received.connect(_output_cb)
-	TerminalManager.write_input(cmd + "\n")
+	TerminalManager.write_input(cmd + "\r")
 
 	var elapsed := 0
-	while not done and elapsed < timeout_ms:
+	while not state["done"] and elapsed < timeout_ms:
 		await get_tree().create_timer(float(POLL_INTERVAL_MS) / 1000.0).timeout
 		elapsed += POLL_INTERVAL_MS
 
@@ -76,4 +90,4 @@ func run_and_await(cmd: String, predicate: Callable, timeout_ms: int = CMD_TIMEO
 		TerminalManager.output_received.disconnect(_output_cb)
 		_output_cb = Callable()
 
-	return matched
+	return state["matched"]

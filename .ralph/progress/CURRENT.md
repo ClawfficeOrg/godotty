@@ -1,11 +1,47 @@
 # Current Working Memory
 
 **STATUS:** complete
-**SPEC:** triage old test failures
+**SPEC:** Windows real terminal (fable_review.md Part 2 — W0/W1)
 **BRANCH:** `fix/fable-review-round-1`
 **STARTED:** 2026-07-03
 
 ## Done this session
+
+### Windows real terminal support — W0/W1 COMPLETE ✅
+
+Real ConPTY-backed shells work end-to-end on Windows. All 3 real integration
+tests pass with `GODOTTY_WINDOWS_REAL=1`; full unit suite stays green (528).
+
+**Build path:** `cargo build --release` in `project/addons/godotty-node/lib/rust`,
+copy `target/release/godotty_node.dll` → `project/addons/godotty-node/bin/windows/`.
+Crate targets `api-4-6` so the old `0xc0000142` ABI crash is gone.
+
+**Fixes:**
+1. **`.gdextension` paths** — pointed into `lib/rust/target/`, but `lib/` has a
+   `.gdignore` so Godot cannot see anything under it. Binaries must live in
+   `bin/<platform>/`. Also bumped compatibility_minimum 4.1 → 4.6.
+2. **Rust default shell** (submodule commit `08e09cc`) — `spawn_shell` hardcoded
+   `$SHELL` → `/bin/bash`; now `default_shell()` uses `%COMSPEC%` → cmd.exe on
+   Windows. Added `spawn_with(shell, args, cwd, env)` + `#[func] spawn_shell_with`
+   (W0 API item). Env param must be `Dictionary<Variant, Variant>` — typed
+   `<GString, GString>` fails marshalling from GDScript `{}`.
+3. **Test helper sent `\n`** — ConPTY treats bare `\n` as typing, only `\r` is
+   Enter. Unix ICRNL maps CR → NL, so `\r` is correct on all platforms.
+   App keymap already sent `\r` (terminal_view.gd:428); only tests were wrong.
+4. **GDScript lambda by-value capture** — `run_and_await`'s signal callback wrote
+   `done`/`matched` into captured locals; the polling loop never saw the change,
+   so every real test timed out even when output matched. State now in a
+   Dictionary (reference type).
+5. **Platform-aware tests** — pwd test sends `cd` on Windows (drive-letter regex);
+   exit-code test uses `cmd /c exit 42` + `echo %errorlevel%`. ConPTY wraps output
+   in OSC title + cursor sequences, so predicates match `42\r?\n`, never `^42`.
+
+**ConPTY facts:** first output flood is deferred ~3s after spawn (DA1 query
+timeout); diagnostic example at `lib/rust/examples/pty_smoke.rs`.
+
+**W2 shell profiles: hippo signed off 2026-07-03** — Hard Stop cleared.
+
+## Done this session (previous)
 
 ### Old test failures triaged
 

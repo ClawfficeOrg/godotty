@@ -9,6 +9,24 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 
 ## [Unreleased]
 
+- **Feat: real Windows terminal support (ConPTY) — review Part 2, W0/W1 complete.**
+  - godotty-node rust submodule builds against Godot 4.6 (`api-4-6`); the old
+    `0xc0000142` init crash is gone. Build: `cargo build --release` in
+    `lib/rust`, dll installed to `addons/godotty-node/bin/windows/`.
+  - Fixed `godotty-node.gdextension` library paths: `lib/` is `.gdignore`d so
+    binaries must live under `bin/`; compatibility_minimum bumped 4.1 → 4.6.
+  - New rust API `spawn_shell_with(shell, args, cwd, env)`; default shell on
+    Windows is `%COMSPEC%` (cmd.exe) instead of the unix-only `$SHELL`.
+  - All 3 real integration tests pass on Windows with `GODOTTY_WINDOWS_REAL=1`.
+
+- **Fix: real integration tests never matched output (all platforms).**
+  - `run_and_await` sent `\n`, which ConPTY treats as typing, not Enter; now
+    sends `\r` (unix ICRNL maps CR → NL, so this is correct everywhere).
+  - Signal callback wrote match state to by-value lambda captures, so the
+    polling loop never saw a match; state now lives in a Dictionary.
+  - `pwd`/exit-code tests are platform-aware (`cd` / `%errorlevel%` on
+    Windows) and match ConPTY's OSC-wrapped output lines.
+
 - **Fix: Windows CRLF line endings breaking GDScript parser.**
   - Converted all `.gd` files to LF line endings (Godot 4.6.2 rejects CRLF on Windows).
   - Added `.gitattributes` to force `*.gd` → LF checkout, preventing future corruption.
