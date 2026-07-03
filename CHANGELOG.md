@@ -9,6 +9,47 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 
 ## [Unreleased]
 
+- **Fix: per-tab output isolation — `TerminalManagerNode` no longer broadcasts on `SignalBus`.**
+  - Every `TerminalView` subscribed to the global `SignalBus.output_ready`, so with per-tab
+    managers each view rendered every tab's output (duplicated across tabs).
+  - `TerminalManagerNode` now emits only its own signals (`output_received`,
+    `shell_started`/`shell_stopped`, and a new `terminal_cleared`); the autoload remains the
+    only `SignalBus` publisher. `TerminalView` with an injected `manager` connects to that
+    manager's signals directly and skips the bus subscriptions.
+  - New suite `tests/unit/terminal_view_output_isolation_test.gd`.
+
+- **Perf: prompt redraws and scrollback trims no longer re-parse the whole raw ANSI buffer.**
+  - `_ansi_to_bbcode` now keeps generated BBCode tags line-local and chunk-local (closed
+    before every newline / at chunk end, reopened after), so the accumulators can be cut at
+    line boundaries without dangling tags.
+  - The cross-chunk CR line-rewrite path replaces its full-display rebuild (GDScript re-parse
+    of the entire raw accumulator on *every* prompt redraw) with a single-paragraph removal
+    plus append. Scrollback-limit enforcement likewise removes oldest paragraphs instead of
+    re-rendering everything. The `_in_rerender` recursion guard is no longer needed.
+
+- **Fix: xterm-256 color cube uses the spec ramp** (0, 95, 135, 175, 215, 255) instead of
+  multiples of 51; low-end cube colors (vim themes, `ls` dircolors) were rendered too dark.
+
+- **Fix: search highlighting escapes literal `[` / `]` as `[lb]` / `[rb]`** (same rule as the
+  main render path) so searching scrollback that contains brackets no longer produces
+  malformed BBCode.
+
+- **Fix: mouse selection accounts for scroll offset** — `_pixel_to_cell` adds the vertical
+  scroll position in primary mode, so selecting text in a scrolled-back buffer copies the
+  lines actually under the cursor.
+
+- **Fix: `clear` no longer writes `clear\n` into the PTY** — clearing is handled view-side;
+  the old behavior typed the word "clear" into running TUI apps and broke on non-POSIX shells.
+
+- **Windows: real-terminal mode can be opted into with `GODOTTY_WINDOWS_REAL=1`** (still
+  defaults to mock until the ConPTY build of godotty-node is verified). `build_extension.sh`
+  now handles Git Bash/MSYS builds (copies `godotty_node.dll` to `bin/windows/`).
+
+- **Fix: mock `cd ..` can now reach `/`** (previously a no-op at depth 1).
+
+- Docs: `docs/fable_review.md` — full codebase review and the Windows shell-support plan
+  (PowerShell, Git Bash, cmd).
+
 - **Fix: Cross-chunk CR line-rewrite now correctly clears previously committed display content.**
   - `_append_output` only called `_ansi_to_bbcode` on the current PTY chunk. When a `\r`
     (line-rewrite) arrived in chunk N+1 but chunk N had already appended partial text to

@@ -35,10 +35,6 @@ const CHAR_H: float = 16.0
 const BRACKETED_PASTE_START: String = "\u001b[200~"
 const BRACKETED_PASTE_END: String = "\u001b[201~"
 
-## Set to true to enable PTY-chunk debug logging (stdout, for triage only).
-## Commit with false.
-const DEBUG_PTY_CHUNKS: bool = false
-
 ## Context menu item IDs for the right-click PopupMenu.
 const MENU_ID_COPY: int = 0
 const MENU_ID_PASTE: int = 1
@@ -162,11 +158,6 @@ var _primary_raw_saved: String = ""
 ## Readable by tests to confirm the re-render was requested.
 var _needs_full_rerender: bool = false
 
-## True while _ansi_to_bbcode is being called as part of a display re-render
-## (scrollback-limit enforcement, cross-chunk line-rewrite rebuild, etc.).
-## Prevents recursive / re-entrant triggering of the line-clear path.
-var _in_rerender: bool = false
-
 ## Set by _ansi_to_bbcode when a standalone CR (line-rewrite) is detected.
 ## _append_output checks this flag after each chunk and, when true, clears the
 ## current (partial) line from the persistent accumulators before committing
@@ -195,6 +186,9 @@ var _last_search_query: String = ""
 
 ## Whether the last search_scrollback() call used regex mode.
 var _last_search_use_regex: bool = false
+
+## Lazily-compiled cached RegEx used by _strip_ansi.
+var _ansi_strip_re: RegEx = null
 
 ## Reference to the output display
 @onready
@@ -226,10 +220,20 @@ var cursor_overlay: ColorRect = $PaddingContainer/VBoxContainer/ScrollContainer/
 
 
 func _ready() -> void:
-	# Connect signals
-	SignalBus.output_ready.connect(_on_output_ready)
-	SignalBus.terminal_cleared.connect(_on_terminal_cleared)
-	SignalBus.shell_status_changed.connect(_on_shell_status_changed)
+	# Connect signals. With an injected per-tab manager, subscribe to that
+	# manager's own signals; the SignalBus fan-out belongs to the app-wide
+	# default TerminalManager autoload only (subscribing every view to the
+	# bus would make each tab render every other tab's output).
+	if manager != null:
+		manager.output_received.connect(_on_output_ready)
+		manager.shell_started.connect(_on_shell_started)
+		manager.shell_stopped.connect(_on_shell_stopped)
+		if manager.has_signal("terminal_cleared"):
+			manager.terminal_cleared.connect(_on_terminal_cleared)
+	else:
+		SignalBus.output_ready.connect(_on_output_ready)
+		SignalBus.terminal_cleared.connect(_on_terminal_cleared)
+		SignalBus.shell_status_changed.connect(_on_shell_status_changed)
 	SignalBus.addon_status_changed.connect(_on_addon_status_changed)
 	_get_manager().theme_changed.connect(_on_theme_changed)
 
@@ -249,11 +253,11 @@ func _ready() -> void:
 	# godot-rust 'safeguards balanced' fires SIGTRAP on the cross-thread
 	# output_received emit.
 	if TerminalSettings.font == null and TerminalSettings.selected_font_name != "Default":
-		var _fpath: String = TerminalSettings.BUNDLED_FONT_PATHS.get(
+		var fpath: String = TerminalSettings.BUNDLED_FONT_PATHS.get(
 			TerminalSettings.selected_font_name, ""
 		)
-		if _fpath != "":
-			TerminalSettings.font = load(_fpath)
+		if fpath != "":
+			TerminalSettings.font = load(fpath)
 
 	# Initialize terminal (spawns the shell / PTY reader thread).
 	_setup_theme_picker()
@@ -367,6 +371,8 @@ func _execute_action(action: String) -> void:
 
 ## Convert a key event to the byte sequence a real terminal sends to the PTY.
 ## Returns "" for keys that should be silently ignored.
+## Early returns per key are the clearest shape for this lookup table.
+# gdlint: disable=max-returns
 func _key_to_pty_seq(ev: InputEventKey) -> String:
 	const ESC := "\u001b"
 
@@ -478,6 +484,9 @@ func _key_to_pty_seq(ev: InputEventKey) -> String:
 	return ""
 
 
+# gdlint: enable=max-returns
+
+
 ## Handle GUI mouse events for click-drag text selection and right-click context menu.
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
@@ -499,12 +508,21 @@ func _gui_input(event: InputEvent) -> void:
 
 
 ## Convert a local pixel position to a grid cell coordinate (col, row).
-## Clamped to [0, _terminal_cols-1] ? [0, _terminal_rows-1].
+## In primary mode the vertical scroll offset is added so rows index into the
+## scrollback content (which is what selection extraction reads), and rows may
+## exceed the viewport when the scrollback is longer than one screen.
+## In alternate-screen mode rows are clamped to [0, _terminal_rows-1].
 func _pixel_to_cell(pos: Vector2) -> Vector2i:
+	var y := pos.y
+	var max_row := maxi(0, _terminal_rows - 1)
+	if not _in_alternate_screen:
+		if scroll_container:
+			y += scroll_container.scroll_vertical
+		max_row = maxi(_line_count, max_row)
 	var col := int(floor(pos.x / char_width))
-	var row := int(floor(pos.y / line_height))
+	var row := int(floor(y / line_height))
 	col = clampi(col, 0, max(0, _terminal_cols - 1))
-	row = clampi(row, 0, max(0, _terminal_rows - 1))
+	row = clampi(row, 0, max_row)
 	return Vector2i(col, row)
 
 
@@ -660,7 +678,12 @@ func _ansi_to_bbcode(text: String) -> String:
 	var input := _partial_escape + text
 	_partial_escape = ""
 
-	var output := ""
+	# Reopen the tags that were textually closed at the previous chunk boundary.
+	# Generated BBCode keeps tags chunk-local and line-local (closed before every
+	# "\n" and at the end of every chunk, reopened after/at the start of the
+	# next), so trimming the accumulator or removing display paragraphs at
+	# newline boundaries can never dangle a tag.
+	var output := _open_active_tags()
 	var i := 0
 	while i < input.length():
 		var ch := input[i]
@@ -825,14 +848,19 @@ func _ansi_to_bbcode(text: String) -> String:
 				output = output.substr(0, last_newline + 1)
 			else:
 				output = ""
+			# The truncation dropped any tag-opens sitting on the discarded
+			# text; re-emit the active tags so subsequent text stays styled.
+			output += _open_active_tags()
 			# Flag that the persistent accumulators also need their current line
-			# cleared.  Not set during re-render passes to prevent recursion.
-			if not _in_alternate_screen and not _in_rerender:
+			# cleared (cross-chunk case, handled in _append_output).
+			if not _in_alternate_screen:
 				_pending_line_clear = true
 			i += 1
 			continue
 		elif ch == "\n":
-			output += "\n"
+			# Close open tags before the newline and reopen after it so every
+			# line of generated BBCode is self-contained (safe to trim/remove).
+			output += _emit_closing_tags() + "\n" + _open_active_tags()
 			i += 1
 			continue
 		elif ch == "\u0008":
@@ -861,7 +889,8 @@ func _ansi_to_bbcode(text: String) -> String:
 				_alt_grid.write_at_cursor(_make_cell_from_state(ch))
 			i += 1
 
-	return output
+	# Close any open tags at the chunk boundary; the next call reopens them.
+	return output + _emit_closing_tags()
 
 
 ## Handle SGR (Select Graphic Rendition) codes.
@@ -901,15 +930,15 @@ func _handle_sgr(params_str: String) -> String:
 				24:
 					new_underline = false
 				30, 31, 32, 33, 34, 35, 36, 37:
-					new_fg = _indexed_color(code - 30, false)
+					new_fg = _indexed_color(code - 30)
 				39:
 					new_fg = ""
 				40, 41, 42, 43, 44, 45, 46, 47:
-					new_bg = _indexed_color(code - 40, false)
+					new_bg = _indexed_color(code - 40)
 				49:
 					new_bg = ""
 				90, 91, 92, 93, 94, 95, 96, 97:
-					new_fg = _indexed_color(code - 90 + 8, false)
+					new_fg = _indexed_color(code - 90 + 8)
 				38:
 					if idx + 2 < codes.size() and int(codes[idx + 1]) == 5:
 						new_fg = _xterm256_hex(int(codes[idx + 2]))
@@ -931,7 +960,7 @@ func _handle_sgr(params_str: String) -> String:
 						)
 						idx += 4
 				100, 101, 102, 103, 104, 105, 106, 107:
-					new_bg = _indexed_color(code - 100 + 8, false)
+					new_bg = _indexed_color(code - 100 + 8)
 			idx += 1
 
 	# --- Pass 2: emit BBCode diff ---
@@ -971,6 +1000,22 @@ func _close_all_tags() -> String:
 	if _current_bold:
 		r += "[/b]"
 		_current_bold = false
+	return r
+
+
+## Emit closing tags for all currently-open tags in LIFO order WITHOUT
+## mutating the SGR state (unlike _close_all_tags). Used to keep the
+## generated BBCode chunk-local and line-local.
+func _emit_closing_tags() -> String:
+	var r := ""
+	if not _current_bg.is_empty():
+		r += "[/bgcolor]"
+	if not _current_fg.is_empty():
+		r += "[/color]"
+	if _current_underline:
+		r += "[/u]"
+	if _current_bold:
+		r += "[/b]"
 	return r
 
 
@@ -1014,7 +1059,7 @@ func get_effective_palette() -> Array[Color]:
 
 
 ## Map an ANSI color index (0-15) to a hex color string using the active theme palette.
-func _indexed_color(idx: int, _bright: bool) -> String:
+func _indexed_color(idx: int) -> String:
 	var palette: Array[Color] = get_effective_palette()
 	if idx >= 0 and idx < palette.size():
 		return "#" + palette[idx].to_html(false)
@@ -1024,15 +1069,22 @@ func _indexed_color(idx: int, _bright: bool) -> String:
 ## Convert xterm-256 index to hex color
 func _xterm256_hex(idx: int) -> String:
 	if idx < 16:
-		return _indexed_color(idx, false)
+		return _indexed_color(idx)
 	if idx < 232:
 		var i := idx - 16
-		var b := (i % 6) * 51
-		var g := ((i / 6) % 6) * 51
-		var r := ((i / 36) % 6) * 51
+		var r := _xterm_cube_channel((i / 36) % 6)
+		var g := _xterm_cube_channel((i / 6) % 6)
+		var b := _xterm_cube_channel(i % 6)
 		return "#%02x%02x%02x" % [r, g, b]
 	var v := 8 + (idx - 232) * 10
 	return "#%02x%02x%02x" % [v, v, v]
+
+
+## Map a 0-5 xterm color-cube step to its channel value.
+## The xterm ramp is 0, 95, 135, 175, 215, 255 (55 + 40n for n > 0), not
+## a linear multiple of 51.
+func _xterm_cube_channel(n: int) -> int:
+	return 0 if n == 0 else 55 + n * 40
 
 
 ## Append text to output with proper scrollback management
@@ -1040,44 +1092,37 @@ func _append_output(text: String) -> void:
 	if not output_display:
 		return
 
-	if DEBUG_PTY_CHUNKS:
-		var esc := text.replace("\u001b", "<ESC>").replace("\r", "<CR>").replace("\n", "<LF>")
-		print("[PTY] chunk(%d): %s" % [text.length(), esc])
-		print("[PTY]   raw_acc before: %s" % _raw_accumulator.replace("\u001b", "<ESC>").replace("\r", "<CR>").replace("\n", "<LF>"))
-
 	var processed := _ansi_to_bbcode(text)
-
-	if DEBUG_PTY_CHUNKS:
-		print("[PTY]   pending_clear=%s  processed_bbcode: %s" % [_pending_line_clear, processed.left(120)])
 
 	# A standalone CR in `text` may span a PTY-read-chunk boundary: the partial
 	# line that was already written to _output_accumulator / output_display in an
 	# earlier chunk must be cleared before appending the rewritten content.
+	# Tags in the accumulator are line-local (see _ansi_to_bbcode), so cutting
+	# at the last newline never dangles BBCode -- no re-parse of the raw ANSI
+	# stream is needed (that re-parse used to make every prompt redraw O(N)).
 	if _pending_line_clear and not _in_alternate_screen:
 		_pending_line_clear = false
-		# Trim the current (partial) line from the raw accumulator, keeping only
-		# the text up to and including the last completed newline.
+		var had_partial := (
+			not _output_accumulator.is_empty() and not _output_accumulator.ends_with("\n")
+		)
 		var raw_nl := _raw_accumulator.rfind("\n")
-		_raw_accumulator = _raw_accumulator.substr(0, raw_nl + 1)
-		_raw_accumulator += text
-		# Rebuild the display from scratch using the updated raw accumulator.
-		output_display.clear()
-		_current_fg = ""
-		_current_bg = ""
-		_current_bold = false
-		_current_underline = false
-		_partial_escape = ""
-		_in_rerender = true
-		var rebuilt := _ansi_to_bbcode(_raw_accumulator)
-		_in_rerender = false
-		_output_accumulator = rebuilt
-		_line_count = rebuilt.count("\n")
-		output_display.append_text(rebuilt)
-		var limit: int = clampi(TerminalSettings.scrollback_lines, 1, 100000)
-		if _line_count > limit:
-			_enforce_scrollback_limit(limit)
-		if DEBUG_PTY_CHUNKS:
-			print("[PTY]   LINE-CLEAR rebuilt. acc=%s" % _output_accumulator.left(120).replace("\u001b", "<ESC>"))
+		_raw_accumulator = _raw_accumulator.substr(0, raw_nl + 1) + text
+		var acc_nl := _output_accumulator.rfind("\n")
+		_output_accumulator = _output_accumulator.substr(0, acc_nl + 1) + processed
+		var removed := true
+		if had_partial:
+			var last_par := output_display.get_paragraph_count() - 1
+			removed = last_par >= 0 and output_display.remove_paragraph(last_par)
+		if removed:
+			output_display.append_text(processed)
+		else:
+			# Fallback: rebuild the display from the already-generated BBCode.
+			output_display.clear()
+			output_display.append_text(_output_accumulator)
+		_line_count = _output_accumulator.count("\n")
+		var clear_limit: int = clampi(TerminalSettings.scrollback_lines, 1, 100000)
+		if _line_count > clear_limit:
+			_enforce_scrollback_limit(clear_limit)
 		_scroll_to_bottom()
 		return
 
@@ -1091,8 +1136,6 @@ func _append_output(text: String) -> void:
 	if not _in_alternate_screen:
 		_output_accumulator += processed
 		_raw_accumulator += text
-	if DEBUG_PTY_CHUNKS:
-		print("[PTY]   normal append. acc_tail=%s" % _output_accumulator.right(80).replace("\u001b", "<ESC>"))
 	var limit: int = clampi(TerminalSettings.scrollback_lines, 1, 100000)
 	if _line_count > limit and not _in_alternate_screen:
 		_enforce_scrollback_limit(limit)
@@ -1101,29 +1144,35 @@ func _append_output(text: String) -> void:
 
 
 ## Trim the primary scrollback to `limit` lines, discarding the oldest content.
-## Rebuilds `_raw_accumulator` and re-renders `output_display` from the trimmed
-## raw ANSI text. Only call when not in alternate-screen mode.
+## Cuts both accumulators at line boundaries (tags are line-local, so the cut
+## is BBCode-safe) and removes the corresponding display paragraphs -- the raw
+## ANSI text is never re-parsed. Only call when not in alternate-screen mode.
 func _enforce_scrollback_limit(limit: int) -> void:
 	var excess := _line_count - limit
+	_raw_accumulator = _cut_leading_lines(_raw_accumulator, excess)
+	_output_accumulator = _cut_leading_lines(_output_accumulator, excess)
+	_line_count = limit
+	var removed_ok := true
+	for _i in range(excess):
+		if not output_display.remove_paragraph(0):
+			removed_ok = false
+			break
+	if not removed_ok:
+		# Fallback: rebuild the display from the already-generated BBCode.
+		output_display.clear()
+		output_display.append_text(_output_accumulator)
+
+
+## Return `s` with its first `count` lines (including each trailing newline)
+## removed.
+func _cut_leading_lines(s: String, count: int) -> String:
 	var pos := 0
 	var found := 0
-	while found < excess and pos < _raw_accumulator.length():
-		if _raw_accumulator[pos] == "\n":
+	while found < count and pos < s.length():
+		if s[pos] == "\n":
 			found += 1
 		pos += 1
-	_raw_accumulator = _raw_accumulator.substr(pos)
-	_line_count = limit
-	output_display.clear()
-	_current_fg = ""
-	_current_bg = ""
-	_current_bold = false
-	_current_underline = false
-	_partial_escape = ""
-	_in_rerender = true
-	var bbcode := _ansi_to_bbcode(_raw_accumulator)
-	_in_rerender = false
-	output_display.append_text(bbcode)
-	_output_accumulator = bbcode
+	return s.substr(pos)
 
 
 ## Clear output display
@@ -1313,6 +1362,16 @@ func _on_theme_changed(_theme: TerminalTheme) -> void:
 	_clear_output()
 	if not raw.is_empty():
 		_append_output(raw)
+
+
+## Adapter: injected manager's shell_started -> shared status handler.
+func _on_shell_started() -> void:
+	_on_shell_status_changed(true)
+
+
+## Adapter: injected manager's shell_stopped -> shared status handler.
+func _on_shell_stopped() -> void:
+	_on_shell_status_changed(false)
 
 
 ## Handle shell status change
@@ -1647,6 +1706,18 @@ func _exit_tree() -> void:
 		SignalBus.shell_status_changed.disconnect(_on_shell_status_changed)
 	if SignalBus.addon_status_changed.is_connected(_on_addon_status_changed):
 		SignalBus.addon_status_changed.disconnect(_on_addon_status_changed)
+	if manager != null and is_instance_valid(manager):
+		if manager.output_received.is_connected(_on_output_ready):
+			manager.output_received.disconnect(_on_output_ready)
+		if manager.shell_started.is_connected(_on_shell_started):
+			manager.shell_started.disconnect(_on_shell_started)
+		if manager.shell_stopped.is_connected(_on_shell_stopped):
+			manager.shell_stopped.disconnect(_on_shell_stopped)
+		if (
+			manager.has_signal("terminal_cleared")
+			and manager.terminal_cleared.is_connected(_on_terminal_cleared)
+		):
+			manager.terminal_cleared.disconnect(_on_terminal_cleared)
 	var mgr := _get_manager()
 	if mgr.theme_changed.is_connected(_on_theme_changed):
 		mgr.theme_changed.disconnect(_on_theme_changed)
@@ -1783,23 +1854,23 @@ func get_highlighted_line(
 	line_text: String, query: String, use_regex: bool = false, accent_col: int = -1
 ) -> String:
 	if query.is_empty() or line_text.is_empty():
-		return line_text.xml_escape()
+		return _escape_bbcode_text(line_text)
 	if use_regex:
 		var re := RegEx.new()
 		if re.compile(query) != OK:
-			return line_text.xml_escape()
+			return _escape_bbcode_text(line_text)
 		var result := ""
 		var pos: int = 0
 		for m: RegExMatch in re.search_all(line_text):
-			result += line_text.substr(pos, m.get_start() - pos).xml_escape()
+			result += _escape_bbcode_text(line_text.substr(pos, m.get_start() - pos))
 			var bg: String = (
 				SEARCH_ACCENT_BG if m.get_start() == accent_col else SEARCH_HIGHLIGHT_BG
 			)
 			result += "[bgcolor=%s]" % bg
-			result += m.get_string().xml_escape()
+			result += _escape_bbcode_text(m.get_string())
 			result += "[/bgcolor]"
 			pos = m.get_start() + m.get_string().length()
-		result += line_text.substr(pos).xml_escape()
+		result += _escape_bbcode_text(line_text.substr(pos))
 		return result
 	# Plain case-insensitive search
 	var lower_line: String = line_text.to_lower()
@@ -1810,23 +1881,33 @@ func get_highlighted_line(
 	while true:
 		var idx: int = lower_line.find(lower_query, pos)
 		if idx == -1:
-			result += line_text.substr(pos).xml_escape()
+			result += _escape_bbcode_text(line_text.substr(pos))
 			break
-		result += line_text.substr(pos, idx - pos).xml_escape()
+		result += _escape_bbcode_text(line_text.substr(pos, idx - pos))
 		var bg: String = SEARCH_ACCENT_BG if idx == accent_col else SEARCH_HIGHLIGHT_BG
 		result += "[bgcolor=%s]" % bg
-		result += line_text.substr(idx, q_len).xml_escape()
+		result += _escape_bbcode_text(line_text.substr(idx, q_len))
 		result += "[/bgcolor]"
 		pos = idx + q_len
 	return result
 
 
+## Escape text for safe embedding in RichTextLabel BBCode: XML entities plus
+## literal square brackets (Godot treats bare [ and ] as tag delimiters, so
+## they must become [lb] / [rb] -- same rule as the main ANSI render path).
+func _escape_bbcode_text(text: String) -> String:
+	return text.xml_escape().replace("[", "[lb]").replace("]", "[rb]")
+
+
 ## Strip ANSI / VT100 escape sequences from text, returning plain Unicode.
+## The RegEx is compiled once and cached -- this runs per line in search loops.
 func _strip_ansi(text: String) -> String:
-	var re := RegEx.new()
-	if re.compile("\u001b(\\[[0-9;?]*[A-Za-z]|\\][^\u0007]*\u0007|.)") != OK:
-		return text
-	return re.sub(text, "", true)
+	if _ansi_strip_re == null:
+		var re := RegEx.new()
+		if re.compile("\u001b(\\[[0-9;?]*[A-Za-z]|\\][^\u0007]*\u0007|.)") != OK:
+			return text
+		_ansi_strip_re = re
+	return _ansi_strip_re.sub(text, "", true)
 
 
 ## Re-render the primary scrollback with search highlights injected.
@@ -1858,6 +1939,6 @@ func _render_highlighted_scrollback() -> void:
 				get_highlighted_line(plain, _last_search_query, _last_search_use_regex, accent)
 			)
 		else:
-			output_display.append_text(plain.xml_escape())
+			output_display.append_text(_escape_bbcode_text(plain))
 		if line_idx < lines.size() - 1:
 			output_display.append_text("\n")
