@@ -12,6 +12,8 @@ Current release: **v0.1.0** — see [CHANGELOG.md](CHANGELOG.md).
 
 - 🖥️ **Terminal Emulation** — full ANSI color (256-color, truecolor, OSC sequences)
 - 📦 **Mock Mode** — works without the GDExtension for development
+- 🪟 **Windows Support** — real ConPTY-backed shells (cmd, PowerShell, Git Bash)
+- 🐚 **Shell Picker** — per-machine shell detection with a TitleBar dropdown
 - 🎨 **Multiple color themes** — Solarized Dark, Dracula, Tokyo Night, Gruvbox, and more
 - ⌨️ **Command History** — navigate with arrow keys
 - 🧠 **Robust ANSI Parser** — handles partial-escape sequences across PTY chunks
@@ -30,13 +32,30 @@ Or open `project/project.godot` in the Godot Editor.
 
 ### Real Terminal (with godotty-node)
 
+godotty-node is vendored as a submodule at `project/addons/godotty-node/lib`.
+
 ```bash
-git clone https://github.com/ClawfficeOrg/godotty-node.git
-cd godotty
-./build_extension.sh    # builds godotty-node and installs it into project/addons/
+git submodule update --init --recursive
+cd project/addons/godotty-node/lib/rust
+cargo build --release
+# install the built library where Godot can see it (lib/ is .gdignore'd):
+cp target/release/godotty_node.dll ../../bin/windows/     # Windows
+cp target/release/libgodotty_node.so ../../bin/linux/     # Linux
+cd ../../../../..                                         # repo root
 cd project
 godot4 .
 ```
+
+**Windows** is opt-in while ConPTY support stabilizes:
+
+```bash
+GODOTTY_WINDOWS_REAL=1 godot4 .
+```
+
+The shell picker in the TitleBar lists every shell detected on the machine
+(PowerShell, cmd, Git Bash); the selection persists for new terminals.
+Note: Windows PowerShell 5.1 can take ~10 s to produce its first output
+under a headless ConPTY session — that's the shell, not the terminal.
 
 ## Architecture
 

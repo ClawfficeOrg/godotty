@@ -3,6 +3,34 @@
 Append-only log of non-obvious things the agent has learned.
 **Newest at top.** Each entry: date, one-line summary, evidence/links.
 
+## 2026-07-03 — ConPTY spawn does not search PATH; forward slashes break cmd.exe argv0
+
+**Context:** `spawn_shell_with("cmd.exe", ...)` reported success (process handle valid, `running=true`) but produced zero output forever. Absolute backslash path worked.
+**Learning:** Three separate spawn traps on Windows ConPTY: (1) bare executable names are not PATH-resolved — the spawn silently produces a dead session; (2) forward slashes in the executable path make cmd.exe parse `/W...` from its own argv0 as switches; (3) failure mode is silent — no error, no EOF, just no bytes. Resolve to an absolute native path before spawning (`resolve_shell_path` in godotty-node).
+**Evidence:** godotty-node commit `01fc794`.
+**Tag:** windows · conpty · rust
+
+## 2026-07-03 — ConPTY defers first output ~3 s (DA1 query timeout); \r is Enter, \n just types
+
+**Context:** Real integration tests timed out even though the shell was alive and the manager signal chain was correct.
+**Learning:** (1) ConPTY sends device queries (`ESC[c` etc.) at spawn and holds the first output flood ~3 s waiting for a response — settle delays and test windows must account for it. (2) A bare `\n` written to ConPTY types the text into the line buffer without executing; only `\r` is Enter. Unix ICRNL maps CR→NL, so `\r` is the correct cross-platform Enter. (3) ConPTY wraps output lines in OSC title + cursor-move sequences — test predicates must not anchor at line start (`^42` never matches; `42\r?\n` does). (4) Windows PowerShell 5.1 cold-starts ~10 s under headless ConPTY.
+**Evidence:** `tests/integration/real/__init__.gd`, `lib/rust/examples/pty_smoke.rs`.
+**Tag:** windows · conpty · testing
+
+## 2026-07-03 — GDScript lambdas capture locals by value; signal callbacks can't write to them
+
+**Context:** `run_and_await` set `done = true` inside an output-signal lambda; the outer polling loop never saw it and every real test timed out silently.
+**Learning:** GDScript 4 lambdas capture surrounding locals **by value**. Assigning to a captured `bool`/`String` mutates the lambda's private copy only. To communicate from a callback to the enclosing scope, share a reference type (Dictionary/Array) or use a member variable.
+**Evidence:** `tests/integration/real/__init__.gd` `run_and_await` state Dictionary.
+**Tag:** gdscript · godot
+
+## 2026-07-03 — Blocking OS.execute in _ready flakes timing tests; .gdignore hides submodule from res://
+
+**Context:** ShellDetector probed `where`/`which` on every TerminalView `_ready`; the bell flash test measured 0.2 s where 0.1 s was expected. Separately, `.gdextension` paths pointing into the submodule never loaded.
+**Learning:** (1) `OS.execute` blocks the main thread (~100 ms per probe) — cache detection results for the process lifetime, never probe per-instance. (2) A `.gdignore` file makes Godot ignore the whole directory for `res://` — GDExtension binaries inside a `.gdignore`'d submodule are unloadable; install them outside (e.g. `bin/<platform>/`).
+**Evidence:** `shell_detector.gd` `_cached_profiles`; `godotty-node.gdextension` bin/ paths.
+**Tag:** godot · testing · gdextension
+
 ## 2026-07-03 — Godot 4.6.2 GDScript parser rejects CRLF line endings on Windows
 
 **Context:** Fresh checkout on Windows with `core.autocrlf=true`. Every `.gd` file with CRLF caused parse errors.
