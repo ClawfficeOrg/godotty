@@ -427,8 +427,22 @@ func _xterm_cube_channel(n: int) -> int:
 
 ## Escape text for safe embedding in RichTextLabel BBCode: XML entities plus
 ## literal square brackets (Godot treats bare [ and ] as tag delimiters).
+##
+## Iterates char-by-char so a replacement never re-escapes its own output
+## (chained .replace() would turn a single `[` into `[lb[rb]` because the
+## inserted `]` inside `[lb]` would be immediately re-escaped).
 static func escape_bbcode_text(text: String) -> String:
-	return text.xml_escape().replace("[", "[lb]").replace("]", "[rb]")
+	var escaped := text.xml_escape()
+	var result := ""
+	for ch: String in escaped:
+		match ch:
+			"[":
+				result += "[lb]"
+			"]":
+				result += "[rb]"
+			_:
+				result += ch
+	return result
 
 
 ## Strip ANSI / VT100 escape sequences from text, returning plain Unicode.

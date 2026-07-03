@@ -67,7 +67,7 @@ func _make_mouse_motion(pos: Vector2) -> InputEventMouseMotion:
 func test_mouse_down_and_drag_selects_five_cells() -> void:
 	var start_px := Vector2(0.0, 0.0)
 	# Cell (col=0, row=4): row 4 * CHAR_H pixels down.
-	var end_px := Vector2(0.0, 4.0 * TerminalView.CHAR_H)
+	var end_px := Vector2(0.0, 4.0 * _view.line_height)
 
 	_view._gui_input(_make_mouse_press(start_px))
 	_view._gui_input(_make_mouse_motion(end_px))
@@ -79,7 +79,7 @@ func test_mouse_down_and_drag_selects_five_cells() -> void:
 
 ## Press at cell (0,5), drag up to cell (0,0) -- reversed drag normalises.
 func test_reverse_drag_selection_count_matches_forward() -> void:
-	var start_px := Vector2(0.0, 5.0 * TerminalView.CHAR_H)
+	var start_px := Vector2(0.0, 5.0 * _view.line_height)
 	var end_px := Vector2(0.0, 0.0)
 
 	_view._gui_input(_make_mouse_press(start_px))
@@ -92,7 +92,7 @@ func test_reverse_drag_selection_count_matches_forward() -> void:
 ## Verify _pixel_to_cell maps pixel offsets to correct cells via CHAR_W / CHAR_H.
 func test_pixel_to_cell_conversion_uses_char_metrics() -> void:
 	# col 3, row 2 -> pixel (3*CHAR_W, 2*CHAR_H)
-	var px := Vector2(3.0 * TerminalView.CHAR_W, 2.0 * TerminalView.CHAR_H)
+	var px := Vector2(3.0 * _view.char_width, 2.0 * _view.line_height)
 	_view._gui_input(_make_mouse_press(px))
 
 	assert_that(_view.selection_start).is_equal(Vector2i(3, 2))
@@ -101,7 +101,7 @@ func test_pixel_to_cell_conversion_uses_char_metrics() -> void:
 ## After a drag the selection overlay must exist, be visible, and cover the cells.
 func test_selection_overlay_exists_and_covers_selected_cells() -> void:
 	var start_px := Vector2(0.0, 0.0)
-	var end_px := Vector2(2.0 * TerminalView.CHAR_W, 0.0)  # 3 cells wide, same row
+	var end_px := Vector2(2.0 * _view.char_width, 0.0)  # 3 cells wide, same row
 
 	_view._gui_input(_make_mouse_press(start_px))
 	_view._gui_input(_make_mouse_motion(end_px))
@@ -109,8 +109,8 @@ func test_selection_overlay_exists_and_covers_selected_cells() -> void:
 	assert_object(_view._selection_overlay).is_not_null()
 	assert_bool(_view._selection_overlay.visible).is_true()
 	# Overlay should span 3 columns ? 1 row.
-	assert_float(_view._selection_overlay.size.x).is_equal(3.0 * TerminalView.CHAR_W)
-	assert_float(_view._selection_overlay.size.y).is_equal(TerminalView.CHAR_H)
+	assert_float(_view._selection_overlay.size.x).is_equal(3.0 * _view.char_width)
+	assert_float(_view._selection_overlay.size.y).is_equal(_view.line_height)
 
 
 ## Out-of-bounds drag clamps to grid limits; no negative or overflowing indices.

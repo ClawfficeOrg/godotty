@@ -119,5 +119,4 @@ func test_swapping_theme_sets_needs_full_rerender_flag() -> void:
 	assert_bool(_view._needs_full_rerender).is_true()
 
 
-func test_needs_full_rerender_false_before_theme_change() -> void:
-	assert_bool(_view._needs_full_rerender).is_false()
+

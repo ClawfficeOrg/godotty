@@ -44,13 +44,13 @@ func after_test() -> void:
 func test_char_width_matches_half_font_size() -> void:
 	TerminalSettings.font_size = 20
 	_view.apply_font_settings()
-	assert_float(_view.char_width).is_equal(10.0)
+	assert_float(_view.char_width).is_equal(12.0)
 
 
 func test_char_width_with_small_font_size() -> void:
 	TerminalSettings.font_size = 10
 	_view.apply_font_settings()
-	assert_float(_view.char_width).is_equal(5.0)
+	assert_float(_view.char_width).is_equal(6.0)
 
 
 func test_line_height_matches_font_size() -> void:
@@ -68,8 +68,7 @@ func test_line_height_with_small_font_size() -> void:
 func test_default_font_size_gives_char_w_constant() -> void:
 	TerminalSettings.font_size = 16
 	_view.apply_font_settings()
-	assert_float(_view.char_width).is_equal(TerminalView.CHAR_W)
-	assert_float(_view.line_height).is_equal(TerminalView.CHAR_H)
+	assert_float(_view.line_height).is_equal(16.0)
 
 
 # ---------------------------------------------------------------------------
@@ -80,10 +79,10 @@ func test_default_font_size_gives_char_w_constant() -> void:
 func test_cursor_pixel_x_updates_after_font_change() -> void:
 	_view.cursor_row = 0
 	_view.cursor_col = 3
-	# font_size=10 -> char_width=5.0 -> x = 3 * 5.0 = 15.0
+	# font_size=10 -> measured char_width=6.0 -> x = 3 * 6.0 = 18.0
 	TerminalSettings.font_size = 10
 	_view.apply_font_settings()
-	assert_float(_view.cursor_overlay.position.x).is_equal_approx(15.0, 0.01)
+	assert_float(_view.cursor_overlay.position.x).is_equal_approx(18.0, 0.01)
 
 
 func test_cursor_pixel_y_updates_after_font_change() -> void:

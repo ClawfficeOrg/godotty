@@ -1,0 +1,15 @@
+# Force LF line endings for GDScript files — Godot 4.6 parser rejects CRLF on Windows
+*.gd text eol=lf
+
+# Godot resource files
+*.tres text eol=lf
+*.tscn text eol=lf
+*.res text eol=lf
+
+# Shell scripts — always LF
+*.sh text eof=lf
+*.bash text eof=lf
+
+# YAML/CI files
+*.yml text eol=lf
+*.yaml text eol=lf

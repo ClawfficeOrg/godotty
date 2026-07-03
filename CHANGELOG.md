@@ -9,6 +9,17 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 
 ## [Unreleased]
 
+- **Fix: Windows CRLF line endings breaking GDScript parser.**
+  - Converted all `.gd` files to LF line endings (Godot 4.6.2 rejects CRLF on Windows).
+  - Added `.gitattributes` to force `*.gd` → LF checkout, preventing future corruption.
+  - Replaced `project/tests/` copy-of-symlink hack with real NTFS junction point.
+
+- **Fix: update tests for font_size default change (16 → 20) and AnsiParser refactor.**
+  - Rewrote `terminal_settings_test.gd` for the new static-class `TerminalSettings`.
+  - Updated font-metric assertions in 6 test files to match measured char_width/line_height.
+  - Removed stale theme-flag test (`_needs_full_rerender` starts `true` after init).
+  - Fixed bracket-escaping test for correct char-by-char `[lb]`/`[rb]` generation.
+
 - **Refactor: extract ANSI parser from `TerminalView` into `AnsiParser` (RefCounted).**
   - New `project/scripts/ansi_parser.gd` with `class_name AnsiParser` — scene-free,
     unit-testable parser owning SGR state, partial-escape buffering, and CR line-rewrite flag.

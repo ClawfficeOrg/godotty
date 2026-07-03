@@ -92,17 +92,17 @@ func test_csi_q_steady_bar_ps6() -> void:
 
 func test_block_style_gives_full_char_size() -> void:
 	SignalBus.output_ready.emit("\u001b[2 q")
-	assert_float(_view.cursor_overlay.size.x).is_equal(TerminalView.CHAR_W)
-	assert_float(_view.cursor_overlay.size.y).is_equal(TerminalView.CHAR_H)
+	assert_float(_view.cursor_overlay.size.x).is_equal(_view.char_width)
+	assert_float(_view.cursor_overlay.size.y).is_equal(_view.line_height)
 
 
 func test_underline_style_gives_thin_horizontal_bar() -> void:
 	SignalBus.output_ready.emit("\u001b[4 q")
-	assert_float(_view.cursor_overlay.size.x).is_equal(TerminalView.CHAR_W)
+	assert_float(_view.cursor_overlay.size.x).is_equal(_view.char_width)
 	assert_float(_view.cursor_overlay.size.y).is_equal(2.0)
 
 
 func test_bar_style_gives_thin_vertical_bar() -> void:
 	SignalBus.output_ready.emit("\u001b[5 q")
 	assert_float(_view.cursor_overlay.size.x).is_equal(2.0)
-	assert_float(_view.cursor_overlay.size.y).is_equal(TerminalView.CHAR_H)
+	assert_float(_view.cursor_overlay.size.y).is_equal(_view.line_height)

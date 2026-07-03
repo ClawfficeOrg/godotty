@@ -67,10 +67,19 @@ RESULTS_DIR="${RESULTS_DIR:-build/test-results}"
 mkdir -p "$RESULTS_DIR"
 
 # Map test paths into the project's view: GdUnit4 wants project-relative paths,
-# but we put tests/ at the repo root. Symlink trick:
+# but we put tests/ at the repo root. Create a symlink/junction so
+# project/tests/ resolves to tests/ at the repo root.
 LINK="$PROJECT_DIR/tests"
 if [[ ! -e "$LINK" ]]; then
-	ln -s "../tests" "$LINK"
+	if command -v cmd >/dev/null 2>&1; then
+		# Windows: use cmd's mklink /J (directory junction)
+		LINK_ABS="$(cd "$(dirname "$LINK")" && pwd -W 2>/dev/null || echo "$PWD/$LINK")"
+		TARGET_ABS="$(cd "$REPO_ROOT/tests" && pwd -W 2>/dev/null || echo "$REPO_ROOT/tests")"
+		cmd //c "mklink /J \"$LINK_ABS\" \"$TARGET_ABS\"" >/dev/null 2>&1 || true
+	else
+		# macOS/Linux: Unix symlink
+		ln -s "../tests" "$LINK" 2>/dev/null || true
+	fi
 fi
 
 set +e

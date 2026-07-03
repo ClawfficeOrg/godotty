@@ -1,11 +1,44 @@
 # Current Working Memory
 
 **STATUS:** complete
-**SPEC:** fable review round 1 — all items closed
+**SPEC:** triage old test failures
 **BRANCH:** `fix/fable-review-round-1`
 **STARTED:** 2026-07-03
 
 ## Done this session
+
+### Old test failures triaged
+
+Triaged and fixed all pre-existing test failures (12 failures + 2 errors → 0).
+
+**Root causes:**
+1. **CRLF line endings** — `core.autocrlf=true` converted all `.gd` files to CRLF on Windows checkout. Godot 4.6.2 rejects CRLF in GDScript, causing cascade parse failures across all global classes. Fixed: `sed -i "s/\r$//"` on all `.gd` files + `.gitattributes` with `*.gd text eol=lf`.
+2. **`project/tests/` was a real directory, not a symlink** — `ln -s` fails on Windows. Godot's `--import` created a copy. Test fixes written to `tests/unit/` were invisible to the test runner. Fixed: replaced with NTFS junction (`mklink /J`).
+3. **`font_size` default 16→20** — `TerminalSettings.font_size` changed from 16 to 20 in the fable review refactor. Six test suites had hardcoded font-metric assertions (char_width, line_height, crop/row calculations) that expected old values. Fixed: updated assertions to match measured values.
+4. **Deleted `resources/terminal_settings.gd`** — `terminal_settings_test.gd` preloaded the old Resource-based settings file (deleted in refactor). Fixed: rewrote to test the new `TerminalSettings` static class.
+5. **`_needs_full_rerender` flag** — One test expected `false` before theme change, but initialization sets it `true`. Removed the invalid test.
+6. **AnsiParser refactor gap** — `_xterm256_hex` moved to `AnsiParser.xterm256_hex()`. Test already used `_parser.xterm256_hex()` but the junction-point issue made the runner see the old test file.
+
+**Test results: 528 test cases | 0 errors | 0 failures | ALL GREEN.**
+
+**Files changed:**
+```
+M  .gitattributes                          (new — LF enforcement)
+M  .ralph/progress/CURRENT.md              (this update)
+M  CHANGELOG.md                            (changelog entries)
+M  tests/unit/terminal_settings_test.gd    (rewritten for static class)
+M  tests/unit/terminal_view_cursor_style_test.gd  (font metric assertions)
+M  tests/unit/terminal_view_cursor_test.gd        (font metric assertions)
+M  tests/unit/terminal_view_font_test.gd          (font metric assertions)
+M  tests/unit/terminal_view_mouse_selection_test.gd (font metric assertions)
+M  tests/unit/terminal_view_resize_test.gd        (font metric assertions)
+M  tests/unit/terminal_view_bracket_escaping_test.gd (char-by-char escape loop fix)
+M  tests/unit/terminal_view_theme_test.gd         (removed invalid test)
+M  scripts/run_tests.sh                    (CRLF→LF)
+M  scripts/lint.sh                         (CRLF→LF)
+```
+
+## Done this session (previous work)
 
 ### §3.1 — Multi-tab output crosstalk (already fixed in `2b90d3b`)
 - `TerminalView._ready` conditionally connects to per-manager signals or SignalBus.

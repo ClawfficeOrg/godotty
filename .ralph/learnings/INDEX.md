@@ -3,6 +3,13 @@
 Append-only log of non-obvious things the agent has learned.
 **Newest at top.** Each entry: date, one-line summary, evidence/links.
 
+## 2026-07-03 — Godot 4.6.2 GDScript parser rejects CRLF line endings on Windows
+
+**Context:** Fresh checkout on Windows with `core.autocrlf=true`. Every `.gd` file with CRLF caused parse errors.
+**Learning:** Unlike Godot 3.x, Godot 4.6.2's GDScript parser does NOT accept CRLF (`\r\n`) line endings. Files with `^M$` fail with "Parse Error: Could not parse global class" or "Identifier not declared" depending on context. Fix: either set `core.autocrlf=false` and use LF-only, or add `.gitattributes` with `*.gd text eol=lf` to force LF on checkout.
+**Evidence:** `.gitattributes`, `scripts/run_tests.sh` CRLF fix.
+**Tag:** godot · gdscript · windows
+
 ## 2026-07-03 — Signal forwarding pattern bridges base-class signals to global bus without coupling
 
 **Context:** Refactoring `TerminalManagerBase` shared between autoload and per-tab node (§3.4).

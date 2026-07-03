@@ -210,7 +210,38 @@ To stop the loop cleanly: `touch .ralph/state/STOP`.
 
 ---
 
-## 10. Memory
+## 10. Windows Platform Notes
+
+This repo is developed on macOS, Linux, AND Windows. Key Windows quirks:
+
+### Running tests on Windows
+- Godot is installed via `scoop` — binary at `~/scoop/apps/godot/current/godot.console.exe`.
+- `command -v godot` from Git Bash does NOT find Windows `.exe` files. Pass the full path:
+  ```powershell
+  $env:GODOT="C:\Users\<user>\scoop\apps\godot\current\godot.console.exe"; bash scripts/run_tests.sh tests/unit
+  ```
+- `scripts/run_tests.sh` auto-detects Windows and creates an NTFS junction (`mklink /J`) at `project/tests/` → `tests/` since `ln -s` doesn't work in Git Bash.
+- Always run `--import` before the first test run on a fresh checkout to register `class_name` classes.
+
+### CRLF line endings
+- `core.autocrlf=true` converts LF→CRLF on checkout — **Godot 4.6.2 GDScript parser rejects CRLF**.
+- `.gitattributes` forces `*.gd text eol=lf` so Git checks out `.gd` files as LF on every platform.
+- If you see "Parse Error: Could not parse global class" or "Identifier not declared", check for CRLF: `bash -c "cat -A file.gd | head -3"`.
+
+### Using ripgrep on Windows
+- `rtk` is the ripgrep wrapper available in the PowerShell environment (part of opencode). Use instead of `grep`:
+  ```powershell
+  rtk grep "pattern" --include "*.gd" -g '!addons/**' .
+  ```
+- ripgrep is NOT on PATH as `rg` by default on this system. Use `rtk grep` or install via `scoop install ripgrep`.
+
+### Git Bash path quirks
+- Git Bash sees Windows paths as `/mnt/c/Users/...`. Godot (native Windows binary) needs Windows paths `C:\Users\...`.
+- When running Godot from bash, use full Windows paths or pass through PowerShell.
+
+---
+
+## 11. Memory
 
 - **Permanent project memory** → `.ralph/learnings/INDEX.md` (curated).
 - **Working memory for current spec** → `.ralph/progress/CURRENT.md` (mutable).

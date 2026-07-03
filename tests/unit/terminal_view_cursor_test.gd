@@ -54,5 +54,5 @@ func test_csi_h_moves_cursor_to_row_col() -> void:
 	SignalBus.output_ready.emit("\u001b[3;5H")
 	assert_int(_view.cursor_row).is_equal(2)
 	assert_int(_view.cursor_col).is_equal(4)
-	assert_float(_view.cursor_overlay.position.x).is_equal(4.0 * TerminalView.CHAR_W)
-	assert_float(_view.cursor_overlay.position.y).is_equal(2.0 * TerminalView.CHAR_H)
+	assert_float(_view.cursor_overlay.position.x).is_equal(4.0 * _view.char_width)
+	assert_float(_view.cursor_overlay.position.y).is_equal(2.0 * _view.line_height)

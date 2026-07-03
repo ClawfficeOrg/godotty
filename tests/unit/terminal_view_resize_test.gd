@@ -37,8 +37,9 @@ func after_test() -> void:
 
 func test_terminal_resized_signal_fires_with_correct_cols_rows() -> void:
 	TerminalSettings.font_size = 10
-	# char_width = 10 * 0.5 = 5.0, line_height = 10.0
-	# 200 / 5.0 = 40 cols, 100 / 10.0 = 10 rows
+	_view.apply_font_settings()
+	# char_width ≈ 6.0 (measured), line_height = 10.0
+	# 200 / 6 = 33 cols, 100 / 10.0 = 10 rows
 	_view.size = Vector2(200, 100)
 	var received: Array = []
 	var cb := func(cols: int, rows: int) -> void: received.append([cols, rows])
@@ -46,7 +47,7 @@ func test_terminal_resized_signal_fires_with_correct_cols_rows() -> void:
 	_view._on_viewport_resize()
 	SignalBus.terminal_resized.disconnect(cb)
 	assert_array(received).is_not_empty()
-	assert_int(received[0][0]).is_equal(40)
+	assert_int(received[0][0]).is_equal(33)
 	assert_int(received[0][1]).is_equal(10)
 
 
@@ -56,8 +57,9 @@ func test_terminal_resized_signal_fires_with_correct_cols_rows() -> void:
 
 
 func test_terminal_resized_larger_font_gives_fewer_cols() -> void:
-	# font_size=20 -> char_w=10.0 -> 200/10=20 cols, 100/20=5 rows
+	# font_size=20 -> char_w=12.0 -> 200/12=16 cols (clamped to 20), 100/20=5 rows
 	TerminalSettings.font_size = 20
+	_view.apply_font_settings()
 	_view.size = Vector2(200, 100)
 	var received: Array = []
 	var cb := func(cols: int, rows: int) -> void: received.append([cols, rows])
@@ -91,9 +93,10 @@ func test_terminal_resized_not_fired_when_size_is_zero() -> void:
 
 
 func test_terminal_resized_uses_floor_not_round() -> void:
-	# font_size=10 -> char_w=5.0
-	# width=209 -> floor(209/5)=41, not round(209/5)=42
+	# font_size=10 -> char_w ≈ 6.0
+	# width=209 -> floor(209/6)=34, not round(209/6)=35
 	TerminalSettings.font_size = 10
+	_view.apply_font_settings()
 	_view.size = Vector2(209, 109)
 	var received: Array = []
 	var cb := func(cols: int, rows: int) -> void: received.append([cols, rows])
@@ -101,7 +104,7 @@ func test_terminal_resized_uses_floor_not_round() -> void:
 	_view._on_viewport_resize()
 	SignalBus.terminal_resized.disconnect(cb)
 	assert_array(received).is_not_empty()
-	assert_int(received[0][0]).is_equal(41)
+	assert_int(received[0][0]).is_equal(34)
 	assert_int(received[0][1]).is_equal(10)
 
 
@@ -111,10 +114,11 @@ func test_terminal_resized_uses_floor_not_round() -> void:
 
 
 func test_terminal_resized_default_font_size_matches_char_constants() -> void:
-	# Default font_size=16 -> char_w=8.0=CHAR_W, line_h=16.0=CHAR_H
+	# font_size=16 -> char_w ≈ 9.6, line_h=16.0
+	# 160/9.6=16 cols (clamped to 20), 96/16=6 rows
 	TerminalSettings.font_size = 16
+	_view.apply_font_settings()
 	_view.size = Vector2(160, 96)
-	# 160/8=20 cols, 96/16=6 rows
 	var received: Array = []
 	var cb := func(cols: int, rows: int) -> void: received.append([cols, rows])
 	SignalBus.terminal_resized.connect(cb)
