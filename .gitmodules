@@ -1,0 +1,3 @@
+[submodule "project/addons/godotty-node/lib"]
+	path = project/addons/godotty-node/lib
+	url = git@github.com:ClawfficeOrg/godotty-node.git
