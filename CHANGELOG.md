@@ -9,6 +9,44 @@ Pre-1.0 versions: MINOR bumps may include breaking changes (loudly noted).
 
 ## [Unreleased]
 
+- **Refactor: extract ANSI parser from `TerminalView` into `AnsiParser` (RefCounted).**
+  - New `project/scripts/ansi_parser.gd` with `class_name AnsiParser` — scene-free,
+    unit-testable parser owning SGR state, partial-escape buffering, and CR line-rewrite flag.
+  - Emits signals for CSI, OSC, bell, and alt-screen cell writes; `TerminalView` connects
+    to these synchronously, preserving dispatch order.
+  - New suite `tests/unit/ansi_parser_test.gd` covering SGR italic/reverse/strikethrough,
+    partial escapes, signal dispatch, and BBCode tag invariant.
+
+- **Refactor: share terminal engine between autoload and per-tab managers.**
+  - New `project/scripts/terminal_manager_base.gd` (`class_name TerminalManagerBase`)
+    containing all mock-command logic and real-terminal wrappers.
+  - `TerminalManagerNode` now extends `TerminalManagerBase` (6 lines).
+  - `TerminalManager` (autoload) extends `TerminalManagerBase` and bridges instance
+    signals to `SignalBus` via forwarding functions.
+  - Deleted unused `project/resources/terminal_settings.gd` resource duplicate.
+
+- **Fix: selection coordinates drift when scrollback trims old lines.**
+  - `_enforce_scrollback_limit` now adjusts `selection_start.y` / `selection_end.y` by the
+    number of trimmed lines; resets selection to (-1,-1) if it scrolled off entirely.
+
+- **Fix: resize plumbing inconsistencies.**
+  - `SignalBus.terminal_resized` now emits AFTER clamping (all consumers see same dims).
+  - Font width measured via `TerminalSettings.font.get_string_size("M", ...)` instead of
+    hardcoded `font_size * 0.5` (correct per-font glyph advance).
+  - Added `Control.resized` signal alongside `root.size_changed` so tab/split layout
+    changes trigger recalc.
+
+- **Fix: blink timer now reads `cursor_blink_rate` dynamically.**
+  - `_start_blinking` updates `_blink_timer.wait_time` from `TerminalSettings.cursor_blink_rate`
+    each time blink starts, so runtime setting changes take effect.
+
+- **Chore: remove redundant `await get_tree().process_frame` from `main.gd`.**
+
+- **Build: add godotty-node as git submodule** at `project/addons/godotty-node/lib/`,
+  pinned at `c9e3630`.
+
+- **Docs: README theme description updated, fable review items closed.**
+
 - **Fix: per-tab output isolation — `TerminalManagerNode` no longer broadcasts on `SignalBus`.**
   - Every `TerminalView` subscribed to the global `SignalBus.output_ready`, so with per-tab
     managers each view rendered every tab's output (duplicated across tabs).

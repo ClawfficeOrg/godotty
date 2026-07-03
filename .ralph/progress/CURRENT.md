@@ -1,15 +1,80 @@
 # Current Working Memory
 
-**STATUS:** in-progress
-**SPEC:** BBCode rendering hotfix + CR line-rewrite fix
-**BRANCH:** `hotfix/bbcode-bracket-escaping`
-**STARTED:** 2026-05-27
+**STATUS:** complete
+**SPEC:** fable review round 1 — all items closed
+**BRANCH:** `fix/fable-review-round-1`
+**STARTED:** 2026-07-03
 
-## Now doing
+## Done this session
 
-**Cross-chunk CR line-rewrite — FIXED** ✅  (commit 0e6739d)
+### §3.1 — Multi-tab output crosstalk (already fixed in `2b90d3b`)
+- `TerminalView._ready` conditionally connects to per-manager signals or SignalBus.
+- `TerminalManagerNode` has zero SignalBus emissions.
+- Verified no action needed.
 
-2026-05-27 — Root-caused and fixed the cross-PTY-chunk text-doubling bug.
+### §3.2 — O(N²) perf (already fixed in `2b90d3b`)
+- CR line-clear uses `remove_paragraph` + `append_text` (no re-parse).
+- Scrollback trim uses `_cut_leading_lines` + `remove_paragraph(0)` (no re-parse).
+
+### §3.3 — ANSI parser extraction — COMPLETE
+- `ansi_parser.gd` created from Fable handoff2.md recovery.
+- `TerminalView` refactored: old parser funcs deleted, `_parser` wired.
+- Added `_on_parser_csi`, `_csi_count`, `_on_parser_alt_char` CSI handlers.
+- `ansi_parser_test.gd` (16 tests) + `terminal_view_output_isolation_test.gd` updated.
+
+### §3.4 — Manager duplication — COMPLETE
+- `terminal_manager_base.gd` created with all shared mock/real logic.
+- `TerminalManagerNode` reduced to 6 lines (extends base + label).
+- `TerminalManager` autoload: extends base + SignalBus signal forwarding.
+
+### §3.5 — Selection scroll offset — COMPLETE
+- `_enforce_scrollback_limit` now adjusts `selection_start/end.y` by trimmed line count.
+
+### §3.6 — xterm-256 color ramp (fixed during parser extraction)
+
+### §3.7 — SGR coverage gaps (fixed during parser extraction)
+
+### §3.8 — Host-side clear (already fixed in `7e80f2d`)
+
+### §3.9 — Search bracket escaping (fixed: all paths use `AnsiParser.escape_bbcode_text`)
+
+### §3.10 — Resize plumbing — COMPLETE
+- `SignalBus.terminal_resized` emits after clamping.
+- Font width measured via `get_string_size` instead of `font_size * 0.5`.
+- `Control.resized` connected alongside `root.size_changed`.
+
+### §3.11 — Committed binary (already gitignored, never tracked)
+
+### §3.12 — Small items — COMPLETE
+- Blink timer: reads `cursor_blink_rate` dynamically on each start.
+- Deleted unused `project/resources/terminal_settings.gd` resource duplicate.
+- Removed fragile `await get_tree().process_frame` from `main.gd`.
+- README theme description updated.
+
+### Build — godotty-node submodule — COMPLETE
+- Added `project/addons/godotty-node/lib/` submodule pinned at `c9e3630`.
+- `.gdextension` paths updated to point at submodule `rust/target/` build output.
+
+## Remaining (not from fable review)
+- 10 pre-existing test failures (never triaged).
+- Windows plan W0-W4 (blocked on upstream godotty-node fixes).
+
+## Files changed (commits `5ffbdbc` + `8bef311`)
+```
+ M README.md
+ M CHANGELOG.md
+ M project/autoload/terminal_manager.gd
+ D project/resources/terminal_settings.gd
+ M project/scripts/main.gd
+ M project/scripts/terminal_manager_node.gd
+ M project/scripts/terminal_view.gd
+ A project/scripts/ansi_parser.gd
+ A project/scripts/terminal_manager_base.gd
+ A .gitmodules
+ A project/addons/godotty-node/lib
+ M tests/unit/ansi_parser_test.gd
+ M tests/unit/terminal_view_output_isolation_test.gd
+```
 
 **The Bug:**
 When a bare CR (line-rewrite intent) arrived as the first byte of chunk N+1,

@@ -3,6 +3,33 @@
 Append-only log of non-obvious things the agent has learned.
 **Newest at top.** Each entry: date, one-line summary, evidence/links.
 
+## 2026-07-03 — Signal forwarding pattern bridges base-class signals to global bus without coupling
+
+**Context:** Refactoring `TerminalManagerBase` shared between autoload and per-tab node (§3.4).
+**Learning:** The cleanest way to handle near-identical functions that differ only by SignalBus emissions is to:
+1. Have the base class emit all instance signals (output_received, shell_started, etc.).
+2. The autoload subclass connects to its OWN signals in `_ready` via signal forwarding functions that re-emit on SignalBus.
+3. No virtual methods, no overrides needed for the SignalBus bridge.
+4. The `_check_addon_availability` function needed a new `addon_availability_changed` signal on the base, since it previously emitted directly on SignalBus.
+**Evidence:** `project/autoload/terminal_manager.gd` — `_ready()` connects 5 forwarding functions; `project/scripts/terminal_manager_base.gd`.
+**Tag:** godot · gdscript · signals · refactoring
+
+## 2026-07-03 — Scrollback trim must adjust selection coordinates or selection drifts
+
+**Context:** Fixing §3.5 — selection coordinates drift when `_enforce_scrollback_limit` removes old lines.
+**Learning:** When trimming lines from the front of a scrollback buffer, all selection row indices must be decremented by the number of removed lines. If the entire selection falls off (new_end_y < 0), reset to (-1,-1). The `_update_selection_overlay()` call after adjustment hides the overlay automatically when selection is cleared.
+**Evidence:** `project/scripts/terminal_view.gd:_enforce_scrollback_limit` — selection adjustment block.
+**Tag:** godot · gdscript · selection · scrollback
+
+## 2026-07-03 — `.gdextension` files with `res://../../` relative paths don't resolve when embedded as submodule
+
+**Context:** Adding godotty-node as a submodule at `project/addons/godotty-node/lib/`.
+**Learning:** The submodule's `.gdextension` file at `lib/project/godotty-node.gdextension` uses `res://../../rust/target/...` paths to reference Rust build output. These paths would resolve to `res://addons/godotty-node/rust/target/...` (one level outside the submodule) instead of the correct `res://addons/godotty-node/lib/rust/target/...`. Fix: keep godotty's own `.gdextension` with explicit `res://addons/godotty-node/lib/rust/target/...` library paths, pointing into the submodule.
+**Evidence:** `project/addons/godotty-node/godotty-node.gdextension`.
+**Tag:** godot · gdextension · submodule
+
+
+
 ## 2026-05-27 — BBCode tags must follow LIFO nesting when changing FG color with active BG
 
 **Context:** Visible `[/bgcolor]`, `[/color]` tags in Starship prompts. Tags rendered as plaintext.
