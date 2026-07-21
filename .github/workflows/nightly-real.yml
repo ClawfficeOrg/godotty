@@ -4,9 +4,6 @@ name: Nightly Real-mode CI
 # PR builds fast. Builds godotty-node from source, installs the native library,
 # and runs the real-PTY integration test suite.
 on:
-  schedule:
-    # 02:17 UTC every night (non-round time avoids GH runner peak load).
-    - cron: "17 2 * * *"
   workflow_dispatch:
     inputs:
       godotty_node_ref:
